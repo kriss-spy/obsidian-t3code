@@ -2,7 +2,7 @@
 
 Date: 2026-11-22. Decision: **do not publish a stable release yet**. The user authorized a GitHub prerelease for testing. Stable publication must wait for the user's real behavior testing on Windows, as well as resolution of the required gates below.
 
-The Linux candidate is reviewable and installable. The [rc.3 HTTP link repair](verification/http-links.md) addresses the reported system-browser failure. The [rc.2 menu update](verification/obsidian-menu.md) adds the shorter Obsidian label and gem icon. Use the [manual checklist](user-test-checklist.md) for the next user pass. Required reference comparisons remain incomplete. The candidate archive is `dist/obsidian-t3code-0.1.0-rc.3-linux.zip`. Its metadata explicitly blocks stable publication. No release, tag, PR, or merge was created by this review.
+The Linux candidate is reviewable and installable. The [rc.3 HTTP link repair](verification/http-links.md) addresses the reported system-browser failure. The [rc.2 menu update](verification/obsidian-menu.md) adds the shorter Obsidian label and gem icon. Use the [manual checklist](user-test-checklist.md) for the next user pass. Required reference comparisons remain incomplete. The candidate archive is `dist/obsidian-t3code-0.1.0-rc.3-linux.zip`. Its metadata explicitly blocks stable publication. The rc.3 prerelease uses the verified archive from source revision `8d4d5a9137ca029f50554138e6791f742b35c57f`. Later documentation updates live on `prep/stable-release`. No PR or merge is part of this publication.
 
 ## Reviewed scope
 
@@ -61,4 +61,4 @@ Keep the trial server's explicit data directory separate from the user's normal 
 
 To roll back, disable the plugin and restore the previous matched plugin/client pair. Preserve `data.json` and the browser partition unless intentionally resetting the connection. There are no plugin database migrations. Do not run two T3 server versions against the same data directory.
 
-Before publication, pass every remaining required gate, regenerate the candidate evidence for the exact final bytes, and complete the install rehearsal. Publishing, tagging, merging, and community-directory submission require a separate user instruction.
+Before publication, pass every remaining required gate, regenerate the candidate evidence for the exact final bytes, and complete the install rehearsal. Stable publication, merging, and community-directory submission require a separate user instruction.
