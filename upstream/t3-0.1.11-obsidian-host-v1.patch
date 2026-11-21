@@ -74,10 +74,18 @@ index 000000000..22f4f3c13
 +  }
 +}
 diff --git a/apps/web/src/components/ChatMarkdown.tsx b/apps/web/src/components/ChatMarkdown.tsx
-index f6062475a..93c44f4df 100644
+index f6062475a..9b592bf12 100644
 --- a/apps/web/src/components/ChatMarkdown.tsx
 +++ b/apps/web/src/components/ChatMarkdown.tsx
-@@ -960,6 +960,7 @@ function useChatMarkdownState({
+@@ -200,6 +200,7 @@ import { sourceControlClients } from "@t3tools/client-runtime/source-control-cli
+ import { useOpenChangeRequestLink } from "~/lib/openPullRequestLink";
+ import { textDirection } from "~/textDirection";
+ import { useOpenLink } from "../browser/useOpenLink";
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
+ import { isPreviewAvailableFor } from "../browser/previewRuntime";
+ import {
+@@ -960,6 +961,7 @@ function useChatMarkdownState({
          workspaceRelativePath={fileLinkMeta.workspaceRelativePath}
          panelPath={isAppBundle ? null : panelPath}
          line={fileLinkMeta.line}
@@ -85,6 +93,15 @@ index f6062475a..93c44f4df 100644
          label={fileLinkLabel(
            {
              path: fileLinkMeta.filePath,
+@@ -1359,7 +1361,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
+               }) !== "app"
+             ) {
+               // Open desktop Alt-clicks before Chromium downloads them so link routers can read the held key.
+-              if (isElectron && event.altKey) {
++              if ((isElectron && event.altKey) || (isObsidianEmbedded() && faviconHost !== null)) {
+                 event.preventDefault();
+                 event.stopPropagation();
+                 void readLocalApi()
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
 index 128f3b16d..21dd0d198 100644
 --- a/apps/web/src/components/ChatView.tsx
@@ -626,7 +643,7 @@ index 8e91e1ef7..6e57dc3df 100644
      previous.copyMarkdown === next.copyMarkdown &&
      previous.theme === next.theme &&
 diff --git a/apps/web/src/components/chat/OpenInPicker.tsx b/apps/web/src/components/chat/OpenInPicker.tsx
-index 711f1e4cb..b1da6c0b5 100644
+index 711f1e4cb..51e1e1ffe 100644
 --- a/apps/web/src/components/chat/OpenInPicker.tsx
 +++ b/apps/web/src/components/chat/OpenInPicker.tsx
 @@ -1,3 +1,5 @@
@@ -635,7 +652,21 @@ index 711f1e4cb..b1da6c0b5 100644
  import { ThreadDetailsControl } from "./ThreadDetailsControl";
  import {
    AuthOrchestrationOperateScope,
-@@ -219,6 +221,7 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -21,7 +23,12 @@ import {
+   useRemoteOpenState,
+ } from "../../remoteOpen";
+ import { useEnvironment } from "../../state/environments";
+-import { ChevronDownIcon, FolderClosedIcon, SquareArrowOutUpRightIcon } from "lucide-react";
++import {
++  ChevronDownIcon,
++  FolderClosedIcon,
++  GemIcon,
++  SquareArrowOutUpRightIcon,
++} from "lucide-react";
+ 
+ import { Group, GroupSeparator } from "../ui/group";
+ import {
+@@ -219,6 +226,7 @@ export const OpenInPicker = memo(function OpenInPicker({
    availableEditors,
    openInCwd,
    openInCwdIsFile = false,
@@ -643,7 +674,7 @@ index 711f1e4cb..b1da6c0b5 100644
    presentation = "toolbar",
    compact = false,
    enableShortcut = true,
-@@ -230,12 +233,14 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -230,12 +238,14 @@ export const OpenInPicker = memo(function OpenInPicker({
    availableEditors: ReadonlyArray<EditorId>;
    openInCwd: string | null;
    openInCwdIsFile?: boolean;
@@ -658,7 +689,7 @@ index 711f1e4cb..b1da6c0b5 100644
    const gt = useGT();
    const messages = useMessages();
    const isPanel = displayMode === "panel";
-@@ -315,6 +320,20 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -315,6 +325,23 @@ export const OpenInPicker = memo(function OpenInPicker({
  
    const editorItems = (
      <>
@@ -673,7 +704,10 @@ index 711f1e4cb..b1da6c0b5 100644
 +            })
 +          }
 +        >
-+          <MenuItemLabel>{gt("Open in {editor}", { editor: "Obsidian" })}</MenuItemLabel>
++          <GemIcon aria-hidden="true" className={getOpenInIconClass("brand")} />
++          <MenuItemLabel>
++            <T>Obsidian</T>
++          </MenuItemLabel>
 +        </MenuItem>
 +      ) : null}
        {unavailableReason !== null ? (
@@ -1127,8 +1161,87 @@ index 60c470040..38f8abdf3 100644
    })();
    if (drafts.length === 0) {
      return null;
+diff --git a/apps/web/src/composerDraftStore.test.ts b/apps/web/src/composerDraftStore.test.ts
+index a04d00cbb..21e5963cb 100644
+--- a/apps/web/src/composerDraftStore.test.ts
++++ b/apps/web/src/composerDraftStore.test.ts
+@@ -756,6 +756,34 @@ describe("composerDraftStore context persistence", () => {
+       vi.resetModules();
+     }
+   });
++
++  it("persists embedded composer edits before the guest can be destroyed", async () => {
++    const storage = createMemoryStorage();
++    vi.stubGlobal("localStorage", storage);
++    vi.stubGlobal("window", new EventTarget());
++    vi.stubGlobal("location", { search: "?obsidian-host=1" });
++    vi.useFakeTimers();
++    vi.resetModules();
++    try {
++      const tab = await import("./composerDraftStore");
++      const ref = scopeThreadRef(TEST_ENVIRONMENT_ID, ThreadId.make("immediate-close"));
++      tab.useComposerDraftStore.getState().setPrompt(ref, "Unsaved note context");
++      const saved = JSON.parse((await storage.getItem(COMPOSER_DRAFT_STORAGE_KEY)) ?? "null");
++      expect(saved?.state.draftsByThreadKey[scopedThreadKey(ref)]?.prompt).toBe(
++        "Unsaved note context",
++      );
++      vi.stubGlobal("window", new EventTarget());
++      vi.resetModules();
++      const reopened = await import("./composerDraftStore");
++      expect(reopened.useComposerDraftStore.getState().getComposerDraft(ref)?.prompt).toBe(
++        "Unsaved note context",
++      );
++    } finally {
++      vi.useRealTimers();
++      vi.unstubAllGlobals();
++      vi.resetModules();
++    }
++  });
+ });
+ 
+ describe("composerDraftStore thread contexts", () => {
+diff --git a/apps/web/src/composerDraftStore.ts b/apps/web/src/composerDraftStore.ts
+index 3c64aa0f6..9d2942bc5 100644
+--- a/apps/web/src/composerDraftStore.ts
++++ b/apps/web/src/composerDraftStore.ts
+@@ -94,6 +94,7 @@ import {
+ } from "./lib/composerContextRecords";
+ import { create } from "zustand";
+ import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
++import { isObsidianEmbedded } from "./obsidianHost";
+ import { useShallow } from "zustand/react/shallow";
+ import { draftModelSelectionApplies } from "./lib/chatThreadActions";
+ import { createDeferredStorage, createMemoryStorage } from "./lib/storage";
+@@ -241,7 +242,11 @@ const composerPersistStorage: PersistStorage<ComposerPersistState> = {
+     }
+     return JSON.parse(raw) as StorageValue<ComposerPersistState>;
+   },
+-  setItem: (name, value) => composerDebouncedStorage.setItem(name, value),
++  setItem: (name, value) => {
++    composerDebouncedStorage.setItem(name, value);
++    // Obsidian can destroy a guest without delivering beforeunload.
++    if (isObsidianEmbedded()) composerDebouncedStorage.flush();
++  },
+   removeItem: (name) => composerDebouncedStorage.removeItem(name),
+ };
+ 
+diff --git a/apps/web/src/contextMenuFallback.ts b/apps/web/src/contextMenuFallback.ts
+index f4abe911a..7f6b4cee7 100644
+--- a/apps/web/src/contextMenuFallback.ts
++++ b/apps/web/src/contextMenuFallback.ts
+@@ -6,6 +6,10 @@ import { m } from "./i18n/messages";
+ const SVG_NS = "http://www.w3.org/2000/svg";
+ 
+ const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<string, string> }>> = {
++  gem: [
++    { tag: "path", attrs: { d: "M6 3h12l4 6-10 13L2 9Z" } },
++    { tag: "path", attrs: { d: "M11 3 8 9l4 13 4-13-3-6M2 9h20" } },
++  ],
+   archive: [
+     { tag: "rect", attrs: { width: "20", height: "5", x: "2", y: "3", rx: "1" } },
+     { tag: "path", attrs: { d: "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" } },
 diff --git a/apps/web/src/fileContextMenu.ts b/apps/web/src/fileContextMenu.ts
-index 452a6bbd5..3054b2c47 100644
+index 452a6bbd5..553eeb01c 100644
 --- a/apps/web/src/fileContextMenu.ts
 +++ b/apps/web/src/fileContextMenu.ts
 @@ -1,3 +1,4 @@
@@ -1155,7 +1268,7 @@ index 452a6bbd5..3054b2c47 100644
      const reveal = action === "reveal-in-folder";
      const editor =
        action === "open" || reveal
-@@ -149,16 +155,36 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+@@ -149,16 +155,37 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
      });
    };
  
@@ -1171,7 +1284,8 @@ index 452a6bbd5..3054b2c47 100644
 +    if (absolutePath && (await verifyObsidianMarkdown(environmentId, absolutePath))) {
 +      const native: ContextMenuItem<FileContextMenuAction> = {
 +        id: "open-in-obsidian",
-+        label: resolve(msg("Open in {editor}", { editor: "Obsidian" })),
++        label: resolve(msg("Obsidian")),
++        icon: "gem",
 +      };
 +      const submenu = items.find((item) => item.id === "open-with");
 +      if (submenu) {
@@ -1197,7 +1311,7 @@ index 452a6bbd5..3054b2c47 100644
      if (items.length === 0 || api === undefined) return;
      const clicked = await api.contextMenu.show(items, position);
      if (clicked === null) return;
-@@ -166,12 +192,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+@@ -166,12 +193,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
    };
  
    return {
@@ -1362,6 +1476,83 @@ index fbd17226c..093a1e7d1 100644
      }
    };
  
+diff --git a/apps/web/src/localApi.test.ts b/apps/web/src/localApi.test.ts
+index b5f9bd18b..6470a4844 100644
+--- a/apps/web/src/localApi.test.ts
++++ b/apps/web/src/localApi.test.ts
+@@ -9,6 +9,14 @@ const showContextMenuFallbackMock =
+     ) => Promise<T | null>
+   >();
+ const dismissContextMenuMock = vi.fn<() => void>();
++const obsidian = vi.hoisted(() => ({
++  embedded: false,
++  open: vi.fn<(url: string) => Promise<boolean>>(),
++}));
++vi.mock("./obsidianHost", () => ({
++  isObsidianEmbedded: () => obsidian.embedded,
++  openObsidianExternal: obsidian.open,
++}));
+ 
+ const requestConfirmDialogMock =
+   vi.fn<(message: string, options?: ConfirmDialogOptions) => Promise<boolean> | undefined>();
+@@ -47,6 +55,8 @@ function testWindow(): Window & typeof globalThis {
+ beforeEach(() => {
+   vi.resetModules();
+   vi.clearAllMocks();
++  obsidian.embedded = false;
++  obsidian.open.mockResolvedValue(true);
+   if (globalThis.window === undefined) {
+     Object.defineProperty(globalThis, "window", {
+       configurable: true,
+@@ -65,6 +75,25 @@ afterEach(() => {
+ });
+ 
+ describe("LocalApi", () => {
++  it("opens embedded web links through the host instead of a blocked guest popup", async () => {
++    obsidian.embedded = true;
++    const popup = vi.fn();
++    Object.defineProperty(testWindow(), "open", { configurable: true, value: popup });
++    const { createLocalApi } = await import("./localApi");
++    await createLocalApi().shell.openExternal("https://example.com/test?q=one#two");
++    expect(obsidian.open).toHaveBeenCalledWith("https://example.com/test?q=one#two");
++    expect(popup).not.toHaveBeenCalled();
++    obsidian.open.mockResolvedValue(false);
++    await expect(createLocalApi().shell.openExternal("https://example.com")).rejects.toThrow();
++    expect(popup).not.toHaveBeenCalled();
++    obsidian.embedded = false;
++    await createLocalApi().shell.openExternal("https://example.com/ordinary");
++    expect(popup).toHaveBeenCalledWith(
++      "https://example.com/ordinary",
++      "_blank",
++      "noopener,noreferrer",
++    );
++  });
+   it("fails closed in a browser when no themed host is available", async () => {
+     requestConfirmDialogMock.mockReturnValue(undefined);
+     const { createLocalApi } = await import("./localApi");
+diff --git a/apps/web/src/localApi.ts b/apps/web/src/localApi.ts
+index 0baba982d..ea48fcd67 100644
+--- a/apps/web/src/localApi.ts
++++ b/apps/web/src/localApi.ts
+@@ -11,6 +11,7 @@ import { requestConfirmDialog } from "./confirmDialog";
+ import { dismissContextMenu, showContextMenuFallback } from "./contextMenuFallback";
+ import { readBrowserClientSettings, writeBrowserClientSettings } from "./clientPersistenceStorage";
+ import { m } from "./i18n/messages";
++import { isObsidianEmbedded, openObsidianExternal } from "./obsidianHost";
+ 
+ let cachedApi: LocalApi | undefined;
+ 
+@@ -27,6 +28,10 @@ export function createLocalApi(): LocalApi {
+     },
+     shell: {
+       openExternal: async (url) => {
++        if (isObsidianEmbedded()) {
++          if (!(await openObsidianExternal(url))) throw new Error(m(msg("Unable to open link.")));
++          return;
++        }
+         if (window.desktopBridge) {
+           const opened = await window.desktopBridge.openExternal(url);
+           if (!opened) {
 diff --git a/apps/web/src/main.tsx b/apps/web/src/main.tsx
 index 112de4848..b6c87f41b 100644
 --- a/apps/web/src/main.tsx
@@ -1383,10 +1574,10 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..e75db6de6
+index 000000000..805608d08
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,553 @@
+@@ -0,0 +1,568 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1664,7 +1855,8 @@ index 000000000..e75db6de6
 +    if (answer?.has(row.kind + ":" + row.id)) result.add(row.kind + ":" + row.id);
 +    return !answer && !inFlight.has(key);
 +  });
-+  if (missing.length && missing.length <= 20000) {
++  // Leave slots for the active file check and an explicit user action.
++  if (missing.length && missing.length <= 20000 && pending.size < 6) {
 +    const epoch = scopeEpoch;
 +    for (const row of missing) inFlight.add(rowKey(env, row));
 +    void request({ type: "scope", environmentId: env, rows: missing })
@@ -1816,6 +2008,20 @@ index 000000000..e75db6de6
 +}
 +export function canOpenObsidianMarkdown(env: string | null) {
 +  return embedded && initialized && env === environmentId;
++}
++export async function openObsidianExternal(url: string): Promise<boolean> {
++  if (!embedded || !initialized) return false;
++  try {
++    const target = new URL(url);
++    if (!["http:", "https:"].includes(target.protocol) || target.username || target.password)
++      return false;
++    const route = location.pathname;
++    return (
++      (await request({ type: "browser", environmentId, url: target.href, route })).handled === true
++    );
++  } catch {
++    return false;
++  }
 +}
 +export async function openObsidianMarkdown(input: {
 +  environmentId: string | null;

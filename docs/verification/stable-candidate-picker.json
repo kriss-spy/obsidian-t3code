@@ -1,0 +1,10 @@
+{
+  "firstResultActive": true,
+  "firstResultHighlighted": true,
+  "activeDescendantMatchesFirst": true,
+  "query": "蔚蓝档案",
+  "expectedPath": "extracurricular/ACG/games/gacha game/Blue Archive/Blue Archive.md",
+  "firstResult": "Blue Archive.mdextracurricular/ACG/games/gacha game/Blue Archive/Blue Archive.md",
+  "resultCount": 200,
+  "passed": true
+}

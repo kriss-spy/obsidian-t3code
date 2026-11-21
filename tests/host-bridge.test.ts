@@ -15,6 +15,22 @@ test('bridge checks the origin again after asynchronous evaluation', async () =>
   await assert.rejects(bridge.poll(), /navigation/);
   assert.equal(opened, 0);
 });
+
+test('system browser requests check route and environment, report opener failure, and retain the guest', async () => {
+  const session=new HostSession('/vault','local');
+  let environmentId='local',route='/current',fail=false;
+  const opened:string[]=[],replies:Array<{handled:boolean}>=[];
+  const guest={getURL:()=> 'http://127.0.0.1:3773/current',executeJavaScript:async(code:string)=>{
+    if(code.includes('drain'))return [{type:'browser',id:'1',generation:session.generation,environmentId,url:'https://example.com/path?q=one#two',route}];
+    replies.push(JSON.parse(code.slice(code.indexOf('reply(')+6,-1)));return true;
+  }};
+  const bridge=new HostBridge(guest,'http://127.0.0.1:3773',session,async()=>false,undefined,undefined,undefined,undefined,async url=>{if(fail)throw Error('OS opener failed');opened.push(url);});
+  await bridge.poll();assert.deepEqual(opened,['https://example.com/path?q=one#two']);assert.equal(replies.at(-1)?.handled,true);
+  environmentId='remote';await bridge.poll();assert.equal(replies.at(-1)?.handled,false);
+  environmentId='local';route='/old';await bridge.poll();assert.equal(replies.at(-1)?.handled,false);
+  route='/current';fail=true;await bridge.poll();assert.equal(replies.at(-1)?.handled,false);
+  fail=false;await bridge.poll();assert.equal(replies.at(-1)?.handled,true);assert.equal(opened.length,2);bridge.close();
+});
 test('bridge rejects a self-declared but wrong revision and stale request generations', async () => {
   const session = new HostSession('/vault', 'local');
   const guest = {getURL:() => 'http://127.0.0.1:3773/', executeJavaScript:async () => ({protocol:1, revision:'wrong', generation:session.generation})};

@@ -23,6 +23,7 @@ export class HostBridge {
     private onDiagnostic: (message: string) => void = () => {},
     private onAliases: (request: AliasRequest) => Promise<SearchEntry[]> = async () => [],
     private onReferences: (token: string) => Promise<string[]> = async () => [],
+    private onBrowser: (url: string) => Promise<void> = async () => { throw new Error('System browser opening is unavailable.'); },
   ) { this.origin = serverOrigin(origin); }
   private assertCurrent() {
     if (this.closed || new URL(this.guest.getURL()).origin !== this.origin) {
@@ -63,6 +64,15 @@ export class HostBridge {
       for (const value of batch) {
         this.assertCurrent();
         const request = parseHostRequest(value, this.session.generation);
+        if (request.type === 'browser') {
+          let handled = false;
+          if (request.environmentId === this.session.localEnvironmentId && request.route === new URL(this.guest.getURL()).pathname) {
+            try { await this.onBrowser(request.url); handled = true; }
+            catch { this.onDiagnostic('Could not open the link in the system browser.'); }
+          }
+          await this.evaluate(`window.t3ObsidianHostV1.reply(${JSON.stringify({id:request.id,generation:this.session.generation,handled})})`);
+          continue;
+        }
         if (request.type === 'references') {
           const paths = request.environmentId === this.session.localEnvironmentId && request.route === new URL(this.guest.getURL()).pathname ? await this.onReferences(request.token) : [];
           await this.evaluate(`window.t3ObsidianHostV1.reply(${JSON.stringify({id:request.id,generation:this.session.generation,paths})})`);

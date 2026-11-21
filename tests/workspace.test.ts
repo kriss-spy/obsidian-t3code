@@ -83,3 +83,23 @@ test('failed Open releases only its own window pending operation and permits ret
   f.pending[1].resolve();
   await b;
 });
+
+test('unload releases guests without removing the workspace tabs needed for restoration', () => {
+  const f = fixture();
+  let disconnected = 0;
+  let detached = 0;
+  f.leaves.push({view:{containerEl:{ownerDocument:f.windowA},disconnect:()=>disconnected++},detach:()=>detached++} as any);
+  f.plugin.onunload();
+  assert.equal(disconnected, 1);
+  assert.equal(detached, 0);
+});
+
+test('changing server resets each view target while an ordinary reconnect retains it', async () => {
+  const f = fixture();
+  let route = '/draft/previous-server';
+  const connected: string[] = [];
+  f.leaves.push({view:{containerEl:{ownerDocument:f.windowA},resetTarget:()=>{route='/';},connect:async()=>{connected.push(route);}}} as any);
+  await f.plugin.reconnect();
+  await f.plugin.reconnect(true);
+  assert.deepEqual(connected, ['/draft/previous-server','/']);
+});

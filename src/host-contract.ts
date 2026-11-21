@@ -1,4 +1,5 @@
 import type { SearchEntry } from './aliases';
+import { externalWebUrl } from './connection';
 import { randomUUID } from 'node:crypto';
 import { threadScope, canonicalDirectory, type Project, type Thread } from './scope';
 
@@ -20,16 +21,18 @@ export interface FileRequest {
   path: string; line?: number; column?: number; route?: string; newTab: boolean;
 }
 export interface ExternalRequest {type:'external'; id:string; generation:string; environmentId:string; path:string}
+export interface BrowserRequest {type:'browser'; id:string; generation:string; environmentId:string; url:string; route:string}
 export interface FileCheckRequest {type:'file-check'; id:string; generation:string; environmentId:string; path:string; route:string}
 export interface AliasRequest {type:"aliases"; id:string; generation:string; environmentId:string; cwd:string; query:string; entries:SearchEntry[]; limit:number; route:string}
 export interface ReferenceRequest {type:"references"; id:string; generation:string; environmentId:string; token:string; route:string}
-export type HostRequest = ScopeRequest | FileRequest | ExternalRequest | FileCheckRequest | AliasRequest | ReferenceRequest;
+export type HostRequest = ScopeRequest | FileRequest | ExternalRequest | BrowserRequest | FileCheckRequest | AliasRequest | ReferenceRequest;
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 8192 && !v.includes('\0');
 const position = (v: unknown) => v === undefined || (Number.isSafeInteger(v) && (v as number) >= 1 && (v as number) <= 10000000);
 export function parseHostRequest(value: unknown, generation: string): HostRequest {
   if (!value || typeof value !== 'object') throw new Error('Invalid host request.');
   const r = value as Record<string, unknown>;
   if (!text(r.id) || r.generation !== generation || !text(r.environmentId)) throw new Error('Invalid request identity.');
+  if (r.type === 'browser' && text(r.url) && text(r.route)) return {type:'browser',id:r.id,generation,environmentId:r.environmentId,url:externalWebUrl(r.url),route:r.route};
   if (r.type === 'references' && text(r.token) && text(r.route)) return {type:'references',id:r.id,generation,environmentId:r.environmentId,token:r.token,route:r.route};
   if (r.type === 'aliases' && text(r.cwd) && typeof r.query === 'string' && r.query.length <= 256 && text(r.route) && Number.isSafeInteger(r.limit) && (r.limit as number) > 0 && (r.limit as number) <= 500 && Array.isArray(r.entries) && r.entries.length <= 500) {
     const entries: SearchEntry[] = [];
