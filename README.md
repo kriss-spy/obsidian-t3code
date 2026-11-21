@@ -5,6 +5,7 @@ Project goal: use T3 Code in the Obsidian GUI with its web UI capabilities and n
 Status: desktop feasibility spike. Full UI hosting and several integration primitives passed runtime checks. No distributable plugin yet.
 
 - [Implementation spec](docs/spec.md)
+- [Implementation roadmap and GitHub issues](docs/roadmap.md)
 - [Technical spike and verification limits](docs/technical-spike.md)
 - [Kickoff recommendation](docs/kickoff.md)
 - [Product brief and acceptance scenarios](docs/product-brief.md)
