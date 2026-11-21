@@ -4,7 +4,7 @@ Project goal: use T3 Code in the Obsidian GUI with its web UI capabilities and n
 
 Status: a Linux development build runs the real T3 workspace in Obsidian 1.15.1. It requires a pinned T3 0.1.11 patch and matching compiled client. Full release verification remains incomplete.
 
-The current Linux candidate fixes immediate draft loss and scope-request saturation. Stable publication remains blocked. See the [release assessment](docs/release-readiness.md), [draft release notes](docs/release-notes.md), and [changelog](CHANGELOG.md).
+The [0.1.0-rc.3 prerelease](https://github.com/kriss-spy/obsidian-t3code/releases/tag/0.1.0-rc.3) fixes immediate draft loss, scope-request saturation, and system-browser links. Stable publication waits for the maintainer's Windows behavior testing and remaining verification. See the [release assessment](docs/release-readiness.md), [release notes](docs/release-notes.md), and [changelog](CHANGELOG.md).
 
 See [try the development build](docs/development-install.md) for installation.
 
