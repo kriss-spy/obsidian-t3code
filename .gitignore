@@ -1,0 +1,11 @@
+node_modules/
+main.js
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.DS_Store
+.aider-desk/
+coverage/
+test-results/
+playwright-report/

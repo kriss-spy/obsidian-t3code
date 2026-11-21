@@ -1,0 +1,166 @@
+{
+  "version": 2,
+  "skills": {
+    "defuddle": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/defuddle/SKILL.md",
+      "computedHash": "82614e1fedcb107d4e4d239900d71d3a94a9ac721e16fa5d98d9dfc7d113e774"
+    },
+    "json-canvas": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/json-canvas/SKILL.md",
+      "computedHash": "5d0499ad8ce7f68bcd501bea93a80c3a0406722f182a5b50cd9d1ec3c34c4ea5"
+    },
+    "knap": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/knap/SKILL.md",
+      "computedHash": "a1c609fa7cdc2de45a04d989b49b16ba691308d611733e08388f5e22c01cf5ec"
+    },
+    "obsidian-bases": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/obsidian-bases/SKILL.md",
+      "computedHash": "69a3105a2237f0d09a74ee197a64be3c3a07e401e4dcd7fd9ad499c574b58cf6"
+    },
+    "obsidian-basics": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-basics/SKILL.md",
+      "computedHash": "53b0fbda8c6e4b456095263d5d17a063a7b8d997c2d1f2d715793f32e7da0910"
+    },
+    "obsidian-cli": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/obsidian-cli/SKILL.md",
+      "computedHash": "c50a6a32f35be2656fcae1b1ead19fd8ef228fcd89b852d4d8b9f9b93b975a1c"
+    },
+    "obsidian-headless": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/obsidian-headless/SKILL.md",
+      "computedHash": "4159b54757a4ed57d4625f27d0a689ab76b50f4acf8ff0703cd618ed3e02dcb0"
+    },
+    "obsidian-markdown": {
+      "source": "obsidianmd/obsidian-skills",
+      "commit": "b110b2f8e9eb1f287892f937050dfd40af862cbb",
+      "sourceType": "github",
+      "skillPath": "plugins/obsidian/skills/obsidian-markdown/SKILL.md",
+      "computedHash": "c5c46fd4ab6321d2ccc3f680ee5372efd1d070749e6ddb8e571e0b0c2ac1ae16"
+    },
+    "obsidian-performance": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-performance/SKILL.md",
+      "computedHash": "38dd1ba8dae82b0e38a43a4f187ec5ba80298d6af0bbc8cce962fc50d534f943"
+    },
+    "obsidian-plugin-bootstrap": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-bootstrap/SKILL.md",
+      "computedHash": "6373915e64c02cbb8f97f9e7470e25da21f4ff32f7f7b15782c143250ee24f1c"
+    },
+    "obsidian-plugin-commands": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-commands/SKILL.md",
+      "computedHash": "eb3bc1f88a2197d338444da32e879e58bf195435b1bba696f9d887a96b995c7f"
+    },
+    "obsidian-plugin-editor-api": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-editor-api/SKILL.md",
+      "computedHash": "8a59db4111d5777a7bf2d05fe5b0e369bb4de14e4f96e57bd5e72a199dfc9f8b"
+    },
+    "obsidian-plugin-events": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-events/SKILL.md",
+      "computedHash": "68735b751d9581a2ab1bb3a147e11728a5b6a47d530422c08cb759d713f08bd6"
+    },
+    "obsidian-plugin-modals": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-modals/SKILL.md",
+      "computedHash": "9f62f0a378c3148c99dbff4e82a3d4c5ed7edde9fefbf874b095df7c3b65b490"
+    },
+    "obsidian-plugin-performance-diagnose": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-performance-diagnose/SKILL.md",
+      "computedHash": "238d959feac2b30cb548fff5c4f7fe93306ff7298bbff66986c92ae2511863ca"
+    },
+    "obsidian-plugin-react": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-react/SKILL.md",
+      "computedHash": "64220e63c6d6be0c2660021817c8cf7921ae6de0ef35fd7609d7ed5a0d784302"
+    },
+    "obsidian-plugin-release": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-release/SKILL.md",
+      "computedHash": "4bf3a947d81be8383eebaf589a43f88a02bd4a8003d34b4f6eeb50918c5961c6"
+    },
+    "obsidian-plugin-review": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-review/SKILL.md",
+      "computedHash": "e3d02e16fee515a98f3158b767d8f297a107d57334d7aacdd36be51dff89699b"
+    },
+    "obsidian-plugin-settings": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-settings/SKILL.md",
+      "computedHash": "b31b35fd84d6b634c1cb636cfbc17c53361ca70a14c87ad2337ee62b9cc47181"
+    },
+    "obsidian-plugin-styling": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-styling/SKILL.md",
+      "computedHash": "176627e1d821220b0deffb4e2fd4455330864c5d1abd57b3a7583b38467bbe82"
+    },
+    "obsidian-plugin-svelte": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-svelte/SKILL.md",
+      "computedHash": "516a289b20da11385cf142d099b80f9b39ee7033981b0a866e01888c9f19e423"
+    },
+    "obsidian-plugin-ui-elements": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-ui-elements/SKILL.md",
+      "computedHash": "ddb1ab642be99274de0b0e47b4618e31f5aa5531e1566f7c23919f9815242d25"
+    },
+    "obsidian-plugin-vault": {
+      "source": "kriss-spy/obsidian-skills",
+      "commit": "bee75e160a95a110d852fa9e2344f2fc011472dc",
+      "sourceType": "github",
+      "skillPath": "obsidian-plugin-vault/SKILL.md",
+      "computedHash": "7bb2f1d978b7c6fd7f8c7a4cf72f7a9f75c925ad807bb2a5e64e881e50ea9349"
+    }
+  }
+}
