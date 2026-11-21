@@ -4,6 +4,7 @@ import path from 'node:path';
 import { canonicalDirectory, containsDirectory } from './scope';
 import type { AliasRequest } from './host-contract';
 import type { SearchEntry } from './aliases';
+import type { ReferenceDropTarget } from './references';
 import { serverOrigin, savedTarget } from './connection';
 import type { Guest } from './guest';
 import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest } from './host-contract';
@@ -145,6 +146,22 @@ export class HostBridge {
     if (route !== new URL(this.guest.getURL()).pathname) throw new Error('The T3 target changed. The folder was not opened.');
     const opened = await this.evaluate(`window.t3ObsidianHostV1.openProject(${JSON.stringify({generation:this.session.generation,environmentId:this.session.localEnvironmentId,path:root,existingId,route})})`);
     if (opened !== true) throw new Error('The folder could not be opened, or the T3 target changed.');
+  }
+  async referenceDropTarget(): Promise<ReferenceDropTarget | null> {
+    const value = await this.evaluate('window.t3ObsidianHostV1.referenceDropTarget()');
+    if (!value || typeof value !== 'object') return null;
+    const result = value as ReferenceDropTarget;
+    if (typeof result.target !== 'string' || result.route !== new URL(this.guest.getURL()).pathname || !result.rect || !result.viewport) return null;
+    if (![result.rect.x,result.rect.y,result.rect.width,result.rect.height,result.viewport.width,result.viewport.height].every(n=>typeof n==='number' && Number.isFinite(n) && Math.abs(n)<100000)) return null;
+    if (result.rect.width<=0 || result.rect.height<=0 || result.viewport.width<=0 || result.viewport.height<=0) return null;
+    return result;
+  }
+  async appendReferences(token: string, expected: ReferenceDropTarget) {
+    if (expected.route !== new URL(this.guest.getURL()).pathname) throw new Error('The T3 target changed. References were not added.');
+    const paths = await this.onReferences(token);
+    if (!paths.length) throw new Error('The dragged reference expired or its source is unavailable.');
+    const handled = await this.evaluate(`window.t3ObsidianHostV1.appendReferences(${JSON.stringify({generation:this.session.generation,target:expected.target,paths})})`);
+    if (handled !== true) throw new Error('The T3 target changed. References were not added.');
   }
   async invalidateAliases() { await this.evaluate('window.t3ObsidianHostV1.invalidateAliases()'); }
   close() { this.closed = true; this.session.invalidate(); }

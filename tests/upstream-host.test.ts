@@ -8,7 +8,7 @@ import { T3_REVISION } from '../src/host-contract';
 // Exercise the exact module shipped in the patch, rather than a second fixture implementation.
 function load(embedded = true) {
   const module = {exports:{} as Record<string, (...args: any[]) => any>};
-  const window: any = {};
+  const window: any = {innerWidth:1200,innerHeight:800};
   const location = {search:embedded ? "?obsidian-host=1" : "",pathname:"/local/thread"};
   const timers = new Map<number, () => void>();
   let nextTimer = 0;
@@ -153,4 +153,16 @@ test('reference drops preserve the intended composer and leave ordinary attachme
   e.registerObsidianComposer('three',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
   e.dropObsidianReferences(event,owner,(p:string)=>`ref(${p})`);const [next]=api.drain();api.reply({id:next.id,generation:'g',paths:['/vault/空 note.md','/vault/folder']});await flush();
   assert.deepEqual(inserted,['ref(/vault/空 note.md) ref(/vault/folder) ']);assert.equal(stopped,2);
+});
+
+test('native explorer drop target exposes only the registered composer and rejects stale insertion', () => {
+  const {api,exports:e,location}=load();api.initialize({generation:'g',environmentId:'local'});
+  const inserted:string[][]=[];
+  e.registerObsidianComposer('target',()=>true,()=>true,()=>({x:20,y:30,width:500,height:200}),(paths:string[])=>{inserted.push(paths);return true;});
+  const target=api.referenceDropTarget();assert.equal(target.route,'/local/thread');assert.equal(target.rect.x,20);
+  assert.equal(api.appendReferences({generation:'stale',target:target.target,paths:['/vault/a.md']}),false);
+  assert.equal(api.appendReferences({generation:'g',target:target.target,paths:['/vault/a.md']}),true);
+  location.pathname='/local/other';assert.equal(api.referenceDropTarget(),null);
+  assert.equal(api.appendReferences({generation:'g',target:target.target,paths:['/vault/b.md']}),false);
+  assert.deepEqual(inserted,[['/vault/a.md']]);
 });

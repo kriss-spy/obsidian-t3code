@@ -1,0 +1,9 @@
+{
+  "query": "蔚蓝档案",
+  "expectedPath": "extracurricular/ACG/games/gacha game/Blue Archive/Blue Archive.md",
+  "firstResult": "Blue Archive.mdextracurricular/ACG/games/gacha game/Blue Archive/Blue Archive.md",
+  "resultCount": 200,
+  "passed": true,
+  "build": "obsidian-host-v1.4",
+  "manifestSha256": "77634e68ed7116c98e8c503bd63b8221807381155ba539b20a6fa2cd55af7e50"
+}

@@ -1,0 +1,29 @@
+{
+  "method": "Electron trusted mouse source and Chromium Input.dispatchDragEvent delivery to host composer drop target",
+  "results": [
+    {
+      "kind": "file",
+      "source": "Extra renamed 空.md",
+      "zoneObserved": true,
+      "textChanged": true,
+      "referencePresent": true,
+      "routePreserved": true,
+      "messagesPreserved": true,
+      "workspaceStillActive": true,
+      "zonesRemaining": 0
+    },
+    {
+      "kind": "folder",
+      "source": "Exact empty 空",
+      "zoneObserved": true,
+      "textChanged": true,
+      "referencePresent": true,
+      "routePreserved": true,
+      "messagesPreserved": true,
+      "workspaceStillActive": true,
+      "zonesRemaining": 0
+    }
+  ],
+  "build": "obsidian-host-v1.4",
+  "manifestSha256": "77634e68ed7116c98e8c503bd63b8221807381155ba539b20a6fa2cd55af7e50"
+}

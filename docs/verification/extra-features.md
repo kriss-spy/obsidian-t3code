@@ -1,4 +1,6 @@
-# Extra-feature verification
+# Earlier v1.3 extra-feature verification
+
+The alias and simulated-drop assertions below were insufficient for the reported CloudNotes failures. The alias fixture contained literal newline escapes, and normal fuzzy results could satisfy its assertions. The fixture is corrected in source. The v1.4 repair has separate [focused evidence](extra-feature-repair.md). Do not treat this older run as verification of the current drag adapter.
 
 This Linux development build uses Obsidian 1.15.1 and adapter `obsidian-host-v1.3`. Full release parity remains open under #10. No issue is closed by these checks.
 

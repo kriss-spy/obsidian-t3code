@@ -41,3 +41,16 @@ test('reference tokens are single-use, canonical, and reject missing or outside 
     assert.deepEqual(await drags.consume('forged',vault),[]);
   } finally { rmSync(root,{recursive:true,force:true}); }
 });
+
+test('exact alias results survive a full normal-result limit', async () => {
+  const root=mkdtempSync(path.join(os.tmpdir(),'t3-alias-full-'));
+  try {
+    const index=new AliasIndex();mkdirSync(path.join(root,'Blue Archive'));writeFileSync(path.join(root,'Blue Archive/Blue Archive.md'),'fixture');
+    index.update({path:'Blue Archive/Blue Archive.md',aliases:['蔚蓝档案']});
+    const normal=[];
+    for(let i=0;i<200;i++){const file=`normal-${i}.md`;writeFileSync(path.join(root,file),'fixture');normal.push({path:file,kind:'file' as const});}
+    const result=await index.search(root,root,'蔚蓝档案',normal,200);
+    assert.equal(result.length,200);assert.equal(result[0].path,'Blue Archive/Blue Archive.md');
+    assert.equal(result[1].path,'normal-0.md');
+  } finally {rmSync(root,{recursive:true,force:true});}
+});

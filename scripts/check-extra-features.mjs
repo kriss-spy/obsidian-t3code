@@ -40,7 +40,9 @@ try {
   checks.explorerEditorItems=await guest(`[...document.querySelectorAll('[role="menuitem"]')].map(e=>e.textContent)`);
   await menu('Open in Obsidian');await wait(native,true);checks.explorerNativeSameGroup=true;
   await back();
-  await parent(`(async()=>{for(const [name,aliases] of [['Extra alias 空.md',['extra-find-空','Café']],['Extra duplicate.md',['extra-find-空']]]){const text='---\\naliases: '+JSON.stringify(aliases)+'\\n---\\nDisposable fixture\\n';const existing=app.vault.getFileByPath(name);if(existing)await app.vault.modify(existing,text);else await app.vault.create(name,text);}return true})()`);
+  const aliasFixtures=[['Extra alias 空.md',['extra-find-空','Café']],['Extra duplicate.md',['extra-find-空']]].map(([name,aliases])=>[name,'---\naliases: '+JSON.stringify(aliases)+'\n---\nDisposable fixture\n']);
+  await parent(`(async()=>{for(const [name,text] of ${JSON.stringify(aliasFixtures)}){const existing=app.vault.getFileByPath(name);if(existing)await app.vault.modify(existing,text);else await app.vault.create(name,text);}return true})()`);
+  await wait(`app.metadataCache.getFileCache(app.vault.getFileByPath('Extra alias 空.md'))?.frontmatter?.aliases?.includes('Café')`,true);
   await search('extra-find-空');await wait(`(${rows}).filter(p=>p==='Extra alias 空.md'||p==='Extra duplicate.md').length===2`);checks.aliasDuplicatesAndUnicode=true;
   await parent(`app.fileManager.processFrontMatter(app.vault.getFileByPath('Extra duplicate.md'), fm=>{fm.aliases=['changed-only']}).then(()=>true)`);
   await wait(`(${rows}).includes('Extra alias 空.md') && !(${rows}).includes('Extra duplicate.md')`);checks.liveAliasEdit=true;

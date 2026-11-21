@@ -12,7 +12,7 @@ const manifest=JSON.parse(manifestText);
 const pluginText=await readFile('main.js','utf8');
 if(!pluginText.includes(JSON.stringify(manifest.build)) || !pluginText.includes(JSON.stringify(createHash('sha256').update(manifestText).digest('hex'))))throw Error('Build the current plugin before packaging this client.');
 const dist=path.resolve('dist');await mkdir(dist,{recursive:true});
-const stage=path.join(dist,'obsidian-t3code-development.3-linux');
+const stage=path.join(dist,'obsidian-t3code-development.4-linux');
 try{await mkdir(stage);}catch{throw Error('Choose a clean dist directory before packaging.');}
 await mkdir(path.join(stage,'plugin/t3-code'),{recursive:true});
 for(const file of ['main.js','manifest.json','styles.css'])await copyFile(file,path.join(stage,'plugin/t3-code',file));
@@ -23,7 +23,7 @@ await copyFile('docs/development-install.md',path.join(stage,'DEVELOPMENT.md'));
 await copyFile('docs/layout.md',path.join(stage,'layout.md'));
 await copyFile(path.join(checkout,'LICENSE'),path.join(stage,'T3-LICENSE'));
 await cp(web,path.join(stage,'t3-web'),{recursive:true,filter:source=>!source.endsWith('.map')});
-const zip=path.join(dist,'obsidian-t3code-0.1.0-development.3-linux.zip');
+const zip=path.join(dist,'obsidian-t3code-0.1.0-development.4-linux.zip');
 execFileSync('zip',['-q','-r',zip,path.basename(stage)],{cwd:dist});
 const digest=createHash('sha256').update(await readFile(zip)).digest('hex');
 await writeFile(zip+'.sha256',digest+'  '+path.basename(zip)+'\n');

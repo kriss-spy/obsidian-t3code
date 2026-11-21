@@ -29,7 +29,7 @@ index 44bca4bf2..8ceaacbf6 100644
        return HttpServerResponse.text("Not Found", { status: 404 });
 diff --git a/apps/server/src/obsidianHostProof.ts b/apps/server/src/obsidianHostProof.ts
 new file mode 100644
-index 000000000..5d6b7f26a
+index 000000000..22f4f3c13
 --- /dev/null
 +++ b/apps/server/src/obsidianHostProof.ts
 @@ -0,0 +1,40 @@
@@ -57,7 +57,7 @@ index 000000000..5d6b7f26a
 +    const token = NodeFS.readFileSync(fd, "utf8");
 +    if (!/^[a-f0-9]{64}$/.test(token)) return null;
 +    return {
-+      adapterBuild: "obsidian-host-v1.3",
++      adapterBuild: "obsidian-host-v1.4",
 +      revision: "59651c1761f6c63e9b6056839067066968e6a406",
 +      environmentId,
 +      machineProof: NodeCrypto.createHmac("sha256", token)
@@ -86,15 +86,16 @@ index f6062475a..93c44f4df 100644
            {
              path: fileLinkMeta.filePath,
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index 128f3b16d..9e4614773 100644
+index 128f3b16d..21dd0d198 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
-@@ -1,3 +1,4 @@
+@@ -1,3 +1,5 @@
++import { serializeComposerFileLink } from "@t3tools/shared/composerTrigger";
 +import { registerObsidianComposer } from "../obsidianHost";
  import { m } from "../i18n/messages";
  import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
  import { useGT, useMessages } from "gt-react";
-@@ -1881,6 +1882,21 @@ export default function ChatView(props: ChatViewProps) {
+@@ -1881,6 +1883,34 @@ export default function ChatView(props: ChatViewProps) {
  
    const { focusComposer: focusComposerStable, scheduleComposerFocus: scheduleComposerFocusStable } =
      useComposerFocus(composerRef);
@@ -111,6 +112,19 @@ index 128f3b16d..9e4614773 100644
 +        return true;
 +      },
 +      (owner) => owner === composerRef,
++      () => composerRef.current?.referenceDropBounds() ?? null,
++      (paths) => {
++        const current = composerRef.current;
++        if (
++          !current ||
++          !current.insertTextAtEnd(paths.map(serializeComposerFileLink).join(" ") + " ", {
++            ensureLeadingBoundary: true,
++          })
++        )
++          return false;
++        current.focusAtEnd();
++        return true;
++      },
 +    );
 +  }, [environmentId, threadId, draftId, composerRef, embedded, backgroundThread, canOperateThread]);
    const canInterruptRunningThread =
@@ -476,7 +490,7 @@ index 5217b068f..b51808d75 100644
 +  );
 +}
 diff --git a/apps/web/src/components/chat/ChatComposer.tsx b/apps/web/src/components/chat/ChatComposer.tsx
-index 603edc067..a0d403e5d 100644
+index 603edc067..d5a60e446 100644
 --- a/apps/web/src/components/chat/ChatComposer.tsx
 +++ b/apps/web/src/components/chat/ChatComposer.tsx
 @@ -1,3 +1,4 @@
@@ -484,7 +498,26 @@ index 603edc067..a0d403e5d 100644
  import { copySnapshot } from "./copySnapshot";
  import { VoiceInputSetup } from "./VoiceInputSetup";
  import { useComposerTypingGuard } from "./useComposerTypingGuard";
-@@ -3461,6 +3462,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+@@ -301,6 +302,7 @@ function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
+ }
+ 
+ export interface ChatComposerHandle {
++  referenceDropBounds: () => { x: number; y: number; width: number; height: number } | null;
+   focusAtEnd: () => void;
+   focusAt: (cursor: number) => void;
+   addDroppedFiles: (files: File[]) => void;
+@@ -3099,6 +3101,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+   useImperativeHandle(
+     composerRef,
+     () => ({
++      referenceDropBounds: () => {
++        const form = composerFormRef.current;
++        return form && form.getClientRects().length ? form.getBoundingClientRect().toJSON() : null;
++      },
+       focusAtEnd: () => {
+         composerEditorRef.current?.focusAtEnd();
+       },
+@@ -3461,6 +3467,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
          composerMentionDragHandlers.onDragEnter(event);
        }}
        onDragOverCapture={(event) => {
@@ -492,7 +525,7 @@ index 603edc067..a0d403e5d 100644
          if (isInsideRestingComposerControlScope(event.target)) return;
          composerMentionDragHandlers.onDragOver(event);
        }}
-@@ -3469,6 +3471,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+@@ -3469,6 +3476,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
          onComposerMentionDragLeaveCapture(event);
        }}
        onDropCapture={(event) => {
@@ -1234,10 +1267,10 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..c84921780
+index 000000000..7f73dfe1f
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,522 @@
+@@ -0,0 +1,553 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1288,6 +1321,8 @@ index 000000000..c84921780
 +  pathname: string;
 +  append: (text: string) => boolean;
 +  owns: (owner: unknown) => boolean;
++  bounds?: (() => { x: number; y: number; width: number; height: number } | null) | undefined;
++  references?: ((paths: string[]) => boolean) | undefined;
 +} | null = null;
 +const roots = new Set<string>();
 +const queue: Request[] = [];
@@ -1319,7 +1354,7 @@ index 000000000..c84921780
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.3",
++      build: "obsidian-host-v1.4",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
 +      initialize(input: { generation: string; environmentId: string; vaultRoot?: string }) {
@@ -1344,7 +1379,7 @@ index 000000000..c84921780
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.3",
++          build: "obsidian-host-v1.4",
 +          coverage: SCOPE_COVERAGE,
 +        };
 +      },
@@ -1367,6 +1402,31 @@ index 000000000..c84921780
 +        )
 +          return false;
 +        return composer.append(input.text);
++      },
++      referenceDropTarget() {
++        if (!composer || composer.pathname !== location.pathname) return null;
++        const rect = composer.bounds?.();
++        return rect
++          ? {
++              target: composer.target,
++              route: composer.pathname,
++              rect,
++              viewport: { width: window.innerWidth, height: window.innerHeight },
++            }
++          : null;
++      },
++      appendReferences(input: { generation: string; target: string; paths: string[] }) {
++        if (
++          input.generation !== generation ||
++          !composer ||
++          composer.pathname !== location.pathname ||
++          input.target !== composer.target ||
++          !Array.isArray(input.paths) ||
++          input.paths.length > 100 ||
++          !input.paths.every((p) => typeof p === "string" && p.startsWith("/"))
++        )
++          return false;
++        return composer.references?.(input.paths) === true;
 +      },
 +      projectRoots() {
 +        return projectActions?.roots() ?? [];
@@ -1411,6 +1471,8 @@ index 000000000..c84921780
 +  identity: string,
 +  append: (text: string) => boolean,
 +  owns: (owner: unknown) => boolean = () => false,
++  bounds?: () => { x: number; y: number; width: number; height: number } | null,
++  references?: (paths: string[]) => boolean,
 +) {
 +  if (!embedded || !initialized) return;
 +  const registration = {
@@ -1418,6 +1480,8 @@ index 000000000..c84921780
 +    pathname: location.pathname,
 +    append,
 +    owns,
++    bounds,
++    references,
 +  };
 +  composer = registration;
 +  return () => {

@@ -6,13 +6,13 @@ See [installation](development-install.md), [runtime assertions](verification/li
 
 ## Extra-feature development build
 
-The current source and private development.3 bundle use `obsidian-host-v1.3`. Both T3 file menus now offer **Open in Obsidian** after canonical local Markdown validation. Preview opening forwards the requested line and uses the existing external-file and placement adapter.
+The current source and private development.4 bundle use `obsidian-host-v1.4`. Both T3 file menus now offer **Open in Obsidian** after canonical local Markdown validation. Preview opening forwards the requested line and uses the existing external-file and placement adapter.
 
 File search matches vault metadata aliases and merges canonical identities within the requested directory. Metadata changes and renames invalidate results. Folder context menus open or register the exact canonical project. Explicit note/folder drops append references through the intended composer and preserve its text and attachments. Normal T3 file drops remain available.
 
-See [extra-feature evidence and remaining gaps](verification/extra-features.md). The normal plugin bundle passed 19 actual feature assertions and the scope/isolation regression checks. Physical cross-webview dragging and broader new-draft reload ordering remain unverified. No complete theme mapping is enabled. The active CloudNotes installation and servers were not upgraded by this feature work.
+See [extra-feature evidence and remaining gaps](verification/extra-features.md). The earlier v1.3 gate ran 19 assertions, but its alias fixture and simulated drops did not catch the reported failures. The v1.4 repair adds result-limit and initial-cache handling, plus a host-side drop target. See [repair evidence](verification/extra-feature-repair.md). Broader new-draft reload ordering remains unverified. No complete theme mapping is enabled. The active CloudNotes installation and servers were not upgraded by this feature work.
 
-The approved manifest SHA-256 is `a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546`. A rebuilt client still requires a new gate; self-declared capabilities remain insufficient.
+The approved manifest SHA-256 is `77634e68ed7116c98e8c503bd63b8221807381155ba539b20a6fa2cd55af7e50`. A rebuilt client still requires a new gate; self-declared capabilities remain insufficient.
 
 ## Implemented
 

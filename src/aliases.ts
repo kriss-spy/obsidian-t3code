@@ -29,16 +29,18 @@ export class AliasIndex {
         matched.push({...entry, path:path.relative(root, canonical).split(path.sep).join('/')});
       } catch { /* Removed files cannot be offered. */ }
     };
+    const needle = normalize(query.trim());
+    if (needle) {
+      const aliases = [...this.notes].filter(([, values]) => values.some(alias => alias.includes(needle)));
+      aliases.sort((a,b) => Number(b[1].includes(needle)) - Number(a[1].includes(needle)));
+      for (const [file] of aliases) {
+        if (matched.length >= limit) break;
+        await add(path.join(vaultRoot, file), {path:file,kind:'file'});
+      }
+    }
     for (const entry of entries) {
       if (matched.length >= limit) break;
       await add(path.resolve(cwd, entry.path), entry);
-    }
-    const needle = normalize(query.trim());
-    if (!needle) return matched;
-    for (const [file, aliases] of this.notes) {
-      if (matched.length >= limit) break;
-      if (!aliases.some(alias => alias.includes(needle))) continue;
-      await add(path.join(vaultRoot, file), {path:file,kind:'file'});
     }
     return matched;
   }

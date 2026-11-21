@@ -19,7 +19,7 @@ for(const file of await readdir(path.join(dist,'assets'))){
 if(selected.size<3)throw new Error('No compiled host integration found in source maps.');
 const files=[];
 for(const file of [...selected].sort())files.push({path:file,sha256:createHash('sha256').update(await readFile(path.join(dist,file))).digest('hex')});
-const manifest={build:'obsidian-host-v1.3',revision,files};
+const manifest={build:'obsidian-host-v1.4',revision,files};
 const text=JSON.stringify(manifest);
 await writeFile(path.join(dist,'obsidian-host-client.json'),text);
 console.log(JSON.stringify({files:files.length,manifestSha256:createHash('sha256').update(text).digest('hex')}));

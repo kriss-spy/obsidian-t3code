@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { ReferenceDrags, REFERENCE_MIME } from './references';
+import { registerExplorerDrops } from './explorer-drops';
+import { ReferenceDrags } from './references';
 import { AliasIndex, metadataAliases } from './aliases';
 import { electronHost } from './electron-host';
 import { captureContext, encodeContext } from './context';
@@ -61,6 +62,8 @@ export default class T3Plugin extends Plugin {
     for (const file of this.app.vault.getMarkdownFiles()) indexNote(file);
     const changed = () => { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) void (leaf.view as T3View).invalidateAliases(); };
     this.registerEvent(this.app.metadataCache.on('changed', file => { indexNote(file); changed(); }));
+    let hydrated = false;
+    this.registerEvent(this.app.metadataCache.on('resolved', () => { if (hydrated) return; hydrated = true; for (const file of this.app.vault.getMarkdownFiles()) indexNote(file); changed(); }));
 
     this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
       this.aliases.remove(oldPath);
@@ -76,14 +79,7 @@ export default class T3Plugin extends Plugin {
         void this.openWorkspace().then(view => view.openProject(folder)).catch(error => new Notice(String(error)));
       }));
     }));
-    const registerDrags = (doc: Document) => this.registerDomEvent(doc, 'dragstart', event => {
-      if (!event.dataTransfer || !(event.target instanceof doc.defaultView!.Element)) return;
-      const row = event.target.closest('.nav-file-title[data-path], .nav-folder-title[data-path]');
-      const source = row?.getAttribute('data-path');
-      const file = source === null || source === undefined ? null : this.app.vault.getAbstractFileByPath(source);
-      if (!(file instanceof TFolder) && !(file instanceof TFile && file.extension.toLowerCase() === 'md')) return;
-      event.dataTransfer.setData(REFERENCE_MIME, this.referenceDrags.capture([file.path]));
-    });
+    const registerDrags = (doc: Document) => registerExplorerDrops(this, doc);
     registerDrags(this.app.workspace.containerEl.ownerDocument);
     this.registerEvent(this.app.workspace.on('window-open', window => registerDrags(window.doc)));
     this.registerEvent(this.app.workspace.on('css-change', () => this.syncAppearance()));

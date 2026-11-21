@@ -28,3 +28,10 @@ export class ReferenceDrags {
     return [...paths];
   }
 }
+
+export interface ReferenceDropTarget {
+  target: string;
+  route: string;
+  rect: {x:number;y:number;width:number;height:number};
+  viewport: {width:number;height:number};
+}
