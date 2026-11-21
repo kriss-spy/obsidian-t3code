@@ -1,0 +1,62 @@
+import { randomUUID } from 'node:crypto';
+import { threadScope, type Project, type Thread } from './scope';
+
+export const HOST_PROTOCOL = 1;
+export const T3_REVISION = '59651c1761f6c63e9b6056839067066968e6a406';
+export const MAX_SCOPE_ROWS = 20000;
+export interface ScopeRow {
+  id: string;
+  projectId: string;
+  workspaceRoot: string;
+  worktreePath: string | null;
+  kind: 'project' | 'thread';
+}
+export interface ScopeRequest { type: 'scope'; id: string; generation: string; environmentId: string; rows: ScopeRow[] }
+export interface FileRequest {
+  type: 'file'; id: string; generation: string; environmentId: string;
+  path: string; line?: number; column?: number; newTab: boolean;
+}
+export type HostRequest = ScopeRequest | FileRequest;
+const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 8192 && !v.includes('\0');
+const position = (v: unknown) => v === undefined || (Number.isSafeInteger(v) && (v as number) >= 1 && (v as number) <= 10000000);
+export function parseHostRequest(value: unknown, generation: string): HostRequest {
+  if (!value || typeof value !== 'object') throw new Error('Invalid host request.');
+  const r = value as Record<string, unknown>;
+  if (!text(r.id) || r.generation !== generation || !text(r.environmentId)) throw new Error('Invalid request identity.');
+  if (r.type === 'file' && text(r.path) && position(r.line) && position(r.column) && typeof r.newTab === 'boolean') {
+    return {type:'file', id:r.id, generation, environmentId:r.environmentId, path:r.path,
+      line:r.line as number | undefined, column:r.column as number | undefined, newTab:r.newTab};
+  }
+  if (r.type !== 'scope' || !Array.isArray(r.rows) || r.rows.length > MAX_SCOPE_ROWS) throw new Error('Invalid scope request.');
+  const rows: ScopeRow[] = [];
+  const seen = new Set<string>();
+  for (const value of r.rows) {
+    if (!value || typeof value !== 'object') throw new Error('Invalid scope row.');
+    const row = value as ScopeRow;
+    if (!text(row.id) || !text(row.projectId) || !text(row.workspaceRoot) ||
+        (row.kind !== 'project' && row.kind !== 'thread') ||
+        (row.worktreePath !== null && !text(row.worktreePath)) || seen.has(row.kind + ':' + row.id)) throw new Error('Invalid scope row.');
+    seen.add(row.kind + ':' + row.id);
+    rows.push({id:row.id, projectId:row.projectId, workspaceRoot:row.workspaceRoot, worktreePath:row.worktreePath, kind:row.kind});
+  }
+  return {type:'scope', id:r.id, generation, environmentId:r.environmentId, rows};
+}
+
+// The caller must independently establish this server's local filesystem identity.
+export class HostSession {
+  readonly generation = randomUUID();
+  private active = true;
+  constructor(readonly vaultRoot: string, readonly localEnvironmentId: string) {}
+  invalidate() { this.active = false; }
+  scope(value: unknown) {
+    if (!this.active) throw new Error('Host session ended.');
+    const request = parseHostRequest(value, this.generation);
+    if (request.type !== 'scope') throw new Error('Expected scope request.');
+    const allowed = request.rows.filter(row => {
+      const project: Project = {id:row.projectId, environmentId:request.environmentId, workspaceRoot:row.workspaceRoot};
+      const thread: Thread = {projectId:row.projectId, environmentId:request.environmentId, worktreePath:row.kind === 'project' ? null : row.worktreePath};
+      return threadScope(this.vaultRoot, this.localEnvironmentId, thread, project).included;
+    }).map(row => row.kind + ':' + row.id);
+    return {id:request.id, generation:this.generation, allowed};
+  }
+}

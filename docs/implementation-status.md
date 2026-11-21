@@ -29,7 +29,7 @@ Source inspected at upstream revision `13226b1c21b703e1ddce8bd1d60ae54bca85ab42`
 - `apps/web/src/components/chat/MarkdownFileLink.tsx` handles clicks through custom callbacks, including `handleOpenInFilePreview`. A navigation listener cannot intercept these actions reliably.
 - `apps/web/src/state/shell.ts` exposes environment snapshot atoms. A host filter must also cover consumers outside the active sidebar, route loading, archive/search results, caches, and project selection.
 
-This inspection is not runtime proof. The upstream revision is not established as the exact source revision of the installed server. No upstream patch is included or installed. Unmodified-T3 compatibility is not claimed.
+This inspection is not runtime proof. The upstream revision is not established as the exact source revision of the installed server. An experimental patch is now included in `upstream/t3-0.1.11-obsidian-host-v1.patch`. It is not installed in the running app. Unmodified-T3 compatibility is not claimed.
 
 The next implementation must add a narrow, versioned T3 host contract. Its required behavior is:
 
@@ -79,3 +79,15 @@ The isolation test mounts only `about:blank` with the production guest construct
 The reset test creates a disposable cookie in the intended partition and another partition. Reset removes only the intended cookie. It does not prove real T3 pairing persistence.
 
 All complete UI parity journeys in the spec remain unverified. No implementation issue is closed by this foundation. There is no release artifact or release approval.
+
+## Pinned host implementation follow-up
+
+The packaged app reports `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to `59651c1761f6c63e9b6056839067066968e6a406`. The patch uses that exact base. This replaces the earlier unknown source identity for the installed version.
+
+The patch adds an opt-in startup handshake, bounded request queue, shell snapshot projection, and a semantic call from the real `MarkdownFileLink` primary callback. `src/host-contract.ts` validates requests and computes canonical scope decisions. `src/host-bridge.ts` validates origin before and after guest evaluation and invalidates closed sessions. Neither module enables production guest mounting.
+
+`npm test` passes 16 tests. Eight new tests cover host request validation, canonical verdicts, stale generations, origin changes, and the exact patched host module in a JavaScript VM. `npm run build` passes. `git apply --check` passes against the exact base files. These checks do not prove React behavior or an actual guest chip click.
+
+The gate remains incomplete. Thread-family merging, older settled/search readers, direct detail routes, draft restoration, and reconnect need complete scope coverage. The transport still needs lifecycle wiring and verified local server identity. Real file navigation and full UI acceptance remain pending. See [the patch dependency and limits](../upstream/README.md).
+
+The patched upstream checkout passes `pnpm exec vp run check:changed HEAD` and `pnpm --filter @t3tools/web build`. The changed-file run includes 11 upstream tests, type checking, format, lint, knip, and React compiler checks. The initial run failed on three patch defects; those defects were fixed before the passing run. Full upstream tests and Obsidian runtime acceptance were not run for this follow-up.
