@@ -62,7 +62,7 @@ Copy the new bundle’s `main.js`, `manifest.json`, and `styles.css` into the va
 
 - Resume an in-vault thread, or start a thread in the vault project.
 - Click a Markdown chip normally to keep its preview in T3. Use Ctrl/Cmd-click or its **Open in default app** menu action to open the original in Obsidian.
-- Use **Open in Obsidian** in the file explorer’s **Open with** submenu or the preview’s editor dropdown.
+- Use **Obsidian** in the file explorer’s **Open with** submenu or the preview’s editor dropdown.
 - Search file names or note aliases from T3. Results retain the canonical file path.
 - Right-click a vault folder and choose **Open folder in T3 Code** to open its exact project. Note and folder reference drops remain under runtime verification.
 - Native notes open in the same tab group as T3 by default. Choose a split explicitly in plugin settings if needed.
@@ -73,6 +73,8 @@ Copy the new bundle’s `main.js`, `manifest.json`, and `styles.css` into the va
 Only threads with a canonical registered worktree inside the vault appear. Without a worktree, their project root must be inside. Remote and uncertain identities stay excluded. An excluded saved route displays an explanation and a normal T3 action.
 
 Recommended: [the official Obsidian agent skills](https://github.com/obsidianmd/obsidian-skills#installation) teach Markdown, Bases, Canvas, and Obsidian tools. Install them through your normal agent setup. This plugin does not change agent instructions.
+
+Start with the [recommended T3 settings](recommended-settings.md), including math rendering, queued follow-ups, quieter tool calls, and shortcut checks.
 
 See the [recommended layout](layout.md). **Focus T3 Code** closes Obsidian's left sidebar on request. T3 controls theme colors; optional Obsidian matching changes only the font.
 

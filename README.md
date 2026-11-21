@@ -8,6 +8,7 @@ The current Linux candidate fixes immediate draft loss and scope-request saturat
 
 See [try the development build](docs/development-install.md) for installation.
 
+- [Recommended T3 settings](docs/recommended-settings.md)
 - [Recommended layout](docs/layout.md)
 - [Extra-feature checks and remaining gaps](docs/verification/extra-features.md)
 - [Feature verification matrix](docs/verification/feature-matrix.md)
