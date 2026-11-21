@@ -1,28 +1,24 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { readFileSync } from 'node:fs';
+import { readAddedPatchSource } from './patch-source';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
 import { T3_REVISION } from '../src/host-contract';
 
 // Exercise the exact module shipped in the patch, rather than a second fixture implementation.
-function moduleSource() {
-  const patch = readFileSync('upstream/t3-0.1.11-obsidian-host-v1.patch', 'utf8');
-  const section = patch.split('diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts\n')[1].split('\ndiff --git ')[0];
-  return section.split('\n').filter(l => l.startsWith('+') && !l.startsWith('+++')).map(l => l.slice(1)).join('\n');
-}
 function load(embedded = true) {
   const module = {exports:{} as Record<string, (...args: any[]) => any>};
-  const window: any = {};
+  const window: any = {innerWidth:1200,innerHeight:800};
+  const location = {search:embedded ? "?obsidian-host=1" : "",pathname:"/local/thread"};
   const timers = new Map<number, () => void>();
   let nextTimer = 0;
-  const code = transformSync(moduleSource(), {loader:'ts', format:'cjs'}).code;
-  vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams,
-    location:{search:embedded ? '?obsidian-host=1' : ''},
+  const code = transformSync(readAddedPatchSource('apps/web/src/obsidianHost.ts'), {loader:'ts', format:'cjs'}).code;
+  vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams, URL,
+    location,
     setTimeout:(fn:() => void) => { timers.set(++nextTimer, fn); return nextTimer; },
     clearTimeout:(id:number) => timers.delete(id),
   });
-  return {api:window.t3ObsidianHostV1, exports:module.exports, timers};
+  return {api:window.t3ObsidianHostV1, exports:module.exports, timers, location};
 }
 const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
 const snapshot = {projects:[{id:'p', workspaceRoot:'/vault'}], threads:[{id:'t', projectId:'p', worktreePath:null}], archivedThreads:[]};
@@ -61,6 +57,15 @@ test('semantic Markdown hook preserves environment, location and modifier intent
   }
   assert.equal(api.drain().length, 0);
 });
+
+test('system browser hook sends only HTTP URLs through the bounded host queue', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const result=e.openObsidianExternal('https://example.com/path?q=one#two');
+  const [request]=api.drain();assert.equal(request.type,'browser');assert.equal(request.url,'https://example.com/path?q=one#two');assert.equal(request.route,'/local/thread');
+  api.reply({id:request.id,generation:'g',handled:true});assert.equal(await result,true);
+  for(const url of ['file:///etc/passwd','javascript:alert(1)','https://user:secret@example.com','relative'])assert.equal(await e.openObsidianExternal(url),false);
+  assert.equal(api.drain().length,0);assert.equal(await load(false).exports.openObsidianExternal('https://example.com'),false);
+});
 test('request queue stays bounded and timed-out file requests preserve T3 fallback', async () => {
   const {api, exports:e, timers} = load();
   api.initialize({generation:'g', environmentId:'local'});
@@ -73,4 +78,118 @@ test('ordinary clients retain the original snapshot and do not expose a host API
   const {api, exports:e} = load(false);
   assert.equal(api, undefined); assert.equal(e.scopeObsidianSnapshot('local', snapshot), snapshot);
   await e.waitForObsidianHost();
+});
+test('approved worktrees retain owning metadata without widening project choices', async () => {
+  const {api, exports:e} = load();
+  api.initialize({generation:'g', environmentId:'local'});
+  const value = {projects:[{id:'outside', workspaceRoot:'/outside'}], threads:[{id:'inside-worktree', projectId:'outside', worktreePath:'/vault/worktree'}], archivedThreads:[]};
+  assert.equal(e.scopeObsidianSnapshot('local', value).threads.length, 0);
+  const [request] = api.drain();
+  api.reply({id:request.id, generation:'g', allowed:['thread:inside-worktree']});
+  await flush();
+  const scoped = e.scopeObsidianSnapshot('local', value);
+  assert.equal(scoped.threads.length, 1); assert.equal(scoped.projects.length, 1);
+  assert.equal(e.isObsidianProjectAllowed('local', value.projects[0]), false);
+});
+test('scope reconnect invalidates active and archived rows and ignores old verdicts', async () => {
+  const {api, exports:e} = load();
+  api.initialize({generation:'g', environmentId:'local'});
+  e.setObsidianScopeEpoch('local', '1:live');
+  const value = {...snapshot, archivedThreads:[{id:'a', projectId:'p', worktreePath:'/vault/archive'}]};
+  e.scopeObsidianSnapshot('local', value);
+  const [old] = api.drain();
+  e.setObsidianScopeEpoch('local', '2:synchronizing');
+  api.reply({id:old.id, generation:'g', allowed:['project:p','thread:t','thread:a']});
+  await flush();
+  const scoped = e.scopeObsidianSnapshot('local', value);
+  assert.equal(scoped.threads.length, 0); assert.equal(scoped.archivedThreads.length, 0);
+  const [current] = api.drain();
+  api.reply({id:current.id, generation:'g', allowed:[]});await flush();
+  assert.equal(e.scopeObsidianSnapshot('local', value).threads.length, 0);
+  assert.equal(e.obsidianThreadDecision('local', value.threads[0], value.projects), 'excluded');
+});
+test('scope completion notifies empty-scope readers after pending rows clear', async () => {
+  const {api, exports:e} = load();api.initialize({generation:'g',environmentId:'local'});
+  const pending: boolean[] = [];e.subscribeObsidianScope(()=>pending.push(e.obsidianScopePending()));
+  e.scopeObsidianSnapshot('local', snapshot);const [r]=api.drain();
+  assert.equal(e.obsidianScopePending(),true);
+  api.reply({id:r.id,generation:'g',allowed:[]});await flush();
+  assert.deepEqual(pending,[false]);
+});
+
+test('more drafts than request slots remain pending until each receives a scope verdict', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const drafts=Array.from({length:12},(_,i)=>({id:'draft-'+i,projectId:'p',worktreePath:null}));
+  const decisions=()=>drafts.map(draft=>e.obsidianThreadDecision('local',draft,snapshot.projects));
+  assert.deepEqual(decisions(),Array(12).fill('pending'));
+  await flush();
+  assert.deepEqual(decisions(),Array(12).fill('pending'));
+  const opening=e.openObsidianExternal('https://example.com');
+  for(let batch=0;batch<2;batch++) {
+    const requests=api.drain();
+    if(batch===0)assert(requests.some((r:any)=>r.type==='browser'),'Scope checks must leave room for an explicit browser action');
+    for(const request of requests)api.reply({id:request.id,generation:'g',handled:true,allowed:request.rows?.map((row:any)=>row.kind+':'+row.id)});
+    await flush();decisions();
+  }
+  assert.equal(await opening,true);
+  assert.deepEqual(decisions(),Array(12).fill('included'));
+});
+test('conflicting active and archived metadata never shares an approval', async () => {
+  const {api, exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  e.scopeObsidianSnapshot('local',snapshot);const [r]=api.drain();api.reply({id:r.id,generation:'g',allowed:['project:p','thread:t']});await flush();
+  const conflict={...snapshot,archivedThreads:[{...snapshot.threads[0],worktreePath:'/outside'}]};
+  const result=e.scopeObsidianSnapshot('local',conflict);assert.equal(result.threads.length,0);assert.equal(result.archivedThreads.length,0);
+});
+test('public composer target rejects old routes, generations and replaced registrations', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const inserted:string[]=[];
+  const remove=e.registerObsidianComposer('thread-one',(text:string)=>{inserted.push(text);return true;});
+  const first=api.composerTarget();
+  assert.equal(api.appendContext({generation:'old',target:first,text:'wrong'}),false);
+  e.registerObsidianComposer('thread-two',(text:string)=>{inserted.push(text);return true;});
+  remove();
+  assert.equal(api.appendContext({generation:'g',target:first,text:'wrong'}),false);
+  assert.equal(api.appendContext({generation:'g',target:api.composerTarget(),text:'exact\n空 ``` text'}),true);
+  assert.deepEqual(inserted,['exact\n空 ``` text']);
+  assert.equal(await api.prepareComposer('/different'),null);
+});
+
+test('native menu checks require a host verdict and decline stale routes and ordinary clients', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const verified=e.verifyObsidianMarkdown('local','/vault/note.md');const [r]=api.drain();
+  assert.equal(r.type,'file-check');api.reply({id:r.id,generation:'g',handled:true});assert.equal(await verified,true);
+  assert.equal(await e.verifyObsidianMarkdown('remote','/vault/note.md'),false);
+  assert.equal(await e.verifyObsidianMarkdown('local','/vault/note.ts'),false);
+  assert.equal(await load(false).exports.verifyObsidianMarkdown('local','/vault/note.md'),false);
+  const next=load();next.api.initialize({generation:'g',environmentId:'local'});
+  const stale=next.exports.verifyObsidianMarkdown('local','/vault/note.md');const [check]=next.api.drain();
+  next.location.pathname='/local/other';next.api.reply({id:check.id,generation:'g',handled:true});assert.equal(await stale,false);
+});
+test('reference drops preserve the intended composer and leave ordinary attachments to T3', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const owner={}, other={}, inserted:string[]=[];let prevented=0,stopped=0;
+  const event={dataTransfer:{types:['application/x-t3-obsidian-reference-v1'],getData:()=> 'token'},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
+  e.registerObsidianComposer('one',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
+  assert.equal(e.dropObsidianReferences(event,other,String),false);
+  assert.equal(e.dropObsidianReferences({...event,dataTransfer:{...event.dataTransfer,types:['Files']}},owner,String),false);
+  assert.equal(prevented,0);
+  assert.equal(e.dropObsidianReferences(event,owner,String),true);
+  const [request]=api.drain();assert.equal(request.type,'references');
+  e.registerObsidianComposer('two',()=>{throw Error('Changed composer');},()=>true);
+  api.reply({id:request.id,generation:'g',paths:['/vault/note.md']});await flush();assert.equal(inserted.length,0);
+  e.registerObsidianComposer('three',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
+  e.dropObsidianReferences(event,owner,(p:string)=>`ref(${p})`);const [next]=api.drain();api.reply({id:next.id,generation:'g',paths:['/vault/空 note.md','/vault/folder']});await flush();
+  assert.deepEqual(inserted,['ref(/vault/空 note.md) ref(/vault/folder) ']);assert.equal(stopped,2);
+});
+
+test('native explorer drop target exposes only the registered composer and rejects stale insertion', () => {
+  const {api,exports:e,location}=load();api.initialize({generation:'g',environmentId:'local'});
+  const inserted:string[][]=[];
+  e.registerObsidianComposer('target',()=>true,()=>true,()=>({x:20,y:30,width:500,height:200}),(paths:string[])=>{inserted.push(paths);return true;});
+  const target=api.referenceDropTarget();assert.equal(target.route,'/local/thread');assert.equal(target.rect.x,20);
+  assert.equal(api.appendReferences({generation:'stale',target:target.target,paths:['/vault/a.md']}),false);
+  assert.equal(api.appendReferences({generation:'g',target:target.target,paths:['/vault/a.md']}),true);
+  location.pathname='/local/other';assert.equal(api.referenceDropTarget(),null);
+  assert.equal(api.appendReferences({generation:'g',target:target.target,paths:['/vault/b.md']}),false);
+  assert.deepEqual(inserted,[['/vault/a.md']]);
 });

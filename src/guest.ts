@@ -4,6 +4,8 @@ export interface Guest extends HTMLElement {
   loadURL(url: string): Promise<void>;
   executeJavaScript(code: string): Promise<unknown>;
   getWebContentsId(): number;
+  insertCSS(css: string): Promise<string>;
+  removeInsertedCSS(key: string): Promise<void>;
 }
 export function createGuest(document: Document, partition: string, url: string): Guest {
   const guest = document.createElement('webview') as Guest;

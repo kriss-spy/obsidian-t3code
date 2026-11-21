@@ -1,0 +1,7 @@
+{
+  "indexedNotes": 20001,
+  "queryMilliseconds": 11,
+  "matches": 1,
+  "scope": "in-memory metadata index plus filesystem validation of one match; excludes Obsidian indexing and UI",
+  "manifestSha256": "a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546"
+}

@@ -1,6 +1,6 @@
 # T3 Code in Obsidian: implementation spec
 
-Status: ready for implementation. No distributable plugin exists yet.
+Status: Linux development build. Full release verification remains incomplete.
 Date: 2026-11-21.
 
 This spec records the accepted product decisions and implementation defaults. It supersedes the initial recommendations in the kickoff and research reports. The [technical spike](technical-spike.md) records what was tested and what remains unverified.
@@ -102,10 +102,12 @@ For a verified local Markdown file:
 
 1. Resolve its filesystem identity.
 2. Reuse an existing editor for that file when available.
-3. Otherwise, open it beside the T3 workspace.
+3. Otherwise, open a note tab in the same tab group as T3 by default. Offer an explicit split option.
 4. Apply the supplied line and column within the file's bounds.
 
-Ordinary clicks focus the editor. Modifier clicks follow Obsidian's normal new-tab behavior. Keep the T3 session and draft intact.
+Ordinary clicks retain T3's thread-linked file preview. Ctrl/Cmd-click and the chip menu's `Open in default app` action open Markdown in Obsidian. Keep the T3 session and draft intact. Native editors do not become T3 thread panels.
+
+The workspace file explorer’s **Open with** submenu and file-preview editor dropdown also offer **Open in Obsidian** after a local Markdown filesystem check. This action does not change the preferred editor or register a server-global editor.
 
 Use normal vault files for paths inside the vault. Use Obsidian's core external-file support for other local Markdown files. Isolate the tested `file:` lookup convention behind a compatibility adapter. Do not copy external files into the vault or implement virtual files by patching Obsidian internals.
 
@@ -129,16 +131,27 @@ Disable Add selection when the selection is empty. Report unavailable editors, d
 
 The first release may use a readable text block through normal composer input. Structured context chips are optional future work. Neither approach may submit automatically.
 
+## Vault search and explicit folder actions
+
+Embedded file search can match note aliases from the vault metadata cache. Merge normal results and alias results by canonical path within the requested directory. Preserve remote search behavior. Alias edits and renames must refresh results without rebuilding the guest.
+
+Provide **Open folder in T3 Code** through Obsidian’s folder context menu. Reuse the project with the same canonical root, or register that exact folder. Open a local draft after scope approval. Never initialize Git or change agent instructions.
+
+Notes and folders dragged from Obsidian’s explorer can add explicit references to the intended composer. Preserve its text and attachments. Cancel insertion if the route or composer registration changes. Keep normal T3 attachment drops available. Physical cross-webview dragging remains a runtime verification requirement.
+
 ## Appearance and settings
 
-Preserve T3's layout and controls. Match Obsidian background, foreground, accent, and font values through the theme adapter. React to theme changes. Respect reduced motion and readable focus indicators.
+Preserve T3's layout, controls, and complete color palette. Optional Obsidian font matching must not override T3 theme colors. Theme-name synchronization requires a verified mapping and a clear ownership mode. Respect reduced motion and readable focus indicators.
 
 Do not hide advanced T3 controls by default. Broad UI removal and a compact mode are deferred until normal use identifies specific problems.
+
+Offer an explicit `Focus T3 Code` command to collapse Obsidian's left sidebar. Do not rearrange the user's workspace automatically. Document the recommended narrow-window layout.
 
 Keep plugin settings small:
 
 - T3 server connection and connection reset.
-- `Follow Obsidian appearance`, enabled by default.
+- `Use Obsidian font`, enabled by default.
+- Native Markdown placement: same tab group by default, with an explicit split option.
 - Read-only compatibility status and copyable diagnostics without credentials.
 
 The current vault determines session scope automatically. No provider, model, token-budget, permission, MCP-server, or agent configuration pages belong in this plugin.

@@ -1,9 +1,11 @@
 // Run only against an isolated Obsidian development instance with CDP enabled.
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { transform } from 'esbuild';
 const [endpoint, expectedVault] = process.argv.slice(2);
 if (!endpoint || !expectedVault) throw new Error('Usage: node scripts/check-development-vault.mjs <http://127.0.0.1:port> <absolute disposable vault>');
+if (!path.basename(path.dirname(expectedVault)).startsWith('obsidian-t3-gate-') || !['127.0.0.1','localhost'].includes(new URL(endpoint).hostname)) throw new Error('Use a loopback endpoint and a disposable fixture vault.');
 const tabs = await (await fetch(endpoint + '/json/list')).json();
 const target = tabs.find(t => t.type === 'page' && t.url === 'app://obsidian.md/index.html');
 if (!target) throw new Error('No Obsidian page');
@@ -56,8 +58,8 @@ try {
     if (JSON.stringify(view.getState()).includes('fixture-secret')) throw new Error('Pairing URL persisted');
     await plugin.saveSettings();
     const persisted = await plugin.loadData();
-    if (Object.keys(persisted).sort().join(',') !== 'followAppearance,origin,target') throw new Error('Unexpected settings');
-    const hash = require('crypto').createHash('sha256').update(plugin.vaultRoot + '\\0' + plugin.settings.origin).digest('hex');
+    if (Object.keys(persisted).sort().join(',') !== 'followAppearance,notePlacement,origin,target') throw new Error('Unexpected settings');
+    const hash = require('crypto').createHash('sha256').update(plugin.vaultRoot + String.fromCharCode(0) + plugin.settings.origin).digest('hex');
     const sessions = require('electron').remote.session;
     const ownSession = sessions.fromPartition('persist:obsidian-t3-code-' + hash);
     const otherSession = sessions.fromPartition('t3-code-disposable-reset-control');

@@ -1,0 +1,49 @@
+{
+  "platform": "Linux",
+  "obsidian": "1.15.1",
+  "build": "obsidian-host-v1.3",
+  "checks": {
+    "plainClickRetainsThreadPreview": true,
+    "previewEditorItems": [
+      "Open in Obsidian",
+      "VS CodeCtrl+O",
+      "Zed",
+      "Files"
+    ],
+    "previewNativeSameGroup": true,
+    "explorerEditorItems": [
+      "Open",
+      "Reveal in Files",
+      "Open with",
+      "Copy mention",
+      "Add to chat",
+      "VS Code",
+      "Zed",
+      "Open in Obsidian"
+    ],
+    "explorerNativeSameGroup": true,
+    "aliasDuplicatesAndUnicode": true,
+    "liveAliasEdit": true,
+    "liveAliasRename": true,
+    "aliasUnicodeNormalization": true,
+    "aliasComposerInsertionPreservesText": true,
+    "folderCreatesExactProjectAndOpensDraft": true,
+    "folderDeduplicatesWithoutGitOrInstructions": true,
+    "rightExplorerReferenceDropWithTextAndAttachment": {
+      "method": "DOM dragstart and guest drop events; physical cross-webview drag not verified",
+      "passed": true
+    },
+    "rightExplorerFolderReferenceDrop": true,
+    "singleUseReferenceToken": true,
+    "changedTargetDropCancelled": true,
+    "ordinaryFileDropPreserved": true,
+    "noPromptSubmitted": true,
+    "previewExternalCursorLine2": true
+  },
+  "limits": [
+    "Physical cross-webview drag is not verified.",
+    "Full reference UI parity remains open under #10.",
+    "No verified theme mapping is enabled."
+  ],
+  "manifestSha256": "a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546"
+}

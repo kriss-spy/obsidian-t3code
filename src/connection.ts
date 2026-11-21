@@ -1,5 +1,11 @@
 import { createHash } from 'node:crypto';
 
+export function externalWebUrl(input: string): string {
+  const url = new URL(input);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Only HTTP and HTTPS browser links are supported.');
+  return url.href;
+}
+
 export interface Descriptor {
   environmentId: string;
   serverVersion: string;
@@ -52,6 +58,7 @@ export function savedTarget(value: unknown, origin: string): string {
   try {
     const url = new URL(value, origin);
     if (url.origin !== origin || url.username || url.password || url.search || url.hash) return '/';
-    return /^\/(?:thread\/[a-zA-Z0-9_-]+)?$/.test(url.pathname) ? url.pathname : '/';
+    const decoded = decodeURIComponent(url.pathname);
+    return /^\/(?:thread\/[a-zA-Z0-9_-]+|draft\/[a-zA-Z0-9_-]+|[0-9a-f-]{36}\/[a-zA-Z0-9_:-]+)?$/i.test(decoded) ? url.pathname : '/';
   } catch { return '/'; }
 }
