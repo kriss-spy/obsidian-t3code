@@ -4,7 +4,7 @@ This build runs the real T3 web UI inside desktop Obsidian. It supports Linux an
 
 It requires a patched T3 0.1.11 server and the exact client bundled here. Your unmodified T3 installation stays unsupported. Rebuilding the plugin alone does not install the required T3 hooks.
 
-The current archive is `obsidian-t3code-0.1.0-rc.2-linux.zip`. It is a testing candidate, not an approved stable release. Check its companion `.sha256`, extract it, and run `node scripts/verify-candidate.mjs /absolute/extracted/candidate`. See [remaining release gates](release-readiness.md).
+The current archive is `obsidian-t3code-0.1.0-rc.3-linux.zip`. It is a testing candidate, not an approved stable release. Check its companion `.sha256`, extract it, and run `node scripts/verify-candidate.mjs /absolute/extracted/candidate`. See [remaining release gates](release-readiness.md).
 
 ## Prepare T3
 
@@ -53,6 +53,10 @@ env -u T3CODE_CLI_PATH -u T3CODE_THREAD_ID -u T3CODE_DESKTOP_HOST_SCOPE \
 Paste the token into T3's pairing form in Obsidian. Do not put it in plugin settings. If no project matches the vault, select **Use vault folder**. This registers the exact folder without initializing Git or changing agent instructions.
 
 The plugin does not start another backend. It connects to the server you select. Other T3 clients keep their normal unfiltered UI.
+
+## Update an existing trial
+
+Copy the new bundle’s `main.js`, `manifest.json`, and `styles.css` into the vault’s `.obsidian/plugins/t3-code/` folder. Preserve `data.json`. Copy the contents of `t3-web/` into the patched checkout’s `apps/web/dist/`. Retain older hashed assets while other tabs remain open. Reload the plugin after both sides match. Keep the server data directory and pairing partition intact.
 
 ## Try the note workflow
 

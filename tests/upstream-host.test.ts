@@ -13,7 +13,7 @@ function load(embedded = true) {
   const timers = new Map<number, () => void>();
   let nextTimer = 0;
   const code = transformSync(readAddedPatchSource('apps/web/src/obsidianHost.ts'), {loader:'ts', format:'cjs'}).code;
-  vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams,
+  vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams, URL,
     location,
     setTimeout:(fn:() => void) => { timers.set(++nextTimer, fn); return nextTimer; },
     clearTimeout:(id:number) => timers.delete(id),
@@ -56,6 +56,15 @@ test('semantic Markdown hook preserves environment, location and modifier intent
     assert.equal(await e.openObsidianMarkdown({...input, newTab:false}), false);
   }
   assert.equal(api.drain().length, 0);
+});
+
+test('system browser hook sends only HTTP URLs through the bounded host queue', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const result=e.openObsidianExternal('https://example.com/path?q=one#two');
+  const [request]=api.drain();assert.equal(request.type,'browser');assert.equal(request.url,'https://example.com/path?q=one#two');assert.equal(request.route,'/local/thread');
+  api.reply({id:request.id,generation:'g',handled:true});assert.equal(await result,true);
+  for(const url of ['file:///etc/passwd','javascript:alert(1)','https://user:secret@example.com','relative'])assert.equal(await e.openObsidianExternal(url),false);
+  assert.equal(api.drain().length,0);assert.equal(await load(false).exports.openObsidianExternal('https://example.com'),false);
 });
 test('request queue stays bounded and timed-out file requests preserve T3 fallback', async () => {
   const {api, exports:e, timers} = load();
@@ -115,10 +124,14 @@ test('more drafts than request slots remain pending until each receives a scope 
   assert.deepEqual(decisions(),Array(12).fill('pending'));
   await flush();
   assert.deepEqual(decisions(),Array(12).fill('pending'));
+  const opening=e.openObsidianExternal('https://example.com');
   for(let batch=0;batch<2;batch++) {
-    for(const request of api.drain())api.reply({id:request.id,generation:'g',allowed:request.rows.map((row:any)=>row.kind+':'+row.id)});
+    const requests=api.drain();
+    if(batch===0)assert(requests.some((r:any)=>r.type==='browser'),'Scope checks must leave room for an explicit browser action');
+    for(const request of requests)api.reply({id:request.id,generation:'g',handled:true,allowed:request.rows?.map((row:any)=>row.kind+':'+row.id)});
     await flush();decisions();
   }
+  assert.equal(await opening,true);
   assert.deepEqual(decisions(),Array(12).fill('included'));
 });
 test('conflicting active and archived metadata never shares an approval', async () => {

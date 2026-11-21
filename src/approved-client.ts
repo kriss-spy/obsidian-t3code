@@ -2,5 +2,5 @@
 // Rebuilding T3 requires a new manifest and the same real integration checks.
 export const APPROVED_CLIENT = {
   build: 'obsidian-host-v1.4',
-  manifestSha256: 'abc3392c98a2f6c9236b0595865ecb255bf6350a36f2030fe5588262f4fc6520',
+  manifestSha256: 'dc2fe4490e9f702a1667942868eb3b7fba604b6edf297c9b10b9c407547627dc',
 } as const;

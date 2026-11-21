@@ -1,0 +1,21 @@
+{
+  "checkedAt": "2026-11-21T16:55:49.445Z",
+  "platform": "Linux",
+  "obsidian": "1.15.1",
+  "checks": {
+    "normalClick": true,
+    "ctrlClick": true,
+    "systemBrowserMenu": true,
+    "exactUrlQueryAndFragment": true,
+    "threadRoutePreserved": true,
+    "integratedBrowserMenuRetained": true
+  },
+  "security": {
+    "allowpopups": false,
+    "sandbox": true,
+    "contextIsolation": true,
+    "webSecurity": true,
+    "nodeIntegration": false
+  },
+  "limit": "Electron shell.openExternal was captured at the host boundary. Opening an actual OS browser window requires the user check."
+}

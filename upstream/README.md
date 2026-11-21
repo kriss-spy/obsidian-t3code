@@ -6,7 +6,7 @@ This development adapter requires the patch in `t3-0.1.11-obsidian-host-v1.patch
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The approved adapter is `obsidian-host-v1.4`, protocol 1. Its client manifest SHA-256 is `abc3392c98a2f6c9236b0595865ecb255bf6350a36f2030fe5588262f4fc6520`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The approved adapter is `obsidian-host-v1.4`, protocol 1. Its client manifest SHA-256 is `dc2fe4490e9f702a1667942868eb3b7fba604b6edf297c9b10b9c407547627dc`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 
@@ -40,3 +40,5 @@ The exact patch module and proof endpoint execute in focused tests. The producti
 Current changed-file checks and runtime evidence are recorded in the release assessment. The full upstream test suite and complete reference UI parity remain unverified. This patch is a development dependency, not an official upstream release.
 
 The explorer drag adapter now uses a host-side composer drop target. It captures the intended route before dragging, reveals that workspace only after a drag starts, and checks the public composer registration before insertion. Alias matches are merged before truncation, and initial metadata resolution refreshes the index once. See [repair evidence](../docs/verification/extra-feature-repair.md).
+
+Embedded HTTP/HTTPS system-browser actions use the bounded host queue and Obsidian’s native opener. Plain system-directed Markdown clicks and Ctrl/Cmd-clicks use this path. The host validates URLs, document generation, environment, and route. Scope checks leave two request slots for file eligibility and explicit user actions. Guest popups stay disabled.

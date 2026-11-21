@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { electronHost } from './electron-host';
-import { ItemView, requestUrl, type WorkspaceLeaf, type ViewStateResult } from 'obsidian';
+import { ItemView, Notice, requestUrl, type WorkspaceLeaf, type ViewStateResult } from 'obsidian';
 import type T3Plugin from './main';
 import { compatibility, parseDescriptor, partitionFor, savedTarget, serverOrigin } from './connection';
 import { verifyLocalServer, verifiedCompatibility } from './local-server';
@@ -77,7 +77,7 @@ export class T3View extends ItemView {
       guest.classList.add('t3-code-pending');
       this.guest = guest;
       const session = new HostSession(this.plugin.vaultRoot, descriptor.environmentId);
-      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;}, request => this.plugin.aliases.search(this.plugin.vaultRoot, request.cwd, request.query, request.entries, request.limit), token => this.plugin.referenceDrags.consume(token, this.plugin.vaultRoot));
+      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;}, request => this.plugin.aliases.search(this.plugin.vaultRoot, request.cwd, request.query, request.entries, request.limit), token => this.plugin.referenceDrags.consume(token, this.plugin.vaultRoot), async url => { if (!current()) throw new Error('The T3 view changed.'); try { await electronHost().shell.openExternal(url); } catch (error) { new Notice('Could not open the link in the system browser.'); throw error; } });
       this.bridge = bridge;
       const navigate = (event: Event) => {
         if (!current()) return;

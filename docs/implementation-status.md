@@ -2,7 +2,7 @@
 
 Date: 2026-11-21. The current artifact is a Linux release candidate for testing. Stable publication remains blocked. See the [release assessment](release-readiness.md) for fixed findings, fresh checks, and all remaining gates.
 
-The candidate uses host contract `obsidian-host-v1.4`, pinned upstream revision `59651c1761f6c63e9b6056839067066968e6a406`, and client manifest SHA-256 `abc3392c98a2f6c9236b0595865ecb255bf6350a36f2030fe5588262f4fc6520`. It requires the matching patched T3 0.1.11 server and compiled client. The plugin runtime remains Linux Obsidian 1.15.1 only.
+The candidate uses host contract `obsidian-host-v1.4`, pinned upstream revision `59651c1761f6c63e9b6056839067066968e6a406`, and client manifest SHA-256 `dc2fe4490e9f702a1667942868eb3b7fba604b6edf297c9b10b9c407547627dc`. It requires the matching patched T3 0.1.11 server and compiled client. The plugin runtime remains Linux Obsidian 1.15.1 only.
 
 Implemented workflows include persistent guest pairing, strict canonical vault filtering, semantic Markdown navigation, explicit editor context, native-open menus, alias search, folder projects, and reference insertion. T3 owns agent configuration and theme colors. The plugin does not start a server or change agent instructions.
 

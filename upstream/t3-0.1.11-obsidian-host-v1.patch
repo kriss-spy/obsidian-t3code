@@ -74,10 +74,18 @@ index 000000000..22f4f3c13
 +  }
 +}
 diff --git a/apps/web/src/components/ChatMarkdown.tsx b/apps/web/src/components/ChatMarkdown.tsx
-index f6062475a..93c44f4df 100644
+index f6062475a..9b592bf12 100644
 --- a/apps/web/src/components/ChatMarkdown.tsx
 +++ b/apps/web/src/components/ChatMarkdown.tsx
-@@ -960,6 +960,7 @@ function useChatMarkdownState({
+@@ -200,6 +200,7 @@ import { sourceControlClients } from "@t3tools/client-runtime/source-control-cli
+ import { useOpenChangeRequestLink } from "~/lib/openPullRequestLink";
+ import { textDirection } from "~/textDirection";
+ import { useOpenLink } from "../browser/useOpenLink";
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { writeTextToClipboard } from "../hooks/useCopyToClipboard";
+ import { isPreviewAvailableFor } from "../browser/previewRuntime";
+ import {
+@@ -960,6 +961,7 @@ function useChatMarkdownState({
          workspaceRelativePath={fileLinkMeta.workspaceRelativePath}
          panelPath={isAppBundle ? null : panelPath}
          line={fileLinkMeta.line}
@@ -85,6 +93,15 @@ index f6062475a..93c44f4df 100644
          label={fileLinkLabel(
            {
              path: fileLinkMeta.filePath,
+@@ -1359,7 +1361,7 @@ const CHAT_MARKDOWN_COMPONENTS = {
+               }) !== "app"
+             ) {
+               // Open desktop Alt-clicks before Chromium downloads them so link routers can read the held key.
+-              if (isElectron && event.altKey) {
++              if ((isElectron && event.altKey) || (isObsidianEmbedded() && faviconHost !== null)) {
+                 event.preventDefault();
+                 event.stopPropagation();
+                 void readLocalApi()
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
 index 128f3b16d..21dd0d198 100644
 --- a/apps/web/src/components/ChatView.tsx
@@ -1459,6 +1476,83 @@ index fbd17226c..093a1e7d1 100644
      }
    };
  
+diff --git a/apps/web/src/localApi.test.ts b/apps/web/src/localApi.test.ts
+index b5f9bd18b..6470a4844 100644
+--- a/apps/web/src/localApi.test.ts
++++ b/apps/web/src/localApi.test.ts
+@@ -9,6 +9,14 @@ const showContextMenuFallbackMock =
+     ) => Promise<T | null>
+   >();
+ const dismissContextMenuMock = vi.fn<() => void>();
++const obsidian = vi.hoisted(() => ({
++  embedded: false,
++  open: vi.fn<(url: string) => Promise<boolean>>(),
++}));
++vi.mock("./obsidianHost", () => ({
++  isObsidianEmbedded: () => obsidian.embedded,
++  openObsidianExternal: obsidian.open,
++}));
+ 
+ const requestConfirmDialogMock =
+   vi.fn<(message: string, options?: ConfirmDialogOptions) => Promise<boolean> | undefined>();
+@@ -47,6 +55,8 @@ function testWindow(): Window & typeof globalThis {
+ beforeEach(() => {
+   vi.resetModules();
+   vi.clearAllMocks();
++  obsidian.embedded = false;
++  obsidian.open.mockResolvedValue(true);
+   if (globalThis.window === undefined) {
+     Object.defineProperty(globalThis, "window", {
+       configurable: true,
+@@ -65,6 +75,25 @@ afterEach(() => {
+ });
+ 
+ describe("LocalApi", () => {
++  it("opens embedded web links through the host instead of a blocked guest popup", async () => {
++    obsidian.embedded = true;
++    const popup = vi.fn();
++    Object.defineProperty(testWindow(), "open", { configurable: true, value: popup });
++    const { createLocalApi } = await import("./localApi");
++    await createLocalApi().shell.openExternal("https://example.com/test?q=one#two");
++    expect(obsidian.open).toHaveBeenCalledWith("https://example.com/test?q=one#two");
++    expect(popup).not.toHaveBeenCalled();
++    obsidian.open.mockResolvedValue(false);
++    await expect(createLocalApi().shell.openExternal("https://example.com")).rejects.toThrow();
++    expect(popup).not.toHaveBeenCalled();
++    obsidian.embedded = false;
++    await createLocalApi().shell.openExternal("https://example.com/ordinary");
++    expect(popup).toHaveBeenCalledWith(
++      "https://example.com/ordinary",
++      "_blank",
++      "noopener,noreferrer",
++    );
++  });
+   it("fails closed in a browser when no themed host is available", async () => {
+     requestConfirmDialogMock.mockReturnValue(undefined);
+     const { createLocalApi } = await import("./localApi");
+diff --git a/apps/web/src/localApi.ts b/apps/web/src/localApi.ts
+index 0baba982d..ea48fcd67 100644
+--- a/apps/web/src/localApi.ts
++++ b/apps/web/src/localApi.ts
+@@ -11,6 +11,7 @@ import { requestConfirmDialog } from "./confirmDialog";
+ import { dismissContextMenu, showContextMenuFallback } from "./contextMenuFallback";
+ import { readBrowserClientSettings, writeBrowserClientSettings } from "./clientPersistenceStorage";
+ import { m } from "./i18n/messages";
++import { isObsidianEmbedded, openObsidianExternal } from "./obsidianHost";
+ 
+ let cachedApi: LocalApi | undefined;
+ 
+@@ -27,6 +28,10 @@ export function createLocalApi(): LocalApi {
+     },
+     shell: {
+       openExternal: async (url) => {
++        if (isObsidianEmbedded()) {
++          if (!(await openObsidianExternal(url))) throw new Error(m(msg("Unable to open link.")));
++          return;
++        }
+         if (window.desktopBridge) {
+           const opened = await window.desktopBridge.openExternal(url);
+           if (!opened) {
 diff --git a/apps/web/src/main.tsx b/apps/web/src/main.tsx
 index 112de4848..b6c87f41b 100644
 --- a/apps/web/src/main.tsx
@@ -1480,10 +1574,10 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..cb3879469
+index 000000000..805608d08
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,553 @@
+@@ -0,0 +1,568 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1761,7 +1855,8 @@ index 000000000..cb3879469
 +    if (answer?.has(row.kind + ":" + row.id)) result.add(row.kind + ":" + row.id);
 +    return !answer && !inFlight.has(key);
 +  });
-+  if (missing.length && missing.length <= 20000 && pending.size < 8) {
++  // Leave slots for the active file check and an explicit user action.
++  if (missing.length && missing.length <= 20000 && pending.size < 6) {
 +    const epoch = scopeEpoch;
 +    for (const row of missing) inFlight.add(rowKey(env, row));
 +    void request({ type: "scope", environmentId: env, rows: missing })
@@ -1913,6 +2008,20 @@ index 000000000..cb3879469
 +}
 +export function canOpenObsidianMarkdown(env: string | null) {
 +  return embedded && initialized && env === environmentId;
++}
++export async function openObsidianExternal(url: string): Promise<boolean> {
++  if (!embedded || !initialized) return false;
++  try {
++    const target = new URL(url);
++    if (!["http:", "https:"].includes(target.protocol) || target.username || target.password)
++      return false;
++    const route = location.pathname;
++    return (
++      (await request({ type: "browser", environmentId, url: target.href, route })).handled === true
++    );
++  } catch {
++    return false;
++  }
 +}
 +export async function openObsidianMarkdown(input: {
 +  environmentId: string | null;

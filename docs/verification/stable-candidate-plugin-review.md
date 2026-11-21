@@ -52,4 +52,4 @@
   - obsidianmd/ui/sentence-case
   - src/view.ts:22
 
-Release attestation checks were skipped because this task does not publish a release. The runner printed its existing numeric-summary warning. The individual findings above were inspected: zero source errors, 19 naming warnings, and one intentional filesystem-access warning. The plugin is desktop-only and the integration requires canonical filesystem checks.
+Release attestation checks were skipped. The runner emitted its existing numeric-summary warning. Individual findings were inspected: zero source errors, 19 naming warnings, and one intentional filesystem-access warning.
