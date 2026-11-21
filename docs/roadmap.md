@@ -2,7 +2,7 @@
 
 Track delivery in [release issue #1](https://github.com/kriss-spy/obsidian-t3code/issues/1) and the [v0.1.0 milestone](https://github.com/kriss-spy/obsidian-t3code/milestone/1).
 
-The [spec](spec.md) defines behavior and release gates. GitHub issues track implementation progress. No implementation task is complete yet.
+The [spec](spec.md) defines behavior and release gates. GitHub issues track implementation progress. The plugin foundation is implemented. No implementation task meets all acceptance criteria yet. See [implementation status](implementation-status.md) for checks and remaining work.
 
 ## Tasks
 
