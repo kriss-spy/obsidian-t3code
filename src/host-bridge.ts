@@ -1,4 +1,9 @@
 import { setTimeout as delay } from 'node:timers/promises';
+import { realpath, stat } from 'node:fs/promises';
+import path from 'node:path';
+import { canonicalDirectory, containsDirectory } from './scope';
+import type { AliasRequest } from './host-contract';
+import type { SearchEntry } from './aliases';
 import { serverOrigin, savedTarget } from './connection';
 import type { Guest } from './guest';
 import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest } from './host-contract';
@@ -7,6 +12,7 @@ import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostReq
 export class HostBridge {
   private closed = false;
   private polling = false;
+  private openingProject?: {root:string;task:Promise<void>};
   constructor(
     private guest: Pick<Guest, 'getURL' | 'executeJavaScript'>,
     private origin: string,
@@ -14,6 +20,8 @@ export class HostBridge {
     private onFile: (request: FileRequest) => Promise<boolean>,
     private onExternal: (path: string) => Promise<void> = async () => {},
     private onDiagnostic: (message: string) => void = () => {},
+    private onAliases: (request: AliasRequest) => Promise<SearchEntry[]> = async () => [],
+    private onReferences: (token: string) => Promise<string[]> = async () => [],
   ) { this.origin = serverOrigin(origin); }
   private assertCurrent() {
     if (this.closed || new URL(this.guest.getURL()).origin !== this.origin) {
@@ -54,6 +62,24 @@ export class HostBridge {
       for (const value of batch) {
         this.assertCurrent();
         const request = parseHostRequest(value, this.session.generation);
+        if (request.type === 'references') {
+          const paths = request.environmentId === this.session.localEnvironmentId && request.route === new URL(this.guest.getURL()).pathname ? await this.onReferences(request.token) : [];
+          await this.evaluate(`window.t3ObsidianHostV1.reply(${JSON.stringify({id:request.id,generation:this.session.generation,paths})})`);
+          continue;
+        }
+        if (request.type === 'aliases') {
+          const entries = request.environmentId === this.session.localEnvironmentId && request.route === new URL(this.guest.getURL()).pathname ? await this.onAliases(request) : [];
+          await this.evaluate(`window.t3ObsidianHostV1.reply(${JSON.stringify({id:request.id,generation:this.session.generation,entries})})`);
+          continue;
+        }
+        if (request.type === 'file-check') {
+          let handled = false;
+          if (request.environmentId === this.session.localEnvironmentId && request.route === new URL(this.guest.getURL()).pathname && path.isAbsolute(request.path) && /\.md$/i.test(request.path)) {
+            try { const resolved = await realpath(request.path); handled = /\.md$/i.test(resolved) && (await stat(resolved)).isFile(); } catch { /* Missing files have no native action. */ }
+          }
+          await this.evaluate(`window.t3ObsidianHostV1.reply(${JSON.stringify({id:request.id,generation:this.session.generation,handled})})`);
+          continue;
+        }
         if (request.type === 'external') {
           if (savedTarget(request.path, this.origin) !== request.path) throw new Error('Invalid external T3 route.');
           await this.onExternal(request.path);
@@ -94,5 +120,32 @@ export class HostBridge {
     const inserted = await this.evaluate(`window.t3ObsidianHostV1.appendContext(${JSON.stringify({generation:this.session.generation, target, text})})`);
     if (inserted !== true) throw new Error('The T3 target changed or its composer is unavailable. Context was not added.');
   }
+  openProject(directory: string): Promise<void> {
+    const root = canonicalDirectory(directory);
+    if (this.openingProject) {
+      if (this.openingProject.root === root) return this.openingProject.task;
+      return Promise.reject(new Error('Another folder is opening. Try again after it finishes.'));
+    }
+    const task = this.openProjectOnce(root).finally(() => {this.openingProject = undefined;});
+    this.openingProject = {root,task};
+    return task;
+  }
+  private async openProjectOnce(root: string) {
+    if (!containsDirectory(this.session.vaultRoot, root)) throw new Error('Choose a folder inside this vault.');
+    const route = new URL(this.guest.getURL()).pathname;
+    const candidates = await this.evaluate('window.t3ObsidianHostV1.projectRoots()');
+    if (!Array.isArray(candidates) || candidates.length > 20000) throw new Error('T3 projects are unavailable.');
+    let existingId: string | null = null;
+    for (const value of candidates as unknown[]) {
+      if (!value || typeof value !== 'object') continue;
+      const candidate = value as Record<string, unknown>;
+      if (candidate.environmentId !== this.session.localEnvironmentId || typeof candidate.id !== 'string' || typeof candidate.workspaceRoot !== 'string') continue;
+      try { if (canonicalDirectory(candidate.workspaceRoot) === root) {existingId = candidate.id; break;} } catch { /* Unverified project roots cannot match. */ }
+    }
+    if (route !== new URL(this.guest.getURL()).pathname) throw new Error('The T3 target changed. The folder was not opened.');
+    const opened = await this.evaluate(`window.t3ObsidianHostV1.openProject(${JSON.stringify({generation:this.session.generation,environmentId:this.session.localEnvironmentId,path:root,existingId,route})})`);
+    if (opened !== true) throw new Error('The folder could not be opened, or the T3 target changed.');
+  }
+  async invalidateAliases() { await this.evaluate('window.t3ObsidianHostV1.invalidateAliases()'); }
   close() { this.closed = true; this.session.invalidate(); }
 }

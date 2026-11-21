@@ -74,7 +74,7 @@ export class T3View extends ItemView {
       guest.classList.add('t3-code-pending');
       this.guest = guest;
       const session = new HostSession(this.plugin.vaultRoot, descriptor.environmentId);
-      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;});
+      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;}, request => this.plugin.aliases.search(this.plugin.vaultRoot, request.cwd, request.query, request.entries, request.limit), token => this.plugin.referenceDrags.consume(token, this.plugin.vaultRoot));
       this.bridge = bridge;
       const navigate = (event: Event) => {
         if (!current()) return;
@@ -123,6 +123,8 @@ export class T3View extends ItemView {
       this.showUnavailable(this.plugin.diagnostic, origin);
     }
   }
+  async openProject(directory: string) { await this.connecting; if (!this.bridge) throw new Error('Connect to a supported T3 server first.'); await this.bridge.openProject(directory); this.guest?.focus(); }
+  async invalidateAliases() { try { await this.bridge?.invalidateAliases(); } catch { /* A closing guest has no search to refresh. */ } }
   async appendContext(text: string) {
     await this.connecting;
     if (!this.bridge || !this.guest) throw new Error('Connect and pair with a supported T3 server before adding context.');

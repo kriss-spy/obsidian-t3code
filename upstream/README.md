@@ -6,7 +6,7 @@ This development adapter requires the patch in `t3-0.1.11-obsidian-host-v1.patch
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The approved adapter is `obsidian-host-v1.2`, protocol 1. Its client manifest SHA-256 is `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The approved adapter is `obsidian-host-v1.3`, protocol 1. Its client manifest SHA-256 is `a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 
@@ -30,6 +30,8 @@ Canonical verdicts apply before rendering. Independent entry points include the 
 The actual MarkdownFileLink primary callback resolves its absolute semantic file path and asks the host before normal T3 callbacks. It preserves environment, line, column, modifier intent, and requesting route. Remote, non-Markdown, timed-out, or declined requests retain T3 behavior. Stale route responses cannot navigate a replacement target.
 
 The composer hook registers the existing public composer handle. Explicit host requests append through that handle. They neither access private React state nor edit persisted stores. A normal new-thread handler can prepare an in-scope composer if none exists. Scope decisions do not change server visibility, tags, or database schemas.
+
+The v1.3 contract adds a filesystem-only Markdown eligibility check for both native-open menus, canonical alias-result merging from the metadata cache, an explicit canonical-folder project action, and single-use explorer-reference drops. Composer ownership uses a stable reference so attachment processing cannot cancel a valid same-target drop. Requests retain generation and route checks. Project creation waits for scope approval before opening its draft.
 
 ## Evidence and remaining work
 

@@ -4,6 +4,16 @@ Date: 2026-11-21. A Linux development build is available to try. It requires the
 
 See [installation](development-install.md), [runtime assertions](verification/linux-development-runtime.json), and [local plugin review](verification/plugin-review.md).
 
+## Extra-feature development build
+
+The current source and private development.3 bundle use `obsidian-host-v1.3`. Both T3 file menus now offer **Open in Obsidian** after canonical local Markdown validation. Preview opening forwards the requested line and uses the existing external-file and placement adapter.
+
+File search matches vault metadata aliases and merges canonical identities within the requested directory. Metadata changes and renames invalidate results. Folder context menus open or register the exact canonical project. Explicit note/folder drops append references through the intended composer and preserve its text and attachments. Normal T3 file drops remain available.
+
+See [extra-feature evidence and remaining gaps](verification/extra-features.md). The normal plugin bundle passed 19 actual feature assertions and the scope/isolation regression checks. Physical cross-webview dragging and broader new-draft reload ordering remain unverified. No complete theme mapping is enabled. The active CloudNotes installation and servers were not upgraded by this feature work.
+
+The approved manifest SHA-256 is `a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546`. A rebuilt client still requires a new gate; self-declared capabilities remain insufficient.
+
 ## Implemented
 
 The ItemView now hosts the real T3 web UI. Pairing uses T3's own form and a persistent vault/server partition. The plugin never starts a backend or invokes the standalone CLI.
@@ -21,7 +31,7 @@ Safe thread/draft routes restore through workspace and plugin lifecycle changes.
 
 ## First-trial feedback update
 
-The current artifact is adapter `obsidian-host-v1.2`. The feedback changes the accepted default: plain Markdown clicks stay in T3's thread-linked preview. Ctrl/Cmd-click and **Open in default app** open a native note. New native notes share T3's tab group by default. An explicit split option remains. Existing editors can be reused in their current group.
+The prior first-feedback artifact used adapter `obsidian-host-v1.2`. The feedback changes the accepted default: plain Markdown clicks stay in T3's thread-linked preview. Ctrl/Cmd-click and **Open in default app** open a native note. New native notes share T3's tab group by default. An explicit split option remains. Existing editors can be reused in their current group.
 
 Removed the injected color palette that overrode T3 theme changes. T3 controls all colors; **Use Obsidian font** changes only the font. The **Focus T3 Code** command reveals T3 and collapses Obsidian's left sidebar. See [recommended layout](layout.md).
 
@@ -65,7 +75,9 @@ All checks used disposable development vaults and separate T3 data. No personal 
 
 `scripts/check-supported-vault.mjs` repeats the production guest, real-chip, search, project-choice, restored-route, reconnect, DOM-observation, and duplicate-Open assertions. It refuses any vault outside the disposable fixture naming convention. The committed JSON records a passing production run. Additional manual CDP checks are listed above; they are not all automated by that script.
 
-## Source and build checks
+## Earlier source and build checks
+
+These results belong to the earlier development gate. The extra-feature checks and their limits are recorded above.
 
 - `npm test`: 28 passing tests. These cover path identity, context encoding, local proofs, executable integrity, stale requests, exact patch contract behavior, scope epochs, conflicting metadata, and per-window Open races.
 - `npm run build`: TypeScript and CommonJS bundle pass.
@@ -74,11 +86,11 @@ All checks used disposable development vaults and separate T3 data. No personal 
 - Patched server and web production builds pass. The source checks used the available pnpm 11.25.0 tooling. The packaged preparation script also passed in a fresh checkout with the exact pinned Node 26.13.1 and pnpm 12.14.0. It cloned the base, applied the patch, installed dependencies, built the server, and verified the copied client assets.
 - Local Obsidian review: zero source errors. Warnings concern deliberate filesystem access and specified product names/command labels. The report script also printed a numeric-summary parsing warning; the individual report is committed.
 
-The client manifest SHA-256 is `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. `src/approved-client.ts` admits only this exact artifact. The package includes it without source maps and retains T3's license and third-party notices.
+The earlier client manifest SHA-256 was `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. The current approved artifact is listed above. The package includes it without source maps and retains T3's license and third-party notices.
 
 ## Release blockers
 
-Issue #10 remains open. The complete reference comparison has not covered question/permission prompts, streamed tool activity, stop/continue through reconnect, terminal execution, browser preview, every lifecycle ordering transition, or all pane/crash cases. Do not claim full parity or publish v0.1.0 until these pass.
+Issue #10 remains open. The complete reference comparison has not covered question/permission prompts, streamed tool activity, stop/continue through reconnect, extended terminal/browser workflows, every lifecycle ordering transition, or all pane/crash cases. Do not claim full parity or publish v0.1.0 until these pass.
 
 Canonical membership fixtures cover root/nested paths, prefix siblings, symlinks, outside worktrees, missing metadata, and remote identities. Those unit checks do not establish runtime support for remote servers or other operating systems. Linux is the only development target.
 

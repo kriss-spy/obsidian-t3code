@@ -49,3 +49,23 @@ test('context cannot append after the intended route changes while waiting for i
   await assert.rejects(bridge.appendContext('captured note'),/target changed/);
   assert.equal(appends,0);bridge.close();
 });
+
+test('folder actions deduplicate canonical projects and cancel navigation after a route change', async () => {
+  const {mkdtempSync,mkdirSync,symlinkSync,rmSync}=await import('node:fs');
+  const {tmpdir}=await import('node:os');const path=await import('node:path');
+  const root=mkdtempSync(path.join(tmpdir(),'t3-project-'));mkdirSync(path.join(root,'folder'));symlinkSync(path.join(root,'folder'),path.join(root,'link'));
+  try {
+    const session=new HostSession(root,'local');let route='/intended';const opened:unknown[]=[];
+    const guest={getURL:()=> 'http://127.0.0.1:3773'+route,executeJavaScript:async(code:string)=>{
+      if(code.includes('projectRoots()'))return [{id:'existing',environmentId:'local',workspaceRoot:path.join(root,'link')}];
+      opened.push(JSON.parse(code.slice(code.indexOf('openProject(')+12,-1)));return true;
+    }};
+    const bridge=new HostBridge(guest,'http://127.0.0.1:3773',session,async()=>false);
+    const one=bridge.openProject(path.join(root,'folder'));assert.equal(bridge.openProject(path.join(root,'link')),one);await one;
+    assert.equal(opened.length,1);assert.equal((opened[0] as {existingId:string}).existingId,'existing');
+    const changed={...guest,executeJavaScript:async(code:string)=>{if(code.includes('projectRoots()')){route='/other';return [];}throw Error('Must not create a project');}};
+    const second=new HostBridge(changed,'http://127.0.0.1:3773',new HostSession(root,'local'),async()=>false);
+    route='/intended';await assert.rejects(second.openProject(path.join(root,'folder')),/target changed/);
+    bridge.close();second.close();
+  } finally {rmSync(root,{recursive:true,force:true});}
+});

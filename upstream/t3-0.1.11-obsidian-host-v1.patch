@@ -29,7 +29,7 @@ index 44bca4bf2..8ceaacbf6 100644
        return HttpServerResponse.text("Not Found", { status: 404 });
 diff --git a/apps/server/src/obsidianHostProof.ts b/apps/server/src/obsidianHostProof.ts
 new file mode 100644
-index 000000000..cb0bb838d
+index 000000000..5d6b7f26a
 --- /dev/null
 +++ b/apps/server/src/obsidianHostProof.ts
 @@ -0,0 +1,40 @@
@@ -57,7 +57,7 @@ index 000000000..cb0bb838d
 +    const token = NodeFS.readFileSync(fd, "utf8");
 +    if (!/^[a-f0-9]{64}$/.test(token)) return null;
 +    return {
-+      adapterBuild: "obsidian-host-v1.2",
++      adapterBuild: "obsidian-host-v1.3",
 +      revision: "59651c1761f6c63e9b6056839067066968e6a406",
 +      environmentId,
 +      machineProof: NodeCrypto.createHmac("sha256", token)
@@ -86,7 +86,7 @@ index f6062475a..93c44f4df 100644
            {
              path: fileLinkMeta.filePath,
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index 128f3b16d..4e72327ec 100644
+index 128f3b16d..9e4614773 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
 @@ -1,3 +1,4 @@
@@ -94,19 +94,24 @@ index 128f3b16d..4e72327ec 100644
  import { m } from "../i18n/messages";
  import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
  import { useGT, useMessages } from "gt-react";
-@@ -1881,6 +1882,16 @@ export default function ChatView(props: ChatViewProps) {
+@@ -1881,6 +1882,21 @@ export default function ChatView(props: ChatViewProps) {
  
    const { focusComposer: focusComposerStable, scheduleComposerFocus: scheduleComposerFocusStable } =
      useComposerFocus(composerRef);
 +  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- registers the public composer handle with the optional host and removes it when the route changes
 +  useEffect(() => {
 +    if (embedded || backgroundThread || !canOperateThread) return;
-+    return registerObsidianComposer(JSON.stringify([environmentId, threadId, draftId]), (text) => {
-+      const current = composerRef.current;
-+      if (!current || !current.insertTextAtEnd(text, { ensureLeadingBoundary: true })) return false;
-+      current.focusAtEnd();
-+      return true;
-+    });
++    return registerObsidianComposer(
++      JSON.stringify([environmentId, threadId, draftId]),
++      (text) => {
++        const current = composerRef.current;
++        if (!current || !current.insertTextAtEnd(text, { ensureLeadingBoundary: true }))
++          return false;
++        current.focusAtEnd();
++        return true;
++      },
++      (owner) => owner === composerRef,
++    );
 +  }, [environmentId, threadId, draftId, composerRef, embedded, backgroundThread, canOperateThread]);
    const canInterruptRunningThread =
      canOperateThread && deriveCanInterruptRunningThread(activeThread !== undefined, activeRuntime);
@@ -470,6 +475,31 @@ index 5217b068f..b51808d75 100644
 +    <UnscopedThreadRouteView {...props} />
 +  );
 +}
+diff --git a/apps/web/src/components/chat/ChatComposer.tsx b/apps/web/src/components/chat/ChatComposer.tsx
+index 603edc067..a0d403e5d 100644
+--- a/apps/web/src/components/chat/ChatComposer.tsx
++++ b/apps/web/src/components/chat/ChatComposer.tsx
+@@ -1,3 +1,4 @@
++import { obsidianReferenceDrag, dropObsidianReferences } from "~/obsidianHost";
+ import { copySnapshot } from "./copySnapshot";
+ import { VoiceInputSetup } from "./VoiceInputSetup";
+ import { useComposerTypingGuard } from "./useComposerTypingGuard";
+@@ -3461,6 +3462,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+         composerMentionDragHandlers.onDragEnter(event);
+       }}
+       onDragOverCapture={(event) => {
++        if (obsidianReferenceDrag(event, composerRef)) return;
+         if (isInsideRestingComposerControlScope(event.target)) return;
+         composerMentionDragHandlers.onDragOver(event);
+       }}
+@@ -3469,6 +3471,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+         onComposerMentionDragLeaveCapture(event);
+       }}
+       onDropCapture={(event) => {
++        if (dropObsidianReferences(event, composerRef, serializeComposerFileLink)) return;
+         if (isInsideRestingComposerControlScope(event.target)) return;
+         composerMentionDragHandlers.onDrop(event);
+       }}
 diff --git a/apps/web/src/components/chat/MarkdownFileLink.tsx b/apps/web/src/components/chat/MarkdownFileLink.tsx
 index 8e91e1ef7..6e57dc3df 100644
 --- a/apps/web/src/components/chat/MarkdownFileLink.tsx
@@ -562,6 +592,60 @@ index 8e91e1ef7..6e57dc3df 100644
      previous.label === next.label &&
      previous.copyMarkdown === next.copyMarkdown &&
      previous.theme === next.theme &&
+diff --git a/apps/web/src/components/chat/OpenInPicker.tsx b/apps/web/src/components/chat/OpenInPicker.tsx
+index 711f1e4cb..b1da6c0b5 100644
+--- a/apps/web/src/components/chat/OpenInPicker.tsx
++++ b/apps/web/src/components/chat/OpenInPicker.tsx
+@@ -1,3 +1,5 @@
++import { useObsidianMarkdown } from "~/useObsidianMarkdown";
++import { openObsidianMarkdown } from "~/obsidianHost";
+ import { ThreadDetailsControl } from "./ThreadDetailsControl";
+ import {
+   AuthOrchestrationOperateScope,
+@@ -219,6 +221,7 @@ export const OpenInPicker = memo(function OpenInPicker({
+   availableEditors,
+   openInCwd,
+   openInCwdIsFile = false,
++  openInLine,
+   presentation = "toolbar",
+   compact = false,
+   enableShortcut = true,
+@@ -230,12 +233,14 @@ export const OpenInPicker = memo(function OpenInPicker({
+   availableEditors: ReadonlyArray<EditorId>;
+   openInCwd: string | null;
+   openInCwdIsFile?: boolean;
++  openInLine?: number | undefined;
+   presentation?: "toolbar" | "menu";
+   compact?: boolean;
+   enableShortcut?: boolean;
+   displayMode?: "toolbar" | "panel";
+   revealFileManager?: boolean;
+ }) {
++  const nativeMarkdown = useObsidianMarkdown(environmentId, openInCwdIsFile ? openInCwd : null);
+   const gt = useGT();
+   const messages = useMessages();
+   const isPanel = displayMode === "panel";
+@@ -315,6 +320,20 @@ export const OpenInPicker = memo(function OpenInPicker({
+ 
+   const editorItems = (
+     <>
++      {nativeMarkdown && openInCwd ? (
++        <MenuItem
++          onClick={() =>
++            void openObsidianMarkdown({
++              environmentId,
++              path: openInCwd,
++              line: openInLine,
++              newTab: false,
++            })
++          }
++        >
++          <MenuItemLabel>{gt("Open in {editor}", { editor: "Obsidian" })}</MenuItemLabel>
++        </MenuItem>
++      ) : null}
+       {unavailableReason !== null ? (
+         <MenuItem density={presentation === "menu" ? "touch" : "default"} disabled>
+           {unavailableReason}
 diff --git a/apps/web/src/components/chat/SideChatPane.tsx b/apps/web/src/components/chat/SideChatPane.tsx
 index ffd384502..28dbf0935 100644
 --- a/apps/web/src/components/chat/SideChatPane.tsx
@@ -627,6 +711,125 @@ index e8a5fc1fe..a8cc5bc5d 100644
    return (
      <li className="group relative flex h-8 items-center rounded-lg">
        <Tooltip>
+diff --git a/apps/web/src/components/files/FileBrowserPanel.tsx b/apps/web/src/components/files/FileBrowserPanel.tsx
+index 1fee7db23..b40b89f1d 100644
+--- a/apps/web/src/components/files/FileBrowserPanel.tsx
++++ b/apps/web/src/components/files/FileBrowserPanel.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "~/obsidianHost";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { m } from "~/i18n/messages";
+ import { RefreshIcon } from "~/components/ui/refresh-icon";
+@@ -165,6 +166,7 @@ export default function FileBrowserPanel({
+ }: FileBrowserPanelProps) {
+   const panelPath = (relativePath: string) =>
+     hostFolder ? joinHostPath(cwd, relativePath) : relativePath;
++  const embeddedSearch = isObsidianEmbedded();
+   const gt = useGT();
+   const messages = useMessages();
+   const { resolvedTheme } = useTheme();
+@@ -188,7 +190,12 @@ export default function FileBrowserPanel({
+     messages,
+   );
+   const { entries, entryKinds, treePaths, directoryPaths, expandableDirectoryPaths } =
+-    buildTreeEntries(directoryEntries, pathSearch.entries, pathSearch.isPending, query);
++    buildTreeEntries(
++      embeddedSearch && query.trim() ? [] : directoryEntries,
++      pathSearch.entries,
++      pathSearch.isPending,
++      query,
++    );
+   const entryKindsRef = useRef(entryKinds);
+   const previousTreePathsRef = useRef<readonly string[] | null>(null);
+   const syncingSelectionRef = useRef(false);
+@@ -217,10 +224,11 @@ export default function FileBrowserPanel({
+         ? { x: pointer.x, y: pointer.y }
+         : { x: anchorRect.left, y: anchorRect.bottom };
+       const fileTarget = { environmentId, filePath: relativePath, workspaceRoot: cwd };
+-      const fileMenuItems = fileContextMenu.buildItems(fileTarget);
++
+       // The app menu owns focus; the tree's outside-click handler would dismiss it before click.
+       context.close({ restoreFocus: !pointerIsFresh });
+       void settlePromise(async () => {
++        const fileMenuItems = await fileContextMenu.buildItems(fileTarget);
+         const clicked = await api.contextMenu.show(
+           [
+             ...fileMenuItems,
+@@ -232,7 +240,9 @@ export default function FileBrowserPanel({
+         if (clicked === null) return;
+         // Open-with submenu ids are absent from the top-level item list.
+         const isFileMenuAction =
+-          fileMenuItems.some((entry) => entry.id === clicked) || clicked.startsWith("editor:");
++          fileMenuItems.some((entry) => entry.id === clicked) ||
++          clicked === "open-in-obsidian" ||
++          clicked.startsWith("editor:");
+         if (isFileMenuAction) {
+           await fileContextMenu.activate(clicked as FileContextMenuAction, fileTarget);
+           return;
+@@ -314,7 +324,9 @@ export default function FileBrowserPanel({
+         ? { icon: "t3-tree-icon-loading", title: gt("Loading…") }
+         : null,
+     search: false,
+-    onSearchChange: (value) => setQuery(value ?? ""),
++    onSearchChange: (value) => {
++      if (!embeddedSearch) setQuery(value ?? "");
++    },
+     unsafeCSS: PIERRE_TREE_UNSAFE_CSS,
+   });
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- makes the Pierre tree model re-render row decorations when loading directories change
+@@ -325,7 +337,9 @@ export default function FileBrowserPanel({
+   }, [loadingDirectories, model]);
+   const search = useFileTreeSearch(model);
+   // Pierre restores the unfiltered tree when a search has no matches.
+-  const hasNoSearchMatches = search.value.trim().length > 0 && search.matchingPaths.length === 0;
++  const hasNoSearchMatches = embeddedSearch
++    ? query.trim().length > 0 && pathSearch.entries.length === 0
++    : search.value.trim().length > 0 && search.matchingPaths.length === 0;
+   const allDirectoriesExpanded = useFileTreeSelector(model, (currentModel) =>
+     areAllDirectoriesExpanded(currentModel, expandableDirectoryPaths),
+   );
+@@ -425,7 +439,7 @@ export default function FileBrowserPanel({
+       search.close();
+       return;
+     }
+-    search.setValue(value);
++    if (!embeddedSearch) search.setValue(value);
+   };
+   const handleRefresh = () => {
+     refresh();
+@@ -471,9 +485,9 @@ export default function FileBrowserPanel({
+ 
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- expands every directory in the Pierre tree model while expand-all is on and no search is active
+   useEffect(() => {
+-    if (expandAll && !query.trim())
++    if ((embeddedSearch && query.trim()) || (expandAll && !query.trim()))
+       setAllDirectoriesExpanded(model, expandableDirectoryPaths, true);
+-  }, [expandableDirectoryPaths, expandAll, model, query]);
++  }, [expandableDirectoryPaths, expandAll, model, query, embeddedSearch]);
+ 
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- reveals an externally selected path in the Pierre tree model by expanding, selecting and scrolling
+   useEffect(() => {
+@@ -573,7 +587,7 @@ export default function FileBrowserPanel({
+           ref={searchInputRef}
+           name="project-files-search"
+           ariaLabel={gt("Search {projectName} files", { projectName })}
+-          value={search.value}
++          value={embeddedSearch ? query : search.value}
+           onValueChange={handleSearchValueChange}
+           onClose={closeSearch}
+         />
+diff --git a/apps/web/src/components/files/FilePreviewPanel.tsx b/apps/web/src/components/files/FilePreviewPanel.tsx
+index 04ca07bd5..239cde6dc 100644
+--- a/apps/web/src/components/files/FilePreviewPanel.tsx
++++ b/apps/web/src/components/files/FilePreviewPanel.tsx
+@@ -1563,6 +1563,7 @@ export default function FilePreviewPanel({
+               enableShortcut={openInShortcutEnabled}
+               openInCwd={absolutePath}
+               openInCwdIsFile={file.isFile}
++              openInLine={revealLine ?? undefined}
+               compact
+               revealFileManager={revealsInFileManager}
+             />
 diff --git a/apps/web/src/components/issue/IssueThreadLinks.tsx b/apps/web/src/components/issue/IssueThreadLinks.tsx
 index e9d54ba19..1683eb6c9 100644
 --- a/apps/web/src/components/issue/IssueThreadLinks.tsx
@@ -775,6 +978,90 @@ index 60c470040..38f8abdf3 100644
    })();
    if (drafts.length === 0) {
      return null;
+diff --git a/apps/web/src/fileContextMenu.ts b/apps/web/src/fileContextMenu.ts
+index 452a6bbd5..3054b2c47 100644
+--- a/apps/web/src/fileContextMenu.ts
++++ b/apps/web/src/fileContextMenu.ts
+@@ -1,3 +1,4 @@
++import { verifyObsidianMarkdown, openObsidianMarkdown } from "./obsidianHost";
+ import {
+   EDITORS,
+   type ContextMenuItem,
+@@ -25,6 +26,7 @@ export type FileContextMenuAction =
+   | "reveal-in-folder"
+   | "open"
+   /** Submenu parent; never the activated id. */
++  | "open-in-obsidian"
+   | "open-with"
+   | `editor:${EditorId}`;
+ 
+@@ -121,6 +123,10 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+     const absolutePath = resolveFileContextMenuAbsolutePath(target);
+     if (absolutePath === null || environmentId === null) return;
+ 
++    if (action === "open-in-obsidian") {
++      await openObsidianMarkdown({ environmentId, path: absolutePath, newTab: false });
++      return;
++    }
+     const reveal = action === "reveal-in-folder";
+     const editor =
+       action === "open" || reveal
+@@ -149,16 +155,36 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+     });
+   };
+ 
++  const buildItems = async (target: FileContextMenuTarget) => {
++    const absolutePath = resolveFileContextMenuAbsolutePath(target);
++    const items = [
++      ...buildFileContextMenuItems({
++        hasAbsolutePath: absolutePath !== null,
++        capabilities,
++        resolve,
++      }),
++    ];
++    if (absolutePath && (await verifyObsidianMarkdown(environmentId, absolutePath))) {
++      const native: ContextMenuItem<FileContextMenuAction> = {
++        id: "open-in-obsidian",
++        label: resolve(msg("Open in {editor}", { editor: "Obsidian" })),
++      };
++      const submenu = items.find((item) => item.id === "open-with");
++      if (submenu) {
++        items[items.indexOf(submenu)] = {
++          ...submenu,
++          children: [...(submenu.children ?? []), native],
++        };
++      } else items.push({ id: "open-with", label: resolve(msg("Open with")), children: [native] });
++    }
++    return items;
++  };
+   const show = async (
+     target: FileContextMenuTarget,
+     position?: { x: number; y: number },
+   ): Promise<void> => {
+     const api = readLocalApi();
+-    const items = buildFileContextMenuItems({
+-      hasAbsolutePath: resolveFileContextMenuAbsolutePath(target) !== null,
+-      capabilities,
+-      resolve,
+-    });
++    const items = await buildItems(target);
+     if (items.length === 0 || api === undefined) return;
+     const clicked = await api.contextMenu.show(items, position);
+     if (clicked === null) return;
+@@ -166,12 +192,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+   };
+ 
+   return {
+-    buildItems: (target: FileContextMenuTarget) =>
+-      buildFileContextMenuItems({
+-        hasAbsolutePath: resolveFileContextMenuAbsolutePath(target) !== null,
+-        capabilities,
+-        resolve,
+-      }),
++    buildItems,
+     capabilities,
+     activate,
+     show,
 diff --git a/apps/web/src/hooks/useHandleNewThread.ts b/apps/web/src/hooks/useHandleNewThread.ts
 index 49e881262..298f5ba3b 100644
 --- a/apps/web/src/hooks/useHandleNewThread.ts
@@ -947,10 +1234,10 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..e6832e190
+index 000000000..c84921780
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,390 @@
+@@ -0,0 +1,522 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -986,6 +1273,8 @@ index 000000000..e6832e190
 +  allowed?: string[];
 +  rootProjects?: string[];
 +  handled?: boolean;
++  paths?: string[];
++  entries?: { path: string; kind: "file" | "directory"; ignored?: boolean | undefined }[];
 +};
 +let generation = "";
 +let environmentId = "";
@@ -994,7 +1283,12 @@ index 000000000..e6832e190
 +let sequence = 0;
 +let composerSequence = 0;
 +let newComposer: (() => Promise<boolean>) | null = null;
-+let composer: { target: string; pathname: string; append: (text: string) => boolean } | null = null;
++let composer: {
++  target: string;
++  pathname: string;
++  append: (text: string) => boolean;
++  owns: (owner: unknown) => boolean;
++} | null = null;
 +const roots = new Set<string>();
 +const queue: Request[] = [];
 +const pending = new Map<
@@ -1025,7 +1319,7 @@ index 000000000..e6832e190
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.2",
++      build: "obsidian-host-v1.3",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
 +      initialize(input: { generation: string; environmentId: string; vaultRoot?: string }) {
@@ -1050,7 +1344,7 @@ index 000000000..e6832e190
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.2",
++          build: "obsidian-host-v1.3",
 +          coverage: SCOPE_COVERAGE,
 +        };
 +      },
@@ -1074,6 +1368,24 @@ index 000000000..e6832e190
 +          return false;
 +        return composer.append(input.text);
 +      },
++      projectRoots() {
++        return projectActions?.roots() ?? [];
++      },
++      async openProject(input: ProjectInput) {
++        if (
++          !initialized ||
++          input.generation !== generation ||
++          input.environmentId !== environmentId ||
++          input.route !== location.pathname ||
++          !projectActions
++        )
++          return false;
++        return projectActions.open(input);
++      },
++      invalidateAliases() {
++        aliasRevision++;
++        for (const listener of aliasListeners) listener();
++      },
 +      drain() {
 +        return queue.splice(0, 8);
 +      },
@@ -1095,12 +1407,17 @@ index 000000000..e6832e190
 +    if (newComposer === create) newComposer = null;
 +  };
 +}
-+export function registerObsidianComposer(identity: string, append: (text: string) => boolean) {
++export function registerObsidianComposer(
++  identity: string,
++  append: (text: string) => boolean,
++  owns: (owner: unknown) => boolean = () => false,
++) {
 +  if (!embedded || !initialized) return;
 +  const registration = {
 +    target: JSON.stringify([generation, identity, ++composerSequence]),
 +    pathname: location.pathname,
 +    append,
++    owns,
 +  };
 +  composer = registration;
 +  return () => {
@@ -1341,6 +1658,108 @@ index 000000000..e6832e190
 +    return false;
 +  }
 +}
++
++export async function verifyObsidianMarkdown(env: string | null, path: string): Promise<boolean> {
++  if (!canOpenObsidianMarkdown(env) || !path.startsWith("/") || !/\.md$/i.test(path)) return false;
++  const route = location.pathname;
++  try {
++    return (
++      (await request({ type: "file-check", environmentId: env, path, route })).handled === true &&
++      route === location.pathname
++    );
++  } catch {
++    return false;
++  }
++}
++
++let aliasRevision = 0;
++const aliasListeners = new Set<() => void>();
++export function subscribeObsidianAliases(listener: () => void) {
++  aliasListeners.add(listener);
++  return () => {
++    aliasListeners.delete(listener);
++  };
++}
++export function obsidianAliasRevision() {
++  return aliasRevision;
++}
++export async function searchObsidianAliases(input: {
++  environmentId: string;
++  cwd: string;
++  query: string;
++  limit: number;
++  entries: readonly { path: string; kind: "file" | "directory"; ignored?: boolean | undefined }[];
++}) {
++  if (!canOpenObsidianMarkdown(input.environmentId)) return input.entries;
++  const route = location.pathname;
++  try {
++    const reply = await request({ type: "aliases", ...input, route });
++    return route === location.pathname && Array.isArray(reply.entries)
++      ? reply.entries
++      : input.entries;
++  } catch {
++    return input.entries;
++  }
++}
++
++type ProjectInput = {
++  generation: string;
++  environmentId: string;
++  path: string;
++  existingId: string | null;
++  route: string;
++};
++let projectActions: {
++  roots: () => readonly unknown[];
++  open: (input: ProjectInput) => Promise<boolean>;
++} | null = null;
++export function registerObsidianProjects(actions: NonNullable<typeof projectActions>) {
++  if (!embedded) return;
++  projectActions = actions;
++  return () => {
++    if (projectActions === actions) projectActions = null;
++  };
++}
++export const OBSIDIAN_REFERENCE_MIME = "application/x-t3-obsidian-reference-v1";
++export function obsidianReferenceDrag(
++  event: { dataTransfer: DataTransfer; preventDefault: () => void },
++  owner: unknown,
++) {
++  if (
++    !embedded ||
++    !initialized ||
++    !composer?.owns(owner) ||
++    composer.pathname !== location.pathname ||
++    !event.dataTransfer.types.includes(OBSIDIAN_REFERENCE_MIME)
++  )
++    return false;
++  event.preventDefault();
++  return true;
++}
++export function dropObsidianReferences(
++  event: { dataTransfer: DataTransfer; preventDefault: () => void; stopPropagation: () => void },
++  owner: unknown,
++  serialize: (path: string) => string,
++) {
++  if (!obsidianReferenceDrag(event, owner) || !composer) return false;
++  event.stopPropagation();
++  const target = composer;
++  const token = event.dataTransfer.getData(OBSIDIAN_REFERENCE_MIME);
++  void request({ type: "references", environmentId, token, route: location.pathname })
++    .then((reply) => {
++      if (
++        composer !== target ||
++        target.pathname !== location.pathname ||
++        !target.owns(owner) ||
++        !Array.isArray(reply.paths) ||
++        !reply.paths.every((path) => typeof path === "string" && path.startsWith("/"))
++      )
++        return;
++      if (reply.paths.length) target.append(reply.paths.map(serialize).join(" ") + " ");
++    })
++    .catch(() => {});
++  return true;
++}
 diff --git a/apps/web/src/routes/_chat.index.tsx b/apps/web/src/routes/_chat.index.tsx
 index 2e6ee5380..d7a8a5a8f 100644
 --- a/apps/web/src/routes/_chat.index.tsx
@@ -1372,27 +1791,86 @@ index 2e6ee5380..d7a8a5a8f 100644
  
    // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- starts a draft thread in the most recent project and navigates to it while still on the index
 diff --git a/apps/web/src/routes/_chat.tsx b/apps/web/src/routes/_chat.tsx
-index c65ed3902..c221c71f7 100644
+index c65ed3902..dbda12fd2 100644
 --- a/apps/web/src/routes/_chat.tsx
 +++ b/apps/web/src/routes/_chat.tsx
-@@ -1,3 +1,12 @@
+@@ -1,3 +1,20 @@
++import { EnvironmentId, ProjectId } from "@t3tools/contracts";
++import { inferProjectTitleFromPath } from "@t3tools/client-runtime/state/projects";
++import { appAtomRegistry } from "../rpc/atomRegistry";
++import { waitForAtomValue } from "../state/waitForAtomValue";
++import { projectEnvironment, environmentProjects } from "../state/projects";
++import { useAtomCommand } from "../state/use-atom-command";
++import { newProjectId } from "../lib/utils";
 +import { useEffect } from "react";
 +import { readProjects } from "../state/entities";
 +import { scopeProjectRef } from "@t3tools/client-runtime/environment";
 +import { useNewThreadHandler } from "../hooks/useHandleNewThread";
 +import {
 +  registerObsidianNewComposer,
++  registerObsidianProjects,
 +  isObsidianRootProject,
 +  isObsidianEmbedded,
 +} from "../obsidianHost";
  import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
  
  import { ThreadRouteView } from "../components/ThreadRouteView";
-@@ -12,9 +21,22 @@ import { useShownThreadRouteTarget } from "../hooks/useShownThreadRouteTarget";
+@@ -12,9 +29,73 @@ import { useShownThreadRouteTarget } from "../hooks/useShownThreadRouteTarget";
  function ChatRouteLayout() {
    // Render both routes here so draft promotion keeps the same ChatView mounted.
    const { shownTarget, modalOpen } = useShownThreadRouteTarget();
 +  const openThread = useNewThreadHandler();
++  const createProject = useAtomCommand(projectEnvironment.create);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- exposes explicit folder actions through the normal project commands while the layout is authenticated
++  useEffect(
++    () =>
++      registerObsidianProjects({
++        roots: () =>
++          readProjects()
++            .filter((p) => p.archivedAt == null)
++            .map((p) => ({
++              id: p.id,
++              environmentId: p.environmentId,
++              workspaceRoot: p.workspaceRoot,
++            })),
++        open: async (input) => {
++          const env = EnvironmentId.make(input.environmentId);
++          let projectId = input.existingId ? ProjectId.make(input.existingId) : null;
++          if (input.route !== location.pathname) return false;
++          if (!projectId) {
++            projectId = newProjectId();
++            const result = await createProject({
++              environmentId: env,
++              input: {
++                projectId,
++                title: inferProjectTitleFromPath(input.path),
++                workspaceRoot: input.path,
++                createWorkspaceRootIfMissing: false,
++                defaultModelSelection: null,
++              },
++            });
++            if (result._tag === "Failure") return false;
++            const ready = await waitForAtomValue({
++              registry: appAtomRegistry,
++              atom: environmentProjects.projectsAtom,
++              predicate: (projects) =>
++                projects.some((p) => p.id === projectId && p.environmentId === env),
++              timeoutMs: 10000,
++            });
++            if (!ready) return false;
++          }
++          if (input.route !== location.pathname) return false;
++          return (
++            (await openThread(scopeProjectRef(env, projectId), {
++              envMode: "local",
++              worktreePath: null,
++              startFromOrigin: false,
++            })) !== null
++          );
++        },
++      }),
++    [openThread, createProject],
++  );
 +  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- exposes the normal new-thread action only during this authenticated layout's lifetime
 +  useEffect(
 +    () =>
@@ -1510,16 +1988,41 @@ index 816ac88b8..95ea3e4e3 100644
  export const projectEnvironment = createProjectEnvironmentAtoms(connectionAtomRuntime, {
    projectAtom: environmentProjects.projectAtom,
  });
+diff --git a/apps/web/src/state/queries.filesystem.test.ts b/apps/web/src/state/queries.filesystem.test.ts
+index 0e604c68f..10ee56c5a 100644
+--- a/apps/web/src/state/queries.filesystem.test.ts
++++ b/apps/web/src/state/queries.filesystem.test.ts
+@@ -22,6 +22,7 @@ vi.mock("react", async (importOriginal) => ({
+   ...(await importOriginal<typeof import("react")>()),
+   useCallback: <A>(callback: A) => callback,
+   useEffect: () => {},
++  useSyncExternalStore: (_subscribe: unknown, read: () => unknown) => read(),
+   useMemo: <A>(factory: () => A) => factory(),
+   useState: <A>(value: A) => [value, vi.fn()],
+ }));
 diff --git a/apps/web/src/state/queries.ts b/apps/web/src/state/queries.ts
-index 62f37a1fe..17e80d1bf 100644
+index 62f37a1fe..533a80cfe 100644
 --- a/apps/web/src/state/queries.ts
 +++ b/apps/web/src/state/queries.ts
-@@ -1,3 +1,4 @@
-+import { isObsidianEmbedded } from "../obsidianHost";
+@@ -1,3 +1,10 @@
++import {
++  searchObsidianAliases,
++  canOpenObsidianMarkdown,
++  subscribeObsidianAliases,
++  obsidianAliasRevision,
++  isObsidianEmbedded,
++} from "../obsidianHost";
  import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
  import { useAtomValue } from "@effect/atom-react";
  import { msg } from "gt-react";
-@@ -41,7 +42,7 @@ import { m, type MessageResolver } from "../i18n/messages";
+@@ -35,13 +42,13 @@ import type {
+ import * as Cause from "effect/Cause";
+ import * as Schema from "effect/Schema";
+ import { AsyncResult, Atom } from "effect/reactivity";
+-import { useEffect, useState } from "react";
++import { useEffect, useState, useSyncExternalStore } from "react";
+ 
+ import { m, type MessageResolver } from "../i18n/messages";
  import { appAtomRegistry } from "../rpc/atomRegistry";
  import { useFilesystemReadAccess } from "./filesystem";
  import { orchestrationEnvironment } from "./orchestration";
@@ -1528,7 +2031,7 @@ index 62f37a1fe..17e80d1bf 100644
  import { isPaginatedBranchesNextPagePending } from "./paginatedBranches";
  import { projectContentSearch, projectEnvironment } from "./projects";
  import { useEnvironmentQuery } from "./query";
-@@ -170,8 +171,14 @@ export function useThreadSearch(
+@@ -170,8 +177,14 @@ export function useThreadSearch(
        for (const release of releases) release();
      };
    }, [shownKey]);
@@ -1544,6 +2047,65 @@ index 62f37a1fe..17e80d1bf 100644
      query: visible.query,
      isPending,
      failed,
+@@ -343,8 +356,57 @@ export function useProjectPathSearch(
+   );
+   const hasTarget = searchTarget !== null;
+ 
++  const aliasRevision = useSyncExternalStore(subscribeObsidianAliases, obsidianAliasRevision);
++  const normalEntries = result.data?.entries ?? EMPTY_PROJECT_ENTRIES;
++  const aliasKey = JSON.stringify([debouncedTarget, limit, aliasRevision]);
++  const [aliasResult, setAliasResult] = useState<{
++    key: string;
++    normal: readonly ProjectEntry[];
++    entries: readonly ProjectEntry[];
++  } | null>(null);
++  const includeAliases =
++    canReadFiles &&
++    hasTarget &&
++    canOpenObsidianMarkdown(debouncedTarget.environmentId) &&
++    debouncedTarget.kind !== "directory" &&
++    !debouncedTarget.imageOnly;
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- merges canonical alias results from the external vault metadata cache
++  useEffect(() => {
++    if (
++      !includeAliases ||
++      !debouncedTarget.environmentId ||
++      !debouncedTarget.cwd ||
++      !debouncedTarget.query
++    )
++      return;
++    let current = true;
++    void searchObsidianAliases({
++      environmentId: debouncedTarget.environmentId,
++      cwd: debouncedTarget.cwd,
++      query: debouncedTarget.query,
++      limit,
++      entries: normalEntries,
++    }).then((entries) => {
++      if (current) setAliasResult({ key: aliasKey, normal: normalEntries, entries });
++    });
++    return () => {
++      current = false;
++    };
++  }, [
++    includeAliases,
++    debouncedTarget.environmentId,
++    debouncedTarget.cwd,
++    debouncedTarget.query,
++    aliasKey,
++    limit,
++    normalEntries,
++  ]);
++
+   return {
+-    entries: result.data?.entries ?? EMPTY_PROJECT_ENTRIES,
++    entries:
++      includeAliases && aliasResult?.key === aliasKey && aliasResult.normal === normalEntries
++        ? aliasResult.entries
++        : normalEntries,
+     error:
+       !hasTarget || fileAccess.isPending
+         ? null
 diff --git a/apps/web/src/state/shell.ts b/apps/web/src/state/shell.ts
 index ef46e4983..7ec2b804e 100644
 --- a/apps/web/src/state/shell.ts
@@ -1734,3 +2296,28 @@ index 6d2ce2a07..a633779de 100644
  const isRunning = (status: string) =>
    status === "preparing" || status === "queued" || status === "starting" || status === "running";
  
+diff --git a/apps/web/src/useObsidianMarkdown.ts b/apps/web/src/useObsidianMarkdown.ts
+new file mode 100644
+index 000000000..bdcdb0ce6
+--- /dev/null
++++ b/apps/web/src/useObsidianMarkdown.ts
+@@ -0,0 +1,19 @@
++import { useEffect, useState } from "react";
++import { verifyObsidianMarkdown } from "./obsidianHost";
++
++export function useObsidianMarkdown(env: string | null, path: string | null) {
++  const [verified, setVerified] = useState<string | null>(null);
++  const key = JSON.stringify([env, path]);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- validates the native file target against the local host filesystem
++  useEffect(() => {
++    let current = true;
++    if (path)
++      void verifyObsidianMarkdown(env, path).then((ok) => {
++        if (current) setVerified(ok ? key : null);
++      });
++    return () => {
++      current = false;
++    };
++  }, [env, path, key]);
++  return verified === key;
++}

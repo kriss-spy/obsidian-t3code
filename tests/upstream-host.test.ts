@@ -9,15 +9,16 @@ import { T3_REVISION } from '../src/host-contract';
 function load(embedded = true) {
   const module = {exports:{} as Record<string, (...args: any[]) => any>};
   const window: any = {};
+  const location = {search:embedded ? "?obsidian-host=1" : "",pathname:"/local/thread"};
   const timers = new Map<number, () => void>();
   let nextTimer = 0;
   const code = transformSync(readAddedPatchSource('apps/web/src/obsidianHost.ts'), {loader:'ts', format:'cjs'}).code;
   vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams,
-    location:{search:embedded ? '?obsidian-host=1' : ''},
+    location,
     setTimeout:(fn:() => void) => { timers.set(++nextTimer, fn); return nextTimer; },
     clearTimeout:(id:number) => timers.delete(id),
   });
-  return {api:window.t3ObsidianHostV1, exports:module.exports, timers};
+  return {api:window.t3ObsidianHostV1, exports:module.exports, timers, location};
 }
 const flush = async () => { for (let i = 0; i < 5; i++) await Promise.resolve(); };
 const snapshot = {projects:[{id:'p', workspaceRoot:'/vault'}], threads:[{id:'t', projectId:'p', worktreePath:null}], archivedThreads:[]};
@@ -124,4 +125,32 @@ test('public composer target rejects old routes, generations and replaced regist
   assert.equal(api.appendContext({generation:'g',target:api.composerTarget(),text:'exact\n空 ``` text'}),true);
   assert.deepEqual(inserted,['exact\n空 ``` text']);
   assert.equal(await api.prepareComposer('/different'),null);
+});
+
+test('native menu checks require a host verdict and decline stale routes and ordinary clients', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const verified=e.verifyObsidianMarkdown('local','/vault/note.md');const [r]=api.drain();
+  assert.equal(r.type,'file-check');api.reply({id:r.id,generation:'g',handled:true});assert.equal(await verified,true);
+  assert.equal(await e.verifyObsidianMarkdown('remote','/vault/note.md'),false);
+  assert.equal(await e.verifyObsidianMarkdown('local','/vault/note.ts'),false);
+  assert.equal(await load(false).exports.verifyObsidianMarkdown('local','/vault/note.md'),false);
+  const next=load();next.api.initialize({generation:'g',environmentId:'local'});
+  const stale=next.exports.verifyObsidianMarkdown('local','/vault/note.md');const [check]=next.api.drain();
+  next.location.pathname='/local/other';next.api.reply({id:check.id,generation:'g',handled:true});assert.equal(await stale,false);
+});
+test('reference drops preserve the intended composer and leave ordinary attachments to T3', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const owner={}, other={}, inserted:string[]=[];let prevented=0,stopped=0;
+  const event={dataTransfer:{types:[e.OBSIDIAN_REFERENCE_MIME],getData:()=> 'token'},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
+  e.registerObsidianComposer('one',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
+  assert.equal(e.dropObsidianReferences(event,other,String),false);
+  assert.equal(e.dropObsidianReferences({...event,dataTransfer:{...event.dataTransfer,types:['Files']}},owner,String),false);
+  assert.equal(prevented,0);
+  assert.equal(e.dropObsidianReferences(event,owner,String),true);
+  const [request]=api.drain();assert.equal(request.type,'references');
+  e.registerObsidianComposer('two',()=>{throw Error('Changed composer');},()=>true);
+  api.reply({id:request.id,generation:'g',paths:['/vault/note.md']});await flush();assert.equal(inserted.length,0);
+  e.registerObsidianComposer('three',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
+  e.dropObsidianReferences(event,owner,(p:string)=>`ref(${p})`);const [next]=api.drain();api.reply({id:next.id,generation:'g',paths:['/vault/空 note.md','/vault/folder']});await flush();
+  assert.deepEqual(inserted,['ref(/vault/空 note.md) ref(/vault/folder) ']);assert.equal(stopped,2);
 });

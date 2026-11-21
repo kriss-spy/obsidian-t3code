@@ -56,6 +56,9 @@ The plugin does not start another backend. It connects to the server you select.
 
 - Resume an in-vault thread, or start a thread in the vault project.
 - Click a Markdown chip normally to keep its preview in T3. Use Ctrl/Cmd-click or its **Open in default app** menu action to open the original in Obsidian.
+- Use **Open in Obsidian** in the file explorer’s **Open with** submenu or the preview’s editor dropdown.
+- Search file names or note aliases from T3. Results retain the canonical file path.
+- Right-click a vault folder and choose **Open folder in T3 Code** to open its exact project. Note and folder reference drops remain under runtime verification.
 - Native notes open in the same tab group as T3 by default. Choose a split explicitly in plugin settings if needed.
 - In an Obsidian editor, run `Add selection to T3` or `Add current note to T3`. Both append explicit context to the composer.
 - Review the composer before sending. The commands preserve existing text and attachments and never submit automatically.

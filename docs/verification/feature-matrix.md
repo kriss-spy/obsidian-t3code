@@ -16,10 +16,14 @@ This matrix tracks features that can break in an isolated Obsidian guest. A visi
 | Terminal | Open PTY, render output, type/paste, resize, selection/copy, Ctrl+C, close/reopen | Executed a fixture command and observed rendered output; full keyboard/clipboard matrix remains open |
 | Browser preview | Create tab, load actual local page, input/click/navigation, back/forward/reload, focus and resize | Loaded/rendered a local page, forwarded a click, and checked back/forward/reload; forms/popups/downloads and broader parity remain open |
 | Diff and Git controls | Open diff, scroll, select, refresh, worktree/project actions, safe external links | Release blocker until exercised with disposable repositories |
-| Files/search | Workspace file preview, search, editor selection, large files, Markdown rendering, links | Basic real file preview checked; alias search is #14 |
+| Files/search | Workspace file preview, search, editor selection, large files, Markdown rendering, links | Basic real file preview checked; alias search and composer insertion passed in the extra-feature gate; large-vault UI latency remains #14 |
 | Context and keyboard | Both note commands and menus, dirty note capture, intended target, attachment preservation, no submission/clipboard changes | Focused and actual checks recorded; native menu matrix remains open |
 | External operations | New windows, links, default-app opening, downloads, clipboard, file dialogs | Verify supported actions and document guest restrictions |
 | Multiple Obsidian windows | One workspace per owner window, focus, commands, cleanup | Unit race checks pass; complete GUI comparison remains open |
 | Diagnostics/failure | Server loss, unsupported client, renderer crash, reconnect, credential-free persistence | Partial actual checks pass; remaining failure journeys stay open |
 
 Do not mark #10 complete or claim full parity while required checks are missing. Record a failure in both reference and embedded clients as a shared deployment limitation, not a passing embedded workflow.
+
+## Extra-feature gate
+
+See [runtime assertions and limits](extra-features.md). Both native-open menus, external line 2, alias edits/renames, exact folder projects, composer reference insertion, and normal file drops passed. Reference drops used DOM events, so physical cross-webview dragging remains unverified. The normal plugin bundle retained strict scope and guest isolation. These checks do not close #10 or establish full parity.
