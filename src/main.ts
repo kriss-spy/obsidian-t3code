@@ -8,7 +8,7 @@ export default class T3Plugin extends Plugin {
   settings: Settings = { ...defaults };
   diagnostic = 'Connection has not been checked.';
   vaultRoot = '';
-  private opening?: Promise<T3View>;
+  private opening = new WeakMap<Document, Promise<T3View>>();
   async onload() {
     const adapter = this.app.vault.adapter;
     if (!(adapter instanceof FileSystemAdapter)) throw new Error('T3 Code requires a local desktop vault.');
@@ -30,12 +30,14 @@ export default class T3Plugin extends Plugin {
       target: savedTarget(this.settings.target, this.settings.origin) });
   }
   openWorkspace(): Promise<T3View> {
-    if (this.opening) return this.opening;
-    this.opening = this.openOnce().finally(() => { this.opening = undefined; });
-    return this.opening;
-  }
-  private async openOnce() {
     const owner = this.app.workspace.activeLeaf?.view.containerEl.ownerDocument ?? document;
+    const pending = this.opening.get(owner);
+    if (pending) return pending;
+    const opening = this.openOnce(owner).finally(() => { this.opening.delete(owner); });
+    this.opening.set(owner, opening);
+    return opening;
+  }
+  private async openOnce(owner: Document) {
     const existing = this.app.workspace.getLeavesOfType(VIEW_TYPE).find(leaf => leaf.view.containerEl.ownerDocument === owner);
     const leaf = existing ?? this.app.workspace.getLeaf('tab');
     if (!existing) await leaf.setViewState({ type: VIEW_TYPE, active: true });

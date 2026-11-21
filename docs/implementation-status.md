@@ -45,7 +45,9 @@ Do not enable the dormant guest path by changing `supported` to true. That would
 
 ## Verification evidence
 
-`npm test`: six passing tests cover origin policy, descriptor validation, partition identity, safe serialized targets, canonical scope, and platform directory boundaries. Filesystem fixtures include spaces, Unicode, `#`, inside/outside symlinks, absent paths, and an outside worktree. Windows path tests only verify path rules. They do not establish Windows runtime support.
+`npm test`: eight passing tests cover origin policy, descriptor validation, partition identity, safe serialized targets, canonical scope, and platform directory boundaries. Filesystem fixtures include spaces, Unicode, `#`, inside/outside symlinks, absent paths, and an outside worktree. Windows path tests only verify path rules. They do not establish Windows runtime support.
+
+The two workspace regression tests exercise the production plugin with a mocked Obsidian runtime. They cover overlapping requests from two windows, same-window deduplication, reverse completion order, and recovery after failure. Both fail against the original plugin-wide pending promise. Both pass after pending operations are keyed by the captured owner document. This follow-up did not rerun Obsidian GUI checks.
 
 `npm run build`: TypeScript checking and production CommonJS bundling pass.
 
