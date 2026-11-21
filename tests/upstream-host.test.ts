@@ -141,7 +141,7 @@ test('native menu checks require a host verdict and decline stale routes and ord
 test('reference drops preserve the intended composer and leave ordinary attachments to T3', async () => {
   const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
   const owner={}, other={}, inserted:string[]=[];let prevented=0,stopped=0;
-  const event={dataTransfer:{types:[e.OBSIDIAN_REFERENCE_MIME],getData:()=> 'token'},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
+  const event={dataTransfer:{types:['application/x-t3-obsidian-reference-v1'],getData:()=> 'token'},preventDefault:()=>prevented++,stopPropagation:()=>stopped++};
   e.registerObsidianComposer('one',(text:string)=>{inserted.push(text);return true;},(candidate:unknown)=>candidate===owner);
   assert.equal(e.dropObsidianReferences(event,other,String),false);
   assert.equal(e.dropObsidianReferences({...event,dataTransfer:{...event.dataTransfer,types:['Files']}},owner,String),false);

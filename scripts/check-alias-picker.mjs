@@ -18,7 +18,10 @@ try{
  await wait(`[...document.querySelectorAll('[role="option"]')].some(e=>e.textContent.includes(${JSON.stringify(expected)}))`);
  const results=await guest(`[...document.querySelectorAll('[role="option"]')].map(e=>e.textContent)`);
  assert(results[0].includes(expected),'Exact alias must precede competing path results');
- const evidence={query:'蔚蓝档案',expectedPath:expected,firstResult:results[0],resultCount:results.length,passed:true};
+ const selection=await guest(`(()=>{const first=document.querySelector('[role="option"]');const input=document.querySelector('[data-testid="project-file-picker"] input');return {firstResultActive:first?.hasAttribute('data-active'),firstResultHighlighted:first?.hasAttribute('data-highlighted'),activeDescendantMatchesFirst:input?.getAttribute('aria-activedescendant')===first?.id}})()`);
+ assert(selection.firstResultActive,'First result must have the visible active styling');
+ assert(selection.firstResultHighlighted && selection.activeDescendantMatchesFirst,'Keyboard highlight must agree with the first result');
+ const evidence={...selection,query:'蔚蓝档案',expectedPath:expected,firstResult:results[0],resultCount:results.length,passed:true};
  await writeFile(output,JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify(evidence));
  await guest(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
 }finally{c.close();}

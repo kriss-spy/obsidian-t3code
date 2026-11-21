@@ -863,6 +863,122 @@ index 04ca07bd5..239cde6dc 100644
                compact
                revealFileManager={revealsInFileManager}
              />
+diff --git a/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx b/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx
+new file mode 100644
+index 000000000..d5db2bc1e
+--- /dev/null
++++ b/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx
+@@ -0,0 +1,90 @@
++import { expect, it, vi } from "vite-plus/test";
++import { page, userEvent } from "vite-plus/test/browser";
++import { render } from "../../../test/render";
++
++const state = vi.hoisted(() => ({
++  entries: [{ name: "filename.md", path: "filename.md", kind: "file" }],
++  openFile: vi.fn(),
++}));
++vi.mock("@effect/atom-react", async (importOriginal) => ({
++  ...(await importOriginal<typeof import("@effect/atom-react")>()),
++  useAtomValue: () => [],
++}));
++vi.mock("~/state/server", () => ({ primaryServerKeybindingsAtom: {} }));
++vi.mock("~/hooks/useActiveProjectTarget", () => ({
++  useActiveProjectTarget: () => ({
++    environmentId: "local",
++    cwd: "/vault",
++    projectName: "vault",
++    threadRef: {},
++  }),
++}));
++vi.mock("~/hooks/useTheme", () => ({ useTheme: () => ({ resolvedTheme: "dark" }) }));
++vi.mock("~/rightPanelStore", () => ({
++  useRightPanelStore: { getState: () => ({ openFile: state.openFile }) },
++}));
++vi.mock("../chat/PierreEntryIcon", () => ({ PierreEntryIcon: () => null }));
++vi.mock("./projectFilesQueryState", () => ({
++  useProjectFilePickerQuery: () => ({
++    entries: state.entries,
++    matchedQuery: "蔚蓝档案",
++    error: null,
++    isPending: false,
++  }),
++}));
++import { ProjectFilePicker } from "./ProjectFilePicker";
++
++it("selects the first alias result after filename results arrive", async () => {
++  state.entries = Array.from({ length: 200 }, (_, i) => ({
++    name: `filename${i}.md`,
++    path: `filename${i}.md`,
++    kind: "file",
++  }));
++  state.openFile.mockClear();
++  await using screen = await render(<ProjectFilePicker setOpen={() => {}} />);
++  await page.getByRole("option", { name: /filename3.md/ }).hover();
++  await page.getByRole("combobox").fill("蔚蓝档案");
++  await expect
++    .element(page.getByRole("option", { name: /filename0.md/ }))
++    .toHaveAttribute("data-highlighted");
++  state.entries = [
++    { name: "Blue Archive.md", path: "Blue Archive.md", kind: "file" },
++    ...state.entries.slice(0, 199),
++  ];
++  await screen.rerender(<ProjectFilePicker setOpen={() => {}} />);
++  await expect
++    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
++    .toHaveAttribute("data-highlighted");
++  await expect
++    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
++    .toHaveAttribute("data-active");
++  await userEvent.keyboard("{Enter}");
++  expect(state.openFile).toHaveBeenCalledWith({}, "Blue Archive.md");
++});
++
++it("opens a keyboard choice after alias results arrive and resets on a new query", async () => {
++  state.entries = [
++    { name: "Blue Archive.md", path: "Blue Archive.md", kind: "file" },
++    ...Array.from({ length: 3 }, (_, i) => ({
++      name: `filename${i}.md`,
++      path: `filename${i}.md`,
++      kind: "file",
++    })),
++  ];
++  state.openFile.mockClear();
++  await using _screen = await render(<ProjectFilePicker setOpen={() => {}} />);
++  await page.getByRole("combobox").fill("蔚蓝档案");
++  await expect
++    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
++    .toHaveAttribute("data-active");
++  await userEvent.keyboard("{ArrowDown}");
++  await expect
++    .element(page.getByRole("option", { name: /filename0.md/ }))
++    .toHaveAttribute("data-active");
++  await userEvent.keyboard("{Enter}");
++  expect(state.openFile).toHaveBeenCalledWith({}, "filename0.md");
++  await page.getByRole("combobox").fill("another query");
++  await expect
++    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
++    .toHaveAttribute("data-active");
++});
+diff --git a/apps/web/src/components/files/ProjectFilePicker.tsx b/apps/web/src/components/files/ProjectFilePicker.tsx
+index 8e3f67ff0..7d25a278b 100644
+--- a/apps/web/src/components/files/ProjectFilePicker.tsx
++++ b/apps/web/src/components/files/ProjectFilePicker.tsx
+@@ -132,13 +132,11 @@ function OpenProjectFilePicker(props: ProjectFilePickerProps & { target: ActiveP
+       footerActionLabel={gt("Open file")}
+       inputProps={{ placeholder: gt("Search files…") }}
+       mode="none"
++      items={items.map((item) => item.value)}
+       onItemHighlighted={(value) => {
+         setHighlightedItemValue(typeof value === "string" ? value : null);
+       }}
+-      onValueChange={(value) => {
+-        setHighlightedItemValue(null);
+-        setQuery(value);
+-      }}
++      onValueChange={setQuery}
+       panelSize="tall-list"
+       testId="project-file-picker"
+       value={query}
 diff --git a/apps/web/src/components/issue/IssueThreadLinks.tsx b/apps/web/src/components/issue/IssueThreadLinks.tsx
 index e9d54ba19..1683eb6c9 100644
 --- a/apps/web/src/components/issue/IssueThreadLinks.tsx
@@ -1267,7 +1383,7 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..7f73dfe1f
+index 000000000..e75db6de6
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
 @@ -0,0 +1,553 @@
@@ -1784,7 +1900,7 @@ index 000000000..7f73dfe1f
 +    if (projectActions === actions) projectActions = null;
 +  };
 +}
-+export const OBSIDIAN_REFERENCE_MIME = "application/x-t3-obsidian-reference-v1";
++const OBSIDIAN_REFERENCE_MIME = "application/x-t3-obsidian-reference-v1";
 +export function obsidianReferenceDrag(
 +  event: { dataTransfer: DataTransfer; preventDefault: () => void },
 +  owner: unknown,

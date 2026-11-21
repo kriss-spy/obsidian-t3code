@@ -36,3 +36,15 @@ node scripts/check-explorer-drag.mjs <CDP> <disposable-vault> <note-path> <folde
 ```
 
 Both runtime scripts refuse personal vaults. Tests never edit CloudNotes notes or submit prompts. Installation preserves settings, partition identity, the server address, and its data directory.
+
+## Picker selection repair
+
+The picker’s keyboard highlight moved to the first alias match, but the separately stored visible highlight kept the old filename result. Clearing that state on input changes could also erase the default highlight. The picker now supplies explicit item values to the autocomplete and lets its highlight callback manage that state.
+
+The browser regression checks both `data-highlighted` and `data-active`, then checks which file Enter opens. A second case checks keyboard navigation after alias results arrive and reset on a new query. The first regression failed on the visible highlight before the fix.
+
+The compiled client passed the [disposable Obsidian picker check](extra-feature-picker-selection.json). It returned 200 results and selected Blue Archive first for 蔚蓝档案. The visible highlight, keyboard highlight, and input’s active descendant agree. The matching development.5 package uses manifest `fbc3a8e780d631c3ae9579d3db2f1dc826b2c78cc23d44243cb3b4d4a49d07b1`. The host protocol remains v1.4.
+
+`npm test` passes all 35 plugin tests. `npm run build` and the web production build pass. Upstream `vp run check:changed HEAD` passes format, lint, both unused-code checks, GraphQL, typecheck, 567 tests across 42 files, and the React compiler check. The explicit HEAD comparison uses the pinned upstream revision because this isolated checkout has no merge base with origin/main.
+
+This repair was verified in the disposable vault. It was not installed into CloudNotes during this run.
