@@ -29,6 +29,7 @@ test('host scope uses canonical identities and never widens an empty result', ()
 test('host rejects malformed, oversized and duplicate requests', () => {
   const base = {type:'file', id:'x', generation:'g', environmentId:'local', path:'/a.md', newTab:false};
   assert.equal(parseHostRequest(base, 'g').type, 'file');
+  assert.equal(parseHostRequest({...base, path:'/vault/a\\0.md'}, 'g').type, 'file');
   for (const change of [{line:0}, {column:-1}, {path:'a\0.md'}, {newTab:1}, {environmentId:''}, {id:null}]) {
     assert.throws(() => parseHostRequest({...base, ...change}, 'g'));
   }
