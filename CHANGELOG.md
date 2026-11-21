@@ -9,6 +9,7 @@
 - Keep excess scope requests pending until capacity becomes available.
 - Preserve workspace tabs and discard superseded font styles.
 - Reset view routes when changing or resetting connections.
+- Label the native editor action “Obsidian” and add a gem icon in both file menus.
 - Add an MIT license, compatibility mapping, candidate metadata, and package checksums.
 
 Stable publication remains blocked by `docs/release-readiness.md`.

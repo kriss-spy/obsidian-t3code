@@ -26,4 +26,6 @@ Run `npm ci`, `npm test`, and `npm run build`. The build produces `main.js`. Cop
 
 Run `node scripts/package-development.mjs /absolute/patched/T3/checkout` after building and verifying the exact client. It creates a private development ZIP in `dist/`. See [implementation status and evidence](docs/implementation-status.md).
 
-For a named candidate, append `rc.1`. The archive includes file checksums, source/client metadata, the MIT license, and the upstream license/notices. Run its `scripts/verify-candidate.mjs` against the extracted directory before installation.
+For a named candidate, append `rc.2`. The archive includes file checksums, source/client metadata, the MIT license, and the upstream license/notices. Run its `scripts/verify-candidate.mjs` against the extracted directory before installation.
+
+See the [real-user test checklist](docs/user-test-checklist.md) for the next manual pass.

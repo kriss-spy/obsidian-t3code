@@ -1,0 +1,16 @@
+{
+  "label": "Obsidian",
+  "hasIcon": true,
+  "iconWidth": 16,
+  "iconHiddenFromScreenReader": "true",
+  "iconColor": "oklab(0.97 0 0)",
+  "oldLabelPresent": false,
+  "menuLabels": [
+    "Obsidian",
+    "VS CodeCtrl+O",
+    "Zed",
+    "Files"
+  ],
+  "nativeOpen": true,
+  "checkedAt": "2026-11-21T15:33:01.124Z"
+}

@@ -2,7 +2,7 @@
 
 Date: 2026-11-21. Decision: **do not publish a stable release yet**.
 
-The Linux candidate is reviewable and installable. Required reference comparisons remain incomplete. The candidate archive is `dist/obsidian-t3code-0.1.0-rc.1-linux.zip`. Its metadata explicitly blocks stable publication. No release, tag, PR, or merge was created by this review.
+The Linux candidate is reviewable and installable. The [rc.2 menu update](verification/obsidian-menu.md) adds the shorter Obsidian label and gem icon. Use the [manual checklist](user-test-checklist.md) for the next user pass. Required reference comparisons remain incomplete. The candidate archive is `dist/obsidian-t3code-0.1.0-rc.2-linux.zip`. Its metadata explicitly blocks stable publication. No release, tag, PR, or merge was created by this review.
 
 ## Reviewed scope
 
@@ -30,13 +30,13 @@ See [candidate evidence](verification/stable-candidate-checks.json), [lifecycle 
 
 - All 39 plugin tests and the TypeScript/production build pass.
 - The exact patch applies to a clean checkout of the pinned revision.
-- Upstream changed-file checks pass. They cover format, lint, both unused-code checks, GraphQL, affected-package types, adjacent tests, and React compiler checks. The adjacent suite has 659 passing tests across 43 files. Full repository suites were not run.
+- Upstream format, lint, both unused-code checks, GraphQL, affected-package types, and React compiler checks pass. The rc.2 adjacent run passed 667 tests and timed out on two browser clicks across 45 files. The errors occurred in the sidebar shift guard and scheduled-task deletion tests. Both failed files subsequently passed in isolation: 16 tests. The original timeouts remain recorded; this is not a passing full-run result. Full repository suites were not run.
 - The patched web production build passes. It reports existing large-chunk warnings.
 - The normal production plugin, without a test admission override, passes immediate lifecycle, strict scope, native Markdown chip, reconnect, duplicate-Open, and 200-result alias-picker checks.
 - Guest sandboxing, context isolation, and web security remain enabled. Guest Node integration remains disabled. Excluded-content observations remain zero in the scope gate.
 - Tests use a disposable vault/profile and isolated server data on 39176. CloudNotes, its server/data on 39173, and normal T3 on 3773 were not modified.
 
-The approved client remains contract `obsidian-host-v1.4` at upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. The new manifest SHA-256 is `4b62ec4b552cdf61540eaba740ee29c7c7327f0a3542737ebe53eed3b43ac8d8`, covering the entry document and 21 JavaScript assets. It supersedes the development.5 client. Rebuilding a client requires renewed runtime admission checks.
+The approved client remains contract `obsidian-host-v1.4` at upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. The new manifest SHA-256 is `abc3392c98a2f6c9236b0595865ecb255bf6350a36f2030fe5588262f4fc6520`, covering the entry document and 22 JavaScript assets. It supersedes the development.5 client. Rebuilding a client requires renewed runtime admission checks.
 
 ## Gates still blocking stable publication
 

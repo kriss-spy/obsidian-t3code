@@ -7,7 +7,7 @@ const [endpoint,vault,output,startRoute]=process.argv.slice(2);
 if(!vault || !path.basename(path.dirname(vault)).startsWith('obsidian-t3-gate-') || !output)throw Error('Supply CDP, a disposable fixture vault, and an evidence path.');
 const c=await connectDevelopmentVault(endpoint,vault);
 const inspect=`({route:location.pathname,text:document.querySelector('[data-testid="composer-editor"]')?.innerText,messages:document.querySelectorAll('[data-message-id]').length})`;
-const state=()=>c.evaluate(`(async()=>{const v=app.workspace.getLeavesOfType('t3-code-workspace')[0]?.view;const g=v?.contentEl.querySelector('webview');return g?await g.executeJavaScript(${JSON.stringify(inspect)}):null})()`);
+const state=()=>c.evaluate(`(async()=>{const v=app.workspace.getLeavesOfType('t3-code-workspace')[0]?.view;const g=v?.contentEl.querySelector('webview:not(.t3-code-pending)');return g?await g.executeJavaScript(${JSON.stringify(inspect)}):null})()`);
 async function restored(route,text) {
   for(let i=0;i<120;i++) {
     const value=await state();

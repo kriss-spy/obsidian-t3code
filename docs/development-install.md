@@ -4,7 +4,7 @@ This build runs the real T3 web UI inside desktop Obsidian. It supports Linux an
 
 It requires a patched T3 0.1.11 server and the exact client bundled here. Your unmodified T3 installation stays unsupported. Rebuilding the plugin alone does not install the required T3 hooks.
 
-The current archive is `obsidian-t3code-0.1.0-rc.1-linux.zip`. It is a testing candidate, not an approved stable release. Check its companion `.sha256`, extract it, and run `node scripts/verify-candidate.mjs /absolute/extracted/candidate`. See [remaining release gates](release-readiness.md).
+The current archive is `obsidian-t3code-0.1.0-rc.2-linux.zip`. It is a testing candidate, not an approved stable release. Check its companion `.sha256`, extract it, and run `node scripts/verify-candidate.mjs /absolute/extracted/candidate`. See [remaining release gates](release-readiness.md).
 
 ## Prepare T3
 

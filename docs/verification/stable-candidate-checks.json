@@ -1,14 +1,14 @@
 {
-  "checkedAt": "2026-11-21T15:17:42.167Z",
+  "checkedAt": "2026-11-21T15:31:52.031Z",
   "status": "blocked-for-stable-publication",
   "platform": "Linux",
   "obsidian": "1.15.1",
   "reviewBase": "d4bc59f442af5e8d19858200d098c6a68450651e",
   "upstreamRevision": "59651c1761f6c63e9b6056839067066968e6a406",
   "hostContract": "obsidian-host-v1.4",
-  "clientManifestSha256": "4b62ec4b552cdf61540eaba740ee29c7c7327f0a3542737ebe53eed3b43ac8d8",
-  "pluginSha256": "b00c8cba9a41e4345712bf7492609f135a9c3c0cd7b98eba5c2336a879c1fbf5",
-  "patchSha256": "daf91b01b97eed13163f307105a8ef71880bd86cba15ab23061ee7498210695c",
+  "clientManifestSha256": "abc3392c98a2f6c9236b0595865ecb255bf6350a36f2030fe5588262f4fc6520",
+  "pluginSha256": "e04aa895d8f2a254e26316099c6b1a92dd71573b487ffd59998dd36afbb745e0",
+  "patchSha256": "e23f4a28740ad7bd6c9ac88630768d459c4ab78679730a3a2567630ec3a25c41",
   "checks": {
     "cleanNpmCi": true,
     "pluginTests": {
@@ -23,9 +23,20 @@
       "knipPasses": 2,
       "graphql": true,
       "typecheckPackages": 4,
-      "testFiles": 43,
-      "testsPassed": 659,
-      "reactCompilerFiles": 37
+      "testFiles": 45,
+      "testsPassed": 667,
+      "testsFailed": 2,
+      "failures": [
+        "Sidebar.shiftGuard: locator.click timeout",
+        "ScheduledTasksSettings: locator.click timeout"
+      ],
+      "reactCompilerFiles": 38,
+      "isolatedRecheck": {
+        "testFiles": 2,
+        "testsPassed": 16,
+        "testsFailed": 0,
+        "note": "The original broad-run browser click timeouts remain recorded."
+      }
     },
     "upstreamWebBuild": true,
     "upstreamServerBundleBuild": true,
@@ -48,7 +59,7 @@
       "lifecycle": "stable-candidate-lifecycle.json",
       "scope": "stable-candidate-scope.json",
       "aliasPicker": "stable-candidate-picker.json",
-      "settings": "stable-candidate-settings.json"
+      "settings": "stable-candidate-settings.json (unchanged settings code; rc.1 evidence)"
     },
     "development6PackagePreflight": {
       "extract": true,
@@ -58,6 +69,10 @@
       "exactProductionPlugin": true,
       "noSourceMaps": true,
       "files": 1466
+    },
+    "menu": {
+      "evidence": "obsidian-menu.json",
+      "nativeOpen": true
     }
   },
   "notRun": [
@@ -67,5 +82,6 @@
     "Cross-platform runtime checks",
     "Final clean-machine server preparation and pairing rehearsal"
   ],
-  "remainingGates": "../release-readiness.md"
+  "remainingGates": "../release-readiness.md",
+  "candidate": "rc.2"
 }

@@ -626,7 +626,7 @@ index 8e91e1ef7..6e57dc3df 100644
      previous.copyMarkdown === next.copyMarkdown &&
      previous.theme === next.theme &&
 diff --git a/apps/web/src/components/chat/OpenInPicker.tsx b/apps/web/src/components/chat/OpenInPicker.tsx
-index 711f1e4cb..b1da6c0b5 100644
+index 711f1e4cb..51e1e1ffe 100644
 --- a/apps/web/src/components/chat/OpenInPicker.tsx
 +++ b/apps/web/src/components/chat/OpenInPicker.tsx
 @@ -1,3 +1,5 @@
@@ -635,7 +635,21 @@ index 711f1e4cb..b1da6c0b5 100644
  import { ThreadDetailsControl } from "./ThreadDetailsControl";
  import {
    AuthOrchestrationOperateScope,
-@@ -219,6 +221,7 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -21,7 +23,12 @@ import {
+   useRemoteOpenState,
+ } from "../../remoteOpen";
+ import { useEnvironment } from "../../state/environments";
+-import { ChevronDownIcon, FolderClosedIcon, SquareArrowOutUpRightIcon } from "lucide-react";
++import {
++  ChevronDownIcon,
++  FolderClosedIcon,
++  GemIcon,
++  SquareArrowOutUpRightIcon,
++} from "lucide-react";
+ 
+ import { Group, GroupSeparator } from "../ui/group";
+ import {
+@@ -219,6 +226,7 @@ export const OpenInPicker = memo(function OpenInPicker({
    availableEditors,
    openInCwd,
    openInCwdIsFile = false,
@@ -643,7 +657,7 @@ index 711f1e4cb..b1da6c0b5 100644
    presentation = "toolbar",
    compact = false,
    enableShortcut = true,
-@@ -230,12 +233,14 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -230,12 +238,14 @@ export const OpenInPicker = memo(function OpenInPicker({
    availableEditors: ReadonlyArray<EditorId>;
    openInCwd: string | null;
    openInCwdIsFile?: boolean;
@@ -658,7 +672,7 @@ index 711f1e4cb..b1da6c0b5 100644
    const gt = useGT();
    const messages = useMessages();
    const isPanel = displayMode === "panel";
-@@ -315,6 +320,20 @@ export const OpenInPicker = memo(function OpenInPicker({
+@@ -315,6 +325,23 @@ export const OpenInPicker = memo(function OpenInPicker({
  
    const editorItems = (
      <>
@@ -673,7 +687,10 @@ index 711f1e4cb..b1da6c0b5 100644
 +            })
 +          }
 +        >
-+          <MenuItemLabel>{gt("Open in {editor}", { editor: "Obsidian" })}</MenuItemLabel>
++          <GemIcon aria-hidden="true" className={getOpenInIconClass("brand")} />
++          <MenuItemLabel>
++            <T>Obsidian</T>
++          </MenuItemLabel>
 +        </MenuItem>
 +      ) : null}
        {unavailableReason !== null ? (
@@ -1191,8 +1208,23 @@ index 3c64aa0f6..9d2942bc5 100644
    removeItem: (name) => composerDebouncedStorage.removeItem(name),
  };
  
+diff --git a/apps/web/src/contextMenuFallback.ts b/apps/web/src/contextMenuFallback.ts
+index f4abe911a..7f6b4cee7 100644
+--- a/apps/web/src/contextMenuFallback.ts
++++ b/apps/web/src/contextMenuFallback.ts
+@@ -6,6 +6,10 @@ import { m } from "./i18n/messages";
+ const SVG_NS = "http://www.w3.org/2000/svg";
+ 
+ const ICON_PATHS: Record<string, ReadonlyArray<{ tag: string; attrs: Record<string, string> }>> = {
++  gem: [
++    { tag: "path", attrs: { d: "M6 3h12l4 6-10 13L2 9Z" } },
++    { tag: "path", attrs: { d: "M11 3 8 9l4 13 4-13-3-6M2 9h20" } },
++  ],
+   archive: [
+     { tag: "rect", attrs: { width: "20", height: "5", x: "2", y: "3", rx: "1" } },
+     { tag: "path", attrs: { d: "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8" } },
 diff --git a/apps/web/src/fileContextMenu.ts b/apps/web/src/fileContextMenu.ts
-index 452a6bbd5..3054b2c47 100644
+index 452a6bbd5..553eeb01c 100644
 --- a/apps/web/src/fileContextMenu.ts
 +++ b/apps/web/src/fileContextMenu.ts
 @@ -1,3 +1,4 @@
@@ -1219,7 +1251,7 @@ index 452a6bbd5..3054b2c47 100644
      const reveal = action === "reveal-in-folder";
      const editor =
        action === "open" || reveal
-@@ -149,16 +155,36 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+@@ -149,16 +155,37 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
      });
    };
  
@@ -1235,7 +1267,8 @@ index 452a6bbd5..3054b2c47 100644
 +    if (absolutePath && (await verifyObsidianMarkdown(environmentId, absolutePath))) {
 +      const native: ContextMenuItem<FileContextMenuAction> = {
 +        id: "open-in-obsidian",
-+        label: resolve(msg("Open in {editor}", { editor: "Obsidian" })),
++        label: resolve(msg("Obsidian")),
++        icon: "gem",
 +      };
 +      const submenu = items.find((item) => item.id === "open-with");
 +      if (submenu) {
@@ -1261,7 +1294,7 @@ index 452a6bbd5..3054b2c47 100644
      if (items.length === 0 || api === undefined) return;
      const clicked = await api.contextMenu.show(items, position);
      if (clicked === null) return;
-@@ -166,12 +192,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
+@@ -166,12 +193,7 @@ export function useFileContextMenu(environmentId: EnvironmentId | null) {
    };
  
    return {
