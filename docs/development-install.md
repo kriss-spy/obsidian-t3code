@@ -4,6 +4,8 @@ This build runs the real T3 web UI inside desktop Obsidian. It supports Linux an
 
 It requires a patched T3 0.1.11 server and the exact client bundled here. Your unmodified T3 installation stays unsupported. Rebuilding the plugin alone does not install the required T3 hooks.
 
+The current archive is `obsidian-t3code-0.1.0-rc.3-linux.zip`. It is a testing candidate, not an approved stable release. Check its companion `.sha256`, extract it, and run `node scripts/verify-candidate.mjs /absolute/extracted/candidate`. See [remaining release gates](release-readiness.md).
+
 ## Prepare T3
 
 The bundle contains `plugin/t3-code`, `t3-web`, the upstream patch, and preparation scripts. Extract the ZIP before continuing.
@@ -52,10 +54,17 @@ Paste the token into T3's pairing form in Obsidian. Do not put it in plugin sett
 
 The plugin does not start another backend. It connects to the server you select. Other T3 clients keep their normal unfiltered UI.
 
+## Update an existing trial
+
+Copy the new bundle’s `main.js`, `manifest.json`, and `styles.css` into the vault’s `.obsidian/plugins/t3-code/` folder. Preserve `data.json`. Copy the contents of `t3-web/` into the patched checkout’s `apps/web/dist/`. Retain older hashed assets while other tabs remain open. Reload the plugin after both sides match. Keep the server data directory and pairing partition intact.
+
 ## Try the note workflow
 
 - Resume an in-vault thread, or start a thread in the vault project.
 - Click a Markdown chip normally to keep its preview in T3. Use Ctrl/Cmd-click or its **Open in default app** menu action to open the original in Obsidian.
+- Use **Obsidian** in the file explorer’s **Open with** submenu or the preview’s editor dropdown.
+- Search file names or note aliases from T3. Results retain the canonical file path.
+- Right-click a vault folder and choose **Open folder in T3 Code** to open its exact project. Note and folder reference drops remain under runtime verification.
 - Native notes open in the same tab group as T3 by default. Choose a split explicitly in plugin settings if needed.
 - In an Obsidian editor, run `Add selection to T3` or `Add current note to T3`. Both append explicit context to the composer.
 - Review the composer before sending. The commands preserve existing text and attachments and never submit automatically.
@@ -64,6 +73,8 @@ The plugin does not start another backend. It connects to the server you select.
 Only threads with a canonical registered worktree inside the vault appear. Without a worktree, their project root must be inside. Remote and uncertain identities stay excluded. An excluded saved route displays an explanation and a normal T3 action.
 
 Recommended: [the official Obsidian agent skills](https://github.com/obsidianmd/obsidian-skills#installation) teach Markdown, Bases, Canvas, and Obsidian tools. Install them through your normal agent setup. This plugin does not change agent instructions.
+
+Start with the [recommended T3 settings](recommended-settings.md), including math rendering, queued follow-ups, quieter tool calls, and shortcut checks.
 
 See the [recommended layout](layout.md). **Focus T3 Code** closes Obsidian's left sidebar on request. T3 controls theme colors; optional Obsidian matching changes only the font.
 

@@ -1,0 +1,22 @@
+{
+  "platform": "Linux",
+  "checks": {
+    "realGuestIsolation": {
+      "sandbox": true,
+      "contextIsolation": true,
+      "webSecurity": true,
+      "nodeIntegration": false
+    },
+    "realVaultChip": true,
+    "realExternalChipLine2": true,
+    "projectChoicesExcludeSibling": true,
+    "searchPositiveIncluded": true,
+    "searchNegativeExcluded": true,
+    "excludedRestoredRoute": true,
+    "excludedReconnect": true,
+    "excludedDomObservations": 0,
+    "concurrentOpenOneView": true
+  },
+  "checkedAt": "2026-11-21T12:32:43.419Z",
+  "manifestSha256": "a6fef69ca10bebd6bfb23c13b5beb6fe8ac7d28a75d3742b3c4398c4fd19e546"
+}

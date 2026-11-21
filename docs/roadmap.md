@@ -4,9 +4,11 @@ Track delivery in [release issue #1](https://github.com/kriss-spy/obsidian-t3cod
 
 The [spec](spec.md) defines behavior and release gates. GitHub issues track implementation progress. A Linux development build now hosts the scoped real T3 UI, native Markdown navigation, explicit note context, restoration, and appearance. Full v0.1.0 release verification remains incomplete. See [implementation status](implementation-status.md) for checks and remaining work.
 
-## Tasks
+## Delivered implementation
 
-- [#2: Host the full T3 web UI in a desktop Obsidian view](https://github.com/kriss-spy/obsidian-t3code/issues/2). Start here.
+The candidate implements the tasks below. Their remaining acceptance checks are tracked together in [#10](https://github.com/kriss-spy/obsidian-t3code/issues/10), rather than as unstarted feature work. Closure of an implementation issue does not establish complete runtime parity.
+
+- [#2: Host the full T3 web UI in a desktop Obsidian view](https://github.com/kriss-spy/obsidian-t3code/issues/2).
 - [#3: Connect and pair with the existing T3 server](https://github.com/kriss-spy/obsidian-t3code/issues/3). Depends on #2.
 - [#4: Implement versioned T3 hooks for strict scope and real file actions](https://github.com/kriss-spy/obsidian-t3code/issues/4). Depends on #2, #3.
 - [#5: Filter all session navigation to the vault root and subfolders](https://github.com/kriss-spy/obsidian-t3code/issues/5). Depends on #4.
@@ -14,7 +16,13 @@ The [spec](spec.md) defines behavior and release gates. GitHub issues track impl
 - [#7: Add selection and current-note context through explicit commands](https://github.com/kriss-spy/obsidian-t3code/issues/7). Depends on #4, #5.
 - [#8: Restore the working thread and draft across pane lifecycle changes](https://github.com/kriss-spy/obsidian-t3code/issues/8). Depends on #2, #3, #5.
 - [#9: Match Obsidian appearance and keep setup settings small](https://github.com/kriss-spy/obsidian-t3code/issues/9). Depends on #3, #4.
-- [#10: Verify end-to-end T3 web UI parity and package v0.1.0](https://github.com/kriss-spy/obsidian-t3code/issues/10). Depends on #5, #6, #7, #8, #9.
+- [#14: Alias search](https://github.com/kriss-spy/obsidian-t3code/issues/14), [#15: Folder projects and references](https://github.com/kriss-spy/obsidian-t3code/issues/15), and [#16: Layout and Git guidance](https://github.com/kriss-spy/obsidian-t3code/issues/16) are included.
+
+## Remaining work
+
+- [#10: Release verification](https://github.com/kriss-spy/obsidian-t3code/issues/10) collects outstanding behavior, performance, installation, and Windows checks.
+- [#1: Stable delivery](https://github.com/kriss-spy/obsidian-t3code/issues/1) stays open until the release requirements pass and stable publication is authorized.
+- [#17: Explicit theme mappings](https://github.com/kriss-spy/obsidian-t3code/issues/17) remains optional future work. T3 owns its colors; Obsidian font matching is optional.
 
 ## First integration gate
 

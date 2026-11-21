@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { electronHost } from './electron-host';
-import { ItemView, requestUrl, type WorkspaceLeaf, type ViewStateResult } from 'obsidian';
+import { ItemView, Notice, requestUrl, type WorkspaceLeaf, type ViewStateResult } from 'obsidian';
 import type T3Plugin from './main';
 import { compatibility, parseDescriptor, partitionFor, savedTarget, serverOrigin } from './connection';
 import { verifyLocalServer, verifiedCompatibility } from './local-server';
@@ -16,6 +16,7 @@ export class T3View extends ItemView {
   private cleanup: Array<() => void> = [];
   private connecting?: Promise<void>;
   private cssKey?: string;
+  private appearanceGeneration = 0;
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
   getViewType() { return VIEW_TYPE; }
   getDisplayText() { return 'T3 Code'; }
@@ -28,8 +29,10 @@ export class T3View extends ItemView {
   }
   async onOpen() { this.route = this.plugin.settings.target; await this.connect(); }
   async onClose() { this.disconnect(); }
+  resetTarget() { this.route = '/'; }
   disconnect() {
     ++this.generation;
+    ++this.appearanceGeneration;
     for (const fn of this.cleanup.splice(0)) fn();
     this.bridge?.close();
     this.bridge = undefined;
@@ -74,7 +77,7 @@ export class T3View extends ItemView {
       guest.classList.add('t3-code-pending');
       this.guest = guest;
       const session = new HostSession(this.plugin.vaultRoot, descriptor.environmentId);
-      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;});
+      const bridge = new HostBridge(guest, origin, session, request => this.plugin.openMarkdown(request, descriptor.environmentId, () => current() && (request.route === undefined || new URL(guest.getURL()).pathname === request.route), this.leaf), async route => {if(current()) await electronHost().shell.openExternal(origin + route);}, message => {if(current()) this.plugin.diagnostic = status.message + ' ' + message;}, request => this.plugin.aliases.search(this.plugin.vaultRoot, request.cwd, request.query, request.entries, request.limit), token => this.plugin.referenceDrags.consume(token, this.plugin.vaultRoot), async url => { if (!current()) throw new Error('The T3 view changed.'); try { await electronHost().shell.openExternal(url); } catch (error) { new Notice('Could not open the link in the system browser.'); throw error; } });
       this.bridge = bridge;
       const navigate = (event: Event) => {
         if (!current()) return;
@@ -123,6 +126,43 @@ export class T3View extends ItemView {
       this.showUnavailable(this.plugin.diagnostic, origin);
     }
   }
+  async prepareReferenceDrop(token: string, expectedRoute: string = this.getState().target) {
+    const bridge = this.bridge, guest = this.guest, generation = this.generation;
+    if (!bridge || !guest) return null;
+    if(this.getState().target!==expectedRoute)return null;
+    await this.app.workspace.revealLeaf(this.leaf);
+    this.app.workspace.setActiveLeaf(this.leaf,{focus:true});
+    const hostWindow=this.contentEl.ownerDocument.defaultView ?? window;
+    let target=await bridge.referenceDropTarget();
+    for(let attempt=0;!target && attempt<20;attempt++){
+      if(generation!==this.generation || this.getState().target!==expectedRoute)return null;
+      await new Promise<void>(resolve=>hostWindow.setTimeout(resolve,25));
+      target=await bridge.referenceDropTarget();
+    }
+    if(target?.route!==expectedRoute)return null;
+    if (!target || bridge !== this.bridge || guest !== this.guest) return null;
+    const box = guest.getBoundingClientRect();
+    if (box.width<=0 || box.height<=0) return null;
+    const scaleX = box.width / target.viewport.width, scaleY = box.height / target.viewport.height;
+    const zone = this.contentEl.ownerDocument.createElement('div');
+    zone.className = 't3-code-reference-drop';
+    zone.textContent = 'Drop reference into T3';
+    const values = {left:box.x+target.rect.x*scaleX,top:box.y+target.rect.y*scaleY,width:target.rect.width*scaleX,height:target.rect.height*scaleY};
+    for (const [key,value] of Object.entries(values)) zone.style.setProperty('--t3-drop-'+key,value+'px');
+    this.contentEl.ownerDocument.body.appendChild(zone);
+    const cancel = () => {zone.remove();const index=this.cleanup.indexOf(cancel);if(index>=0)this.cleanup.splice(index,1);};
+    this.cleanup.push(cancel);
+    return {element:zone,cancel,complete:async()=>{
+      cancel();
+      if (generation !== this.generation || bridge !== this.bridge) throw new Error('The T3 target changed. References were not added.');
+      await bridge.appendReferences(token,target);
+      await this.app.workspace.revealLeaf(this.leaf);
+      this.app.workspace.setActiveLeaf(this.leaf,{focus:true});
+      guest.focus();
+    }};
+  }
+  async openProject(directory: string) { await this.connecting; if (!this.bridge) throw new Error('Connect to a supported T3 server first.'); await this.bridge.openProject(directory); this.guest?.focus(); }
+  async invalidateAliases() { try { await this.bridge?.invalidateAliases(); } catch { /* A closing guest has no search to refresh. */ } }
   async appendContext(text: string) {
     await this.connecting;
     if (!this.bridge || !this.guest) throw new Error('Connect and pair with a supported T3 server before adding context.');
@@ -130,19 +170,22 @@ export class T3View extends ItemView {
     this.guest.focus();
   }
   async syncAppearance() {
+    const generation = ++this.appearanceGeneration;
     const guest = this.guest;
     if (!guest) return;
     const oldKey = this.cssKey;
     this.cssKey = undefined;
     try {
       if (oldKey) await guest.removeInsertedCSS(oldKey);
-      if (guest !== this.guest) return;
-      const font = getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
+      if (guest !== this.guest || generation !== this.appearanceGeneration) return;
+      const hostWindow = this.contentEl.ownerDocument.defaultView ?? window;
+      const font = hostWindow.getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
       // T3 owns all palette colors. Host color overrides break T3's theme editor.
       const fontCSS = this.plugin.settings.followAppearance ? `:root{--font-sans:${font}!important}html,body{font-family:var(--font-sans)!important}` : '';
       const css = fontCSS + '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}';
       const key = await guest.insertCSS(css);
-      if (guest === this.guest) this.cssKey = key;
+      if (guest === this.guest && generation === this.appearanceGeneration) this.cssKey = key;
+      else await guest.removeInsertedCSS(key);
     } catch { /* A closing document has no remaining stylesheet to update. */ }
   }
   private showUnavailable(message: string, origin: string) {

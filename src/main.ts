@@ -1,8 +1,12 @@
+import path from 'node:path';
+import { registerExplorerDrops } from './explorer-drops';
+import { ReferenceDrags } from './references';
+import { AliasIndex, metadataAliases } from './aliases';
 import { electronHost } from './electron-host';
 import { captureContext, encodeContext } from './context';
 import { openLocalMarkdown } from './navigation';
 import type { FileRequest } from './host-contract';
-import { FileSystemAdapter, Notice, Plugin } from 'obsidian';
+import { FileSystemAdapter, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { canonicalDirectory } from './scope';
 import { defaults, SettingsTab, type Settings } from './settings';
 import { partitionFor, savedTarget, serverOrigin } from './connection';
@@ -12,6 +16,8 @@ export default class T3Plugin extends Plugin {
   settings: Settings = { ...defaults };
   diagnostic = 'Connection has not been checked.';
   vaultRoot = '';
+  readonly aliases = new AliasIndex();
+  readonly referenceDrags = new ReferenceDrags();
   private opening = new WeakMap<Document, Promise<T3View>>();
   async onload() {
     const adapter = this.app.vault.adapter;
@@ -50,6 +56,32 @@ export default class T3Plugin extends Plugin {
       menu.addItem(item => item.setTitle('Add selection to T3').setIcon('text-select').setDisabled(!selection).onClick(() => {if(selection) append(selection);}));
       menu.addItem(item => item.setTitle('Add current note to T3').setIcon('file-text').onClick(() => append(note)));
     }));
+    const indexNote = (file: TFile) => {
+      if (file.extension.toLowerCase() === 'md') this.aliases.update({path:file.path,aliases:metadataAliases(this.app.metadataCache.getFileCache(file)?.frontmatter?.aliases)});
+    };
+    for (const file of this.app.vault.getMarkdownFiles()) indexNote(file);
+    const changed = () => { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) void (leaf.view as T3View).invalidateAliases(); };
+    this.registerEvent(this.app.metadataCache.on('changed', file => { indexNote(file); changed(); }));
+    let hydrated = false;
+    this.registerEvent(this.app.metadataCache.on('resolved', () => { if (hydrated) return; hydrated = true; for (const file of this.app.vault.getMarkdownFiles()) indexNote(file); changed(); }));
+
+    this.registerEvent(this.app.vault.on('rename', (file, oldPath) => {
+      this.aliases.remove(oldPath);
+      if (file instanceof TFile) indexNote(file);
+      else { for (const note of this.app.vault.getMarkdownFiles()) { if (note.path.startsWith(file.path + '/')) {this.aliases.remove(oldPath + note.path.slice(file.path.length)); indexNote(note);} } }
+      changed();
+    }));
+    this.registerEvent(this.app.vault.on('delete', file => { this.aliases.remove(file.path); changed(); }));
+    this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+      if (!(file instanceof TFolder)) return;
+      const folder = path.join(this.vaultRoot, file.path);
+      menu.addItem(item => item.setTitle('Open folder in T3 Code').setIcon('folder-open').onClick(() => {
+        void this.openWorkspace().then(view => view.openProject(folder)).catch(error => new Notice(String(error)));
+      }));
+    }));
+    const registerDrags = (doc: Document) => registerExplorerDrops(this, doc);
+    registerDrags(this.app.workspace.containerEl.ownerDocument);
+    this.registerEvent(this.app.workspace.on('window-open', window => registerDrags(window.doc)));
     this.registerEvent(this.app.workspace.on('css-change', () => this.syncAppearance()));
   }
   openMarkdown(request: FileRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor, this.settings.notePlacement); }
@@ -75,8 +107,12 @@ export default class T3Plugin extends Plugin {
     this.app.workspace.setActiveLeaf(leaf, {focus:true});
     return leaf.view as T3View;
   }
-  async reconnect() {
-    await Promise.all(this.app.workspace.getLeavesOfType(VIEW_TYPE).map(leaf => (leaf.view as T3View).connect()));
+  async reconnect(resetTarget = false) {
+    await Promise.all(this.app.workspace.getLeavesOfType(VIEW_TYPE).map(leaf => {
+      const view = leaf.view as T3View;
+      if (resetTarget) view.resetTarget();
+      return view.connect();
+    }));
   }
   async resetConnection() {
     const partition = partitionFor(this.vaultRoot, this.settings.origin);
@@ -89,6 +125,7 @@ export default class T3Plugin extends Plugin {
       await session.clearStorageData();
       await session.clearCache();
       this.settings.target = '/';
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) (leaf.view as T3View).resetTarget();
       await this.saveSettings();
       this.diagnostic = 'This vault connection was reset.';
     } catch { this.diagnostic = 'Connection disconnected. Browser storage reset is unavailable on this host.'; }
@@ -97,7 +134,6 @@ export default class T3Plugin extends Plugin {
   onunload() {
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       (leaf.view as T3View).disconnect();
-      leaf.detach();
     }
   }
 }

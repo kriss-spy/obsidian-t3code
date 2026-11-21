@@ -1,0 +1,23 @@
+{
+  "platform": "Linux",
+  "checks": {
+    "realGuestIsolation": {
+      "sandbox": true,
+      "contextIsolation": true,
+      "webSecurity": true,
+      "nodeIntegration": false
+    },
+    "realVaultChip": true,
+    "realExternalChipLine2": true,
+    "projectChoicesExcludeSibling": true,
+    "searchPositiveIncluded": true,
+    "searchNegativeExcluded": true,
+    "excludedRestoredRoute": true,
+    "excludedReconnect": true,
+    "excludedDomObservations": 0,
+    "concurrentOpenOneView": true
+  },
+  "checkedAt": "2026-11-21T13:23:05.344Z",
+  "build": "obsidian-host-v1.4",
+  "manifestSha256": "77634e68ed7116c98e8c503bd63b8221807381155ba539b20a6fa2cd55af7e50"
+}

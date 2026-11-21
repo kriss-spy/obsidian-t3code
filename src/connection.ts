@@ -1,5 +1,11 @@
 import { createHash } from 'node:crypto';
 
+export function externalWebUrl(input: string): string {
+  const url = new URL(input);
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('Only HTTP and HTTPS browser links are supported.');
+  return url.href;
+}
+
 export interface Descriptor {
   environmentId: string;
   serverVersion: string;

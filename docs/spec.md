@@ -1,6 +1,6 @@
 # T3 Code in Obsidian: implementation spec
 
-Status: ready for implementation. No distributable plugin exists yet.
+Status: Linux development build. Full release verification remains incomplete.
 Date: 2026-11-21.
 
 This spec records the accepted product decisions and implementation defaults. It supersedes the initial recommendations in the kickoff and research reports. The [technical spike](technical-spike.md) records what was tested and what remains unverified.
@@ -107,6 +107,8 @@ For a verified local Markdown file:
 
 Ordinary clicks retain T3's thread-linked file preview. Ctrl/Cmd-click and the chip menu's `Open in default app` action open Markdown in Obsidian. Keep the T3 session and draft intact. Native editors do not become T3 thread panels.
 
+The workspace file explorer’s **Open with** submenu and file-preview editor dropdown also offer **Open in Obsidian** after a local Markdown filesystem check. This action does not change the preferred editor or register a server-global editor.
+
 Use normal vault files for paths inside the vault. Use Obsidian's core external-file support for other local Markdown files. Isolate the tested `file:` lookup convention behind a compatibility adapter. Do not copy external files into the vault or implement virtual files by patching Obsidian internals.
 
 If a file is missing, report its path without creating a note. If the file belongs to a remote environment or the adapter cannot identify it reliably, preserve T3's existing viewer behavior. Non-Markdown links retain T3's normal actions.
@@ -128,6 +130,14 @@ If there is no active target, open an in-scope new-thread draft before adding co
 Disable Add selection when the selection is empty. Report unavailable editors, disconnected targets, or missing composer support clearly. Do not queue automatic insertion for an unknown future thread. Do not use or overwrite the system clipboard.
 
 The first release may use a readable text block through normal composer input. Structured context chips are optional future work. Neither approach may submit automatically.
+
+## Vault search and explicit folder actions
+
+Embedded file search can match note aliases from the vault metadata cache. Merge normal results and alias results by canonical path within the requested directory. Preserve remote search behavior. Alias edits and renames must refresh results without rebuilding the guest.
+
+Provide **Open folder in T3 Code** through Obsidian’s folder context menu. Reuse the project with the same canonical root, or register that exact folder. Open a local draft after scope approval. Never initialize Git or change agent instructions.
+
+Notes and folders dragged from Obsidian’s explorer can add explicit references to the intended composer. Preserve its text and attachments. Cancel insertion if the route or composer registration changes. Keep normal T3 attachment drops available. Physical cross-webview dragging remains a runtime verification requirement.
 
 ## Appearance and settings
 

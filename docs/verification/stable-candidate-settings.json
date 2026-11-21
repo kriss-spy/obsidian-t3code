@@ -1,0 +1,14 @@
+{
+  "labels": [
+    "T3 server",
+    "Open Markdown notes",
+    "Use Obsidian font",
+    "Reset connection",
+    "Obsidian agent skills",
+    "Compatibility"
+  ],
+  "diagnostic": true,
+  "fontToggle": true,
+  "placement": true,
+  "origin": "http://127.0.0.1:39176"
+}

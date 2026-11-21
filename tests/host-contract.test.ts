@@ -36,4 +36,12 @@ test('host rejects malformed, oversized and duplicate requests', () => {
   assert.throws(() => parseHostRequest({...base, type:'scope', rows:Array(20001).fill({})}, 'g'));
   const row = {kind:'project', id:'p', projectId:'p', workspaceRoot:'/vault', worktreePath:null};
   assert.throws(() => parseHostRequest({...base, type:'scope', rows:[row, row]}, 'g'));
+  const aliases = {...base,type:'aliases',cwd:'/vault',query:'空',route:'/local/thread',limit:80,entries:[{path:'note.md',kind:'file'}]};
+  assert.equal(parseHostRequest(aliases,'g').type,'aliases');
+  const browser={...base,type:'browser',url:'https://example.com/path?q=1#two',route:'/local/thread'};
+  assert.equal(parseHostRequest(browser,'g').type,'browser');
+  for (const url of ['javascript:alert(1)','file:///etc/passwd','data:text/html,test','https://user:secret@example.com','relative/path'])assert.throws(()=>parseHostRequest({...browser,url},'g'));
+  for (const change of [{entries:[null]}, {entries:[{path:'note.md',kind:'file',ignored:'yes'}]}, {limit:501}, {query:'x'.repeat(257)}, {entries:Array(501).fill({path:'note.md',kind:'file'})}]) {
+    assert.throws(()=>parseHostRequest({...aliases,...change},'g'));
+  }
 });
