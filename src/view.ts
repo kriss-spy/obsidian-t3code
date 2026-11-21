@@ -16,6 +16,7 @@ export class T3View extends ItemView {
   private cleanup: Array<() => void> = [];
   private connecting?: Promise<void>;
   private cssKey?: string;
+  private appearanceGeneration = 0;
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
   getViewType() { return VIEW_TYPE; }
   getDisplayText() { return 'T3 Code'; }
@@ -28,8 +29,10 @@ export class T3View extends ItemView {
   }
   async onOpen() { this.route = this.plugin.settings.target; await this.connect(); }
   async onClose() { this.disconnect(); }
+  resetTarget() { this.route = '/'; }
   disconnect() {
     ++this.generation;
+    ++this.appearanceGeneration;
     for (const fn of this.cleanup.splice(0)) fn();
     this.bridge?.close();
     this.bridge = undefined;
@@ -167,19 +170,22 @@ export class T3View extends ItemView {
     this.guest.focus();
   }
   async syncAppearance() {
+    const generation = ++this.appearanceGeneration;
     const guest = this.guest;
     if (!guest) return;
     const oldKey = this.cssKey;
     this.cssKey = undefined;
     try {
       if (oldKey) await guest.removeInsertedCSS(oldKey);
-      if (guest !== this.guest) return;
-      const font = getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
+      if (guest !== this.guest || generation !== this.appearanceGeneration) return;
+      const hostWindow = this.contentEl.ownerDocument.defaultView ?? window;
+      const font = hostWindow.getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
       // T3 owns all palette colors. Host color overrides break T3's theme editor.
       const fontCSS = this.plugin.settings.followAppearance ? `:root{--font-sans:${font}!important}html,body{font-family:var(--font-sans)!important}` : '';
       const css = fontCSS + '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}';
       const key = await guest.insertCSS(css);
-      if (guest === this.guest) this.cssKey = key;
+      if (guest === this.guest && generation === this.appearanceGeneration) this.cssKey = key;
+      else await guest.removeInsertedCSS(key);
     } catch { /* A closing document has no remaining stylesheet to update. */ }
   }
   private showUnavailable(message: string, origin: string) {

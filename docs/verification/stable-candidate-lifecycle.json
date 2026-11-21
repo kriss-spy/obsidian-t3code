@@ -1,0 +1,27 @@
+{
+  "platform": "Linux",
+  "obsidian": "1.15.1",
+  "checks": {
+    "immediateNewDraftReconnect": {
+      "route": "/draft/743e9f32-2ee5-4ce1-9702-bdc47280cba5",
+      "text": "RELEASE_IMMEDIATE_RECONNECT",
+      "messages": 0
+    },
+    "immediateTabClose": {
+      "route": "/draft/743e9f32-2ee5-4ce1-9702-bdc47280cba5",
+      "text": "RELEASE_IMMEDIATE_RECONNECT RELEASE_IMMEDIATE_TAB_CLOSE",
+      "messages": 0
+    },
+    "disabledCleanup": {
+      "guests": 0,
+      "dropZones": 0
+    },
+    "immediateDisableEnable": {
+      "route": "/draft/743e9f32-2ee5-4ce1-9702-bdc47280cba5",
+      "text": "RELEASE_IMMEDIATE_RECONNECT RELEASE_IMMEDIATE_TAB_CLOSE RELEASE_IMMEDIATE_DISABLE",
+      "messages": 0
+    },
+    "singleWorkspaceAfterReload": true
+  },
+  "checkedAt": "2026-11-21T15:10:53.466Z"
+}

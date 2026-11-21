@@ -8,7 +8,7 @@ This matrix tracks features that can break in an isolated Obsidian guest. A visi
 | Scope | Loading/empty, lists, search, recents, archive, projects, drafts, restored routes, reconnect | Focused and actual checks recorded separately; every lifecycle ordering case remains open |
 | Markdown preview | Plain click stays in T3, correct file and thread, no native editor | First-feedback runtime check |
 | Native Markdown | Ctrl/Cmd-click and explicit menu action; canonical originals; placement, cursor, stale route | First-feedback runtime check |
-| Tab lifecycle | Same-group return, unsent text/attachments, hidden tabs, reload, closing notes | Repeat after the placement change; crash/active-run cases remain open |
+| Tab lifecycle | Same-group return, unsent text/attachments, hidden tabs, reload, closing notes | Immediate fresh-draft reconnect, tab close, and disable/enable pass in the candidate gate; crash/active-run/multiple-window cases remain open |
 | Themes | Change themes in T3; compare chat/composer/sidebar/menu/preview colors; light/dark; optional host font | First-feedback runtime check; no palette override allowed |
 | Responsive layout | Narrow/wide widths, each sidebar/panel, focus indicators, accessible menus | Check actual controls; source inspection is insufficient |
 | Agent execution | Stream text/tool output, questions, permissions, stop/continue, reconnect without duplicated send | Release blocker until full reference comparison passes |

@@ -4,6 +4,8 @@ Project goal: use T3 Code in the Obsidian GUI with its web UI capabilities and n
 
 Status: a Linux development build runs the real T3 workspace in Obsidian 1.15.1. It requires a pinned T3 0.1.11 patch and matching compiled client. Full release verification remains incomplete.
 
+The current Linux candidate fixes immediate draft loss and scope-request saturation. Stable publication remains blocked. See the [release assessment](docs/release-readiness.md), [draft release notes](docs/release-notes.md), and [changelog](CHANGELOG.md).
+
 See [try the development build](docs/development-install.md) for installation.
 
 - [Recommended layout](docs/layout.md)
@@ -23,3 +25,5 @@ See [try the development build](docs/development-install.md) for installation.
 Run `npm ci`, `npm test`, and `npm run build`. The build produces `main.js`. Copy it with `manifest.json` and `styles.css` into a disposable vault’s `.obsidian/plugins/t3-code/` directory. Enable T3 Code and run Open T3 Code.
 
 Run `node scripts/package-development.mjs /absolute/patched/T3/checkout` after building and verifying the exact client. It creates a private development ZIP in `dist/`. See [implementation status and evidence](docs/implementation-status.md).
+
+For a named candidate, append `rc.1`. The archive includes file checksums, source/client metadata, the MIT license, and the upstream license/notices. Run its `scripts/verify-candidate.mjs` against the extracted directory before installation.

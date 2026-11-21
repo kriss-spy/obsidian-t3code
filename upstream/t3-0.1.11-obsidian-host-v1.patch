@@ -1127,6 +1127,70 @@ index 60c470040..38f8abdf3 100644
    })();
    if (drafts.length === 0) {
      return null;
+diff --git a/apps/web/src/composerDraftStore.test.ts b/apps/web/src/composerDraftStore.test.ts
+index a04d00cbb..21e5963cb 100644
+--- a/apps/web/src/composerDraftStore.test.ts
++++ b/apps/web/src/composerDraftStore.test.ts
+@@ -756,6 +756,34 @@ describe("composerDraftStore context persistence", () => {
+       vi.resetModules();
+     }
+   });
++
++  it("persists embedded composer edits before the guest can be destroyed", async () => {
++    const storage = createMemoryStorage();
++    vi.stubGlobal("localStorage", storage);
++    vi.stubGlobal("window", new EventTarget());
++    vi.stubGlobal("location", { search: "?obsidian-host=1" });
++    vi.useFakeTimers();
++    vi.resetModules();
++    try {
++      const tab = await import("./composerDraftStore");
++      const ref = scopeThreadRef(TEST_ENVIRONMENT_ID, ThreadId.make("immediate-close"));
++      tab.useComposerDraftStore.getState().setPrompt(ref, "Unsaved note context");
++      const saved = JSON.parse((await storage.getItem(COMPOSER_DRAFT_STORAGE_KEY)) ?? "null");
++      expect(saved?.state.draftsByThreadKey[scopedThreadKey(ref)]?.prompt).toBe(
++        "Unsaved note context",
++      );
++      vi.stubGlobal("window", new EventTarget());
++      vi.resetModules();
++      const reopened = await import("./composerDraftStore");
++      expect(reopened.useComposerDraftStore.getState().getComposerDraft(ref)?.prompt).toBe(
++        "Unsaved note context",
++      );
++    } finally {
++      vi.useRealTimers();
++      vi.unstubAllGlobals();
++      vi.resetModules();
++    }
++  });
+ });
+ 
+ describe("composerDraftStore thread contexts", () => {
+diff --git a/apps/web/src/composerDraftStore.ts b/apps/web/src/composerDraftStore.ts
+index 3c64aa0f6..9d2942bc5 100644
+--- a/apps/web/src/composerDraftStore.ts
++++ b/apps/web/src/composerDraftStore.ts
+@@ -94,6 +94,7 @@ import {
+ } from "./lib/composerContextRecords";
+ import { create } from "zustand";
+ import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
++import { isObsidianEmbedded } from "./obsidianHost";
+ import { useShallow } from "zustand/react/shallow";
+ import { draftModelSelectionApplies } from "./lib/chatThreadActions";
+ import { createDeferredStorage, createMemoryStorage } from "./lib/storage";
+@@ -241,7 +242,11 @@ const composerPersistStorage: PersistStorage<ComposerPersistState> = {
+     }
+     return JSON.parse(raw) as StorageValue<ComposerPersistState>;
+   },
+-  setItem: (name, value) => composerDebouncedStorage.setItem(name, value),
++  setItem: (name, value) => {
++    composerDebouncedStorage.setItem(name, value);
++    // Obsidian can destroy a guest without delivering beforeunload.
++    if (isObsidianEmbedded()) composerDebouncedStorage.flush();
++  },
+   removeItem: (name) => composerDebouncedStorage.removeItem(name),
+ };
+ 
 diff --git a/apps/web/src/fileContextMenu.ts b/apps/web/src/fileContextMenu.ts
 index 452a6bbd5..3054b2c47 100644
 --- a/apps/web/src/fileContextMenu.ts
@@ -1383,7 +1447,7 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..e75db6de6
+index 000000000..cb3879469
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
 @@ -0,0 +1,553 @@
@@ -1664,7 +1728,7 @@ index 000000000..e75db6de6
 +    if (answer?.has(row.kind + ":" + row.id)) result.add(row.kind + ":" + row.id);
 +    return !answer && !inFlight.has(key);
 +  });
-+  if (missing.length && missing.length <= 20000) {
++  if (missing.length && missing.length <= 20000 && pending.size < 8) {
 +    const epoch = scopeEpoch;
 +    for (const row of missing) inFlight.add(rowKey(env, row));
 +    void request({ type: "scope", environmentId: env, rows: missing })

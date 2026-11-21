@@ -1,97 +1,13 @@
-# Development implementation status
+# Implementation status
 
-Date: 2026-11-21. A Linux development build is available to try. It requires the pinned T3 patch and matching compiled client. This is not a release or a full T3 parity claim.
+Date: 2026-11-21. The current artifact is a Linux release candidate for testing. Stable publication remains blocked. See the [release assessment](release-readiness.md) for fixed findings, fresh checks, and all remaining gates.
 
-See [installation](development-install.md), [runtime assertions](verification/linux-development-runtime.json), and [local plugin review](verification/plugin-review.md).
+The candidate uses host contract `obsidian-host-v1.4`, pinned upstream revision `59651c1761f6c63e9b6056839067066968e6a406`, and client manifest SHA-256 `4b62ec4b552cdf61540eaba740ee29c7c7327f0a3542737ebe53eed3b43ac8d8`. It requires the matching patched T3 0.1.11 server and compiled client. The plugin runtime remains Linux Obsidian 1.15.1 only.
 
-## Extra-feature development build
+Implemented workflows include persistent guest pairing, strict canonical vault filtering, semantic Markdown navigation, explicit editor context, native-open menus, alias search, folder projects, and reference insertion. T3 owns agent configuration and theme colors. The plugin does not start a server or change agent instructions.
 
-The current source and private development.4 bundle use `obsidian-host-v1.4`. Both T3 file menus now offer **Open in Obsidian** after canonical local Markdown validation. Preview opening forwards the requested line and uses the existing external-file and placement adapter.
+The candidate fixes two separate fresh-draft failures. Embedded composer persistence now writes before a guest can be destroyed. A saturated eight-request scope queue now leaves further drafts pending until they receive a verdict. Immediate reconnect, tab close, and plugin disable/enable preserve a fresh draft in the normal production bundle. This closes the reproduced ordering gap; it does not establish crash recovery or full lifecycle parity.
 
-File search matches vault metadata aliases and merges canonical identities within the requested directory. Metadata changes and renames invalidate results. Folder context menus open or register the exact canonical project. Explicit note/folder drops append references through the intended composer and preserve its text and attachments. Normal T3 file drops remain available.
+Fresh evidence is linked in the [release assessment](release-readiness.md). Earlier development, feedback, extra-feature, and repair reports remain under `verification/` as historical records. Their hashes and passing assertions belong to those older artifacts. They do not approve this candidate.
 
-See [extra-feature evidence and remaining gaps](verification/extra-features.md). The earlier v1.3 gate ran 19 assertions, but its alias fixture and simulated drops did not catch the reported failures. The v1.4 repair adds result-limit and initial-cache handling, plus a host-side drop target. See [repair evidence](verification/extra-feature-repair.md). Broader new-draft reload ordering remains unverified. No complete theme mapping is enabled. The active CloudNotes installation and servers were not upgraded by this feature work.
-
-The approved manifest SHA-256 is `77634e68ed7116c98e8c503bd63b8221807381155ba539b20a6fa2cd55af7e50`. A rebuilt client still requires a new gate; self-declared capabilities remain insufficient.
-
-## Implemented
-
-The ItemView now hosts the real T3 web UI. Pairing uses T3's own form and a persistent vault/server partition. The plugin never starts a backend or invokes the standalone CLI.
-
-Admission requires server 0.1.11, protocol 2, a nonce proof of the same local filesystem and Linux machine identity, and a pinned client manifest. The plugin hashes the served entry document and 17 integration/entry assets before creating the guest. It then requires the complete versioned scope handshake. A copied capability declaration cannot approve another client. The unmodified running server remains unmounted.
-
-The patched client starts empty in embedded mode. Canonical host verdicts filter raw shell snapshots, merged thread families, archived RPC results, search matches, project choices, draft membership, and route loading. Pending and remote identities remain empty. Owning project metadata stays available for an eligible worktree without making the outside project a new-thread choice. Epochs invalidate approvals on reconnect. Conflicting active/archive metadata is excluded.
-
-The real MarkdownFileLink callback sends semantic environment/path/line/column/modifier requests. Native navigation resolves existing files, reuses editors, opens external Markdown through an isolated `file:` adapter, and applies bounded cursor positions. Plain clicks retain T3 previews; Ctrl/Cmd-click and the explicit default-app menu action open native note tabs. New notes share T3's tab group by default, with a split option. Missing files show a notice without creating a note. Stale route requests cannot open a different target.
-
-Explicit note commands and editor-menu actions capture in-memory content before changing focus. The public composer handle appends readable source context and focuses the composer. Existing text and attachments remain. No clipboard writes, saves, or submissions occur in the command implementation. If no composer exists, the normal T3 new-thread action opens a known in-scope draft. Target changes cancel insertion.
-
-Safe thread/draft routes restore through workspace and plugin lifecycle changes. Pairing data is excluded from saved fields. T3 owns its full color palette. Optional Obsidian font matching updates live and can be removed. Settings contain connection/reset, appearance, diagnostics, and the official agent-skills recommendation.
-
-
-## First-trial feedback update
-
-The prior first-feedback artifact used adapter `obsidian-host-v1.2`. The feedback changes the accepted default: plain Markdown clicks stay in T3's thread-linked preview. Ctrl/Cmd-click and **Open in default app** open a native note. New native notes share T3's tab group by default. An explicit split option remains. Existing editors can be reused in their current group.
-
-Removed the injected color palette that overrode T3 theme changes. T3 controls all colors; **Use Obsidian font** changes only the font. The **Focus T3 Code** command reveals T3 and collapses Obsidian's left sidebar. See [recommended layout](layout.md).
-
-Observed in isolated Obsidian 1.15.1 after this change:
-
-- Plain chip click opened the T3 workspace file preview without activating a native editor.
-- Ctrl-click opened the vault note in T3's tab group. The explicit menu action opened the external original in the same group.
-- The focus command collapsed Obsidian's left sidebar and selected the existing T3 workspace.
-- T3's Ocean/light theme changed the chat and surrounding background surfaces together while Obsidian font matching remained enabled.
-- The terminal executed `printf` and rendered its fixture marker. See [actual terminal canvas](verification/terminal-fixture.png).
-- Browser preview loaded a local fixture page and rendered it. A real guest mouse click reached the fixture's click endpoint. Back, forward, and reload produced the expected addresses. See [actual preview canvas](verification/browser-fixture.png).
-- The repeated scope/isolation/search/route checks passed with zero excluded-content observations. See [feedback runtime assertions](verification/linux-feedback-runtime.json).
-
-Validation for this update: 28 plugin tests and the plugin build pass. Upstream targeted lint, web typecheck, server/web builds, and 10 adjacent Markdown-link tests pass. The full `check:changed` command did not pass in the filtered checkout: unrelated mobile/marketing dependencies were absent, and its root test configuration could not load `gt-react-native`. Its results are not counted as a passing full check. The earlier full changed-file pass below applies to the previous development artifact.
-
-The [feature matrix](verification/feature-matrix.md) records the remaining broader workflows. Basic terminal/browser success is not full parity. Aliases are tracked in #14, folder/project actions and reference drops in #15, optional setup guidance in #16, and verified theme mappings in #17.
-
-## Earlier development runtime evidence
-
-All checks used disposable development vaults and separate T3 data. No personal notes or live database were edited. The installed Obsidian app was 1.15.1 on Linux Flatpak, installer 1.15.0. The patched source was `59651c1761f6c63e9b6056839067066968e6a406`.
-
-| Scenario | Observed result |
-| --- | --- |
-| Actual supported guest | `require` and `process` unavailable; sandbox, context isolation, web security enabled; Node integration disabled |
-| Real agent conversation | Two completed Codex turns returned actual vault/external Markdown links |
-| Actual chip clicks | Unicode/space/encoded-`#` vault file opened; external original opened at line 2; modifier click created another editor |
-| Original file saves | Both disposable original files edited and saved through Obsidian |
-| Scope | Included conversation rendered; excluded saved route showed a scope explanation; reconnect stayed blocked |
-| Search and project choices | Positive included search matched; excluded search returned no rows; only in-vault project choices appeared |
-| Archive reference comparison | Normal T3 archive showed the sibling thread; embedded archive showed no archived threads |
-| Recents | Command palette showed the included recent thread without the sibling project/thread |
-| Initial pairing redirect | Old guest removed before replacement; observed excluded-content count remained zero |
-| Empty vault | First-run project scan exposed no unrelated projects; exact path and Use vault folder appeared; explicit action opened an in-scope draft |
-| Setup filesystem | Empty vault gained no `.git`, `AGENTS.md`, or provider configuration |
-| Context | Selection and unsaved note appended to nonempty composer; text and file attachment remained; focus moved to composer; clipboard unchanged; no prompt submitted |
-| No active composer | Explicit insertion opened a vault-project draft and appended once |
-| Reload | Guest removed on disable; same draft route and unsent text returned after enable |
-| Concurrent Open | Six overlapping Open calls produced one workspace |
-| Appearance | Light and dark backgrounds matched Obsidian; disabling synchronization restored T3 black background |
-| Unmodified server | Actual 0.1.11/protocol-2 server rejected with no guest and a normal-app fallback |
-
-`scripts/check-supported-vault.mjs` repeats the production guest, real-chip, search, project-choice, restored-route, reconnect, DOM-observation, and duplicate-Open assertions. It refuses any vault outside the disposable fixture naming convention. The committed JSON records a passing production run. Additional manual CDP checks are listed above; they are not all automated by that script.
-
-## Earlier source and build checks
-
-These results belong to the earlier development gate. The extra-feature checks and their limits are recorded above.
-
-- `npm test`: 28 passing tests. These cover path identity, context encoding, local proofs, executable integrity, stale requests, exact patch contract behavior, scope epochs, conflicting metadata, and per-window Open races.
-- `npm run build`: TypeScript and CommonJS bundle pass.
-- `node scripts/check-upstream-patch.mjs /tmp/obsidian-t3-patch-check --check`: patch applies to a clean exact-revision checkout.
-- Upstream `pnpm exec vp run check:changed HEAD`: format, lint, both knip passes, GraphQL, four-package typecheck, 34 adjacent test files, and 29 React compiler checks pass. This is not the full upstream test suite.
-- Patched server and web production builds pass. The source checks used the available pnpm 11.25.0 tooling. The packaged preparation script also passed in a fresh checkout with the exact pinned Node 26.13.1 and pnpm 12.14.0. It cloned the base, applied the patch, installed dependencies, built the server, and verified the copied client assets.
-- Local Obsidian review: zero source errors. Warnings concern deliberate filesystem access and specified product names/command labels. The report script also printed a numeric-summary parsing warning; the individual report is committed.
-
-The earlier client manifest SHA-256 was `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. The current approved artifact is listed above. The package includes it without source maps and retains T3's license and third-party notices.
-
-## Release blockers
-
-Issue #10 remains open. The complete reference comparison has not covered question/permission prompts, streamed tool activity, stop/continue through reconnect, extended terminal/browser workflows, every lifecycle ordering transition, or all pane/crash cases. Do not claim full parity or publish v0.1.0 until these pass.
-
-Canonical membership fixtures cover root/nested paths, prefix siblings, symlinks, outside worktrees, missing metadata, and remote identities. Those unit checks do not establish runtime support for remote servers or other operating systems. Linux is the only development target.
-
-The required source patch is broader than the initial shell-only experiment because T3 has independent readers for archives, thread families, drafts, onboarding, and routes. It changes no database schema and remains opt-in for embedded clients. It is not an official upstream T3 release.
+Issue #10 and the complete reference UI comparison remain open. No release or merge was published. The existing CloudNotes installation and its server were not upgraded during this review.

@@ -4,7 +4,7 @@ import path from 'node:path';
 const [directory]=process.argv.slice(2);
 if(!directory)throw Error('Supply the extracted web directory.');
 const manifestText=await readFile(path.join(directory,'obsidian-host-client.json'),'utf8');
-const expected='fbc3a8e780d631c3ae9579d3db2f1dc826b2c78cc23d44243cb3b4d4a49d07b1';
+const expected='4b62ec4b552cdf61540eaba740ee29c7c7327f0a3542737ebe53eed3b43ac8d8';
 if(createHash('sha256').update(manifestText).digest('hex')!==expected)throw Error('Wrong client manifest.');
 const manifest=JSON.parse(manifestText);
 for(const file of manifest.files){

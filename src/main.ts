@@ -107,8 +107,12 @@ export default class T3Plugin extends Plugin {
     this.app.workspace.setActiveLeaf(leaf, {focus:true});
     return leaf.view as T3View;
   }
-  async reconnect() {
-    await Promise.all(this.app.workspace.getLeavesOfType(VIEW_TYPE).map(leaf => (leaf.view as T3View).connect()));
+  async reconnect(resetTarget = false) {
+    await Promise.all(this.app.workspace.getLeavesOfType(VIEW_TYPE).map(leaf => {
+      const view = leaf.view as T3View;
+      if (resetTarget) view.resetTarget();
+      return view.connect();
+    }));
   }
   async resetConnection() {
     const partition = partitionFor(this.vaultRoot, this.settings.origin);
@@ -121,6 +125,7 @@ export default class T3Plugin extends Plugin {
       await session.clearStorageData();
       await session.clearCache();
       this.settings.target = '/';
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) (leaf.view as T3View).resetTarget();
       await this.saveSettings();
       this.diagnostic = 'This vault connection was reset.';
     } catch { this.diagnostic = 'Connection disconnected. Browser storage reset is unavailable on this host.'; }
@@ -129,7 +134,6 @@ export default class T3Plugin extends Plugin {
   onunload() {
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       (leaf.view as T3View).disconnect();
-      leaf.detach();
     }
   }
 }

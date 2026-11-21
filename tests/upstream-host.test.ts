@@ -107,6 +107,20 @@ test('scope completion notifies empty-scope readers after pending rows clear', a
   api.reply({id:r.id,generation:'g',allowed:[]});await flush();
   assert.deepEqual(pending,[false]);
 });
+
+test('more drafts than request slots remain pending until each receives a scope verdict', async () => {
+  const {api,exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
+  const drafts=Array.from({length:12},(_,i)=>({id:'draft-'+i,projectId:'p',worktreePath:null}));
+  const decisions=()=>drafts.map(draft=>e.obsidianThreadDecision('local',draft,snapshot.projects));
+  assert.deepEqual(decisions(),Array(12).fill('pending'));
+  await flush();
+  assert.deepEqual(decisions(),Array(12).fill('pending'));
+  for(let batch=0;batch<2;batch++) {
+    for(const request of api.drain())api.reply({id:request.id,generation:'g',allowed:request.rows.map((row:any)=>row.kind+':'+row.id)});
+    await flush();decisions();
+  }
+  assert.deepEqual(decisions(),Array(12).fill('included'));
+});
 test('conflicting active and archived metadata never shares an approval', async () => {
   const {api, exports:e}=load();api.initialize({generation:'g',environmentId:'local'});
   e.scopeObsidianSnapshot('local',snapshot);const [r]=api.drain();api.reply({id:r.id,generation:'g',allowed:['project:p','thread:t']});await flush();
