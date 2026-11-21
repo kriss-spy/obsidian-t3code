@@ -10,7 +10,7 @@ const manifestText=await readFile(manifestFile,'utf8');
 const manifestSha256=createHash('sha256').update(manifestText).digest('hex');
 const output = await build({entryPoints:['src/main.ts'],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian','electron'],plugins:[{
   name:'candidate-admission-for-integration-tests',
-  setup(builder) {builder.onLoad({filter:/approved-client\.ts$/},async () => ({loader:'ts',contents:'export const APPROVED_CLIENT = '+JSON.stringify({build:'obsidian-host-v1.1',manifestSha256})+';'}));},
+  setup(builder) {builder.onLoad({filter:/approved-client\.ts$/},async () => ({loader:'ts',contents:'export const APPROVED_CLIENT = '+JSON.stringify({build:'obsidian-host-v1.2',manifestSha256})+';'}));},
 }]});
 const folder=path.join(vault,'.obsidian/plugins/t3-code');await mkdir(folder,{recursive:true});
 await writeFile(path.join(folder,'main.js'),output.outputFiles[0].text);

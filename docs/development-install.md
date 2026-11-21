@@ -55,7 +55,8 @@ The plugin does not start another backend. It connects to the server you select.
 ## Try the note workflow
 
 - Resume an in-vault thread, or start a thread in the vault project.
-- Click a Markdown file chip in an assistant reply. Obsidian opens the original file, including verified local files outside the vault.
+- Click a Markdown chip normally to keep its preview in T3. Use Ctrl/Cmd-click or its **Open in default app** menu action to open the original in Obsidian.
+- Native notes open in the same tab group as T3 by default. Choose a split explicitly in plugin settings if needed.
 - In an Obsidian editor, run `Add selection to T3` or `Add current note to T3`. Both append explicit context to the composer.
 - Review the composer before sending. The commands preserve existing text and attachments and never submit automatically.
 - Use **Reset connection** to clear only this vault/server browser partition.
@@ -63,6 +64,8 @@ The plugin does not start another backend. It connects to the server you select.
 Only threads with a canonical registered worktree inside the vault appear. Without a worktree, their project root must be inside. Remote and uncertain identities stay excluded. An excluded saved route displays an explanation and a normal T3 action.
 
 Recommended: [the official Obsidian agent skills](https://github.com/obsidianmd/obsidian-skills#installation) teach Markdown, Bases, Canvas, and Obsidian tools. Install them through your normal agent setup. This plugin does not change agent instructions.
+
+See the [recommended layout](layout.md). **Focus T3 Code** closes Obsidian's left sidebar on request. T3 controls theme colors; optional Obsidian matching changes only the font.
 
 ## Known limits
 

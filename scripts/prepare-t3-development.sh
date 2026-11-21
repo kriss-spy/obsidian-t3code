@@ -14,7 +14,7 @@ cd -- "$checkout_dir"
 [[ "$(git rev-parse HEAD)" = '59651c1761f6c63e9b6056839067066968e6a406' ]]
 git apply --check "$bundle_dir/upstream/t3-0.1.11-obsidian-host-v1.patch"
 git apply "$bundle_dir/upstream/t3-0.1.11-obsidian-host-v1.patch"
-pnpm install --ignore-scripts --frozen-lockfile
+pnpm --filter t3... --filter @t3tools/monorepo install --ignore-scripts --frozen-lockfile
 pnpm --filter t3 run build:bundle
 mkdir -p apps/web/dist
 cp -a "$bundle_dir/t3-web/." apps/web/dist/

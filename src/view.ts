@@ -136,18 +136,11 @@ export class T3View extends ItemView {
     this.cssKey = undefined;
     try {
       if (oldKey) await guest.removeInsertedCSS(oldKey);
-      if (guest !== this.guest || !this.plugin.settings.followAppearance) return;
-      const colors = getComputedStyle(this.contentEl.ownerDocument.body);
-      const value = (name: string) => colors.getPropertyValue(name).trim().replace(/[;{}]/g, '');
-      const mapping: Record<string,string> = {
-        background:'--background-primary', foreground:'--text-normal', sidebar:'--background-secondary',
-        'sidebar-foreground':'--text-normal', card:'--background-primary', 'card-foreground':'--text-normal',
-        popover:'--background-secondary', 'popover-foreground':'--text-normal', muted:'--background-secondary',
-        'muted-foreground':'--text-muted', border:'--background-modifier-border', input:'--background-modifier-border',
-        primary:'--interactive-accent', ring:'--interactive-accent',
-      };
-      const variables = Object.entries(mapping).map(([name,host]) => `--${name}:${value(host)}!important`).join(';');
-      const css = `:root{${variables};--font-sans:${colors.fontFamily.replace(/[;{}]/g, '')}!important}html,body{background-color:var(--background)!important;color:var(--foreground)!important;font-family:var(--font-sans)!important}@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}`;
+      if (guest !== this.guest) return;
+      const font = getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
+      // T3 owns all palette colors. Host color overrides break T3's theme editor.
+      const fontCSS = this.plugin.settings.followAppearance ? `:root{--font-sans:${font}!important}html,body{font-family:var(--font-sans)!important}` : '';
+      const css = fontCSS + '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}';
       const key = await guest.insertCSS(css);
       if (guest === this.guest) this.cssKey = key;
     } catch { /* A closing document has no remaining stylesheet to update. */ }

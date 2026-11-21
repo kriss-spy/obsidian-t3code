@@ -20,6 +20,7 @@ export default class T3Plugin extends Plugin {
     const data: unknown = await this.loadData();
     const raw = data && typeof data === 'object' ? data as Partial<Settings> : {};
     try { this.settings.origin = serverOrigin(raw.origin ?? defaults.origin); } catch { /* Retain safe default. */ }
+    this.settings.notePlacement = raw.notePlacement === 'split' ? 'split' : 'tab';
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
     this.settings.target = savedTarget(raw.target, this.settings.origin);
     this.registerView(VIEW_TYPE, leaf => new T3View(leaf, this));
@@ -27,6 +28,9 @@ export default class T3Plugin extends Plugin {
     const open = () => { void this.openWorkspace().catch(() => new Notice('Could not open T3 Code.')); };
     this.addCommand({ id: 'open', name: 'Open T3 Code', callback: open });
     this.addRibbonIcon('terminal', 'Open T3 Code', open);
+    this.addCommand({id:'focus-workspace',name:'Focus T3 Code',callback:()=>{
+      void this.openWorkspace().then(()=>this.app.workspace.leftSplit.collapse()).catch(()=>new Notice('Could not focus T3 Code.'));
+    }});
     const add = (editor: import('obsidian').Editor, view: import('obsidian').MarkdownView, selection: boolean) => {
       if (!view.file) { new Notice('Open a Markdown note before adding context.'); return; }
       const captured = captureContext(editor, view.file.path, selection);
@@ -48,12 +52,12 @@ export default class T3Plugin extends Plugin {
     }));
     this.registerEvent(this.app.workspace.on('css-change', () => this.syncAppearance()));
   }
-  openMarkdown(request: FileRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor); }
+  openMarkdown(request: FileRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor, this.settings.notePlacement); }
   syncAppearance() { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) void (leaf.view as T3View).syncAppearance(); }
   async saveSettings() {
     // Whitelist persisted fields. Never spread descriptor, guest state, or pairing data.
     await this.saveData({ origin: serverOrigin(this.settings.origin), followAppearance: this.settings.followAppearance,
-      target: savedTarget(this.settings.target, this.settings.origin) });
+      target: savedTarget(this.settings.target, this.settings.origin), notePlacement:this.settings.notePlacement });
   }
   openWorkspace(): Promise<T3View> {
     const owner = this.app.workspace.getMostRecentLeaf()?.view.containerEl.ownerDocument ?? activeDocument;

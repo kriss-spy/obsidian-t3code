@@ -1,8 +1,8 @@
 import { PluginSettingTab, Setting, Notice } from 'obsidian';
 import type T3Plugin from './main';
 import { serverOrigin } from './connection';
-export interface Settings { origin: string; followAppearance: boolean; target: string }
-export const defaults: Settings = { origin: 'http://127.0.0.1:3773', followAppearance: true, target: '/' };
+export interface Settings { origin: string; followAppearance: boolean; target: string; notePlacement: 'tab' | 'split' }
+export const defaults: Settings = { origin: 'http://127.0.0.1:3773', followAppearance: true, target: '/', notePlacement: 'tab' };
 export class SettingsTab extends PluginSettingTab {
   constructor(private plugin: T3Plugin) { super(plugin.app, plugin); }
   display() {
@@ -19,7 +19,12 @@ export class SettingsTab extends PluginSettingTab {
           this.display();
         } catch { new Notice('Enter an HTTPS origin or a loopback HTTP origin without credentials or a path.'); }
       }));
-    new Setting(this.containerEl).setName('Follow Obsidian appearance').addToggle(t =>
+    new Setting(this.containerEl).setName('Open Markdown notes').setDesc('Applies to explicit Obsidian opening. Plain clicks keep the T3 preview.').addDropdown(d =>
+      d.addOption('tab','Same tab group').addOption('split','Split beside T3').setValue(this.plugin.settings.notePlacement).onChange(async value => {
+        this.plugin.settings.notePlacement = value === 'split' ? 'split' : 'tab';
+        await this.plugin.saveSettings();
+      }));
+    new Setting(this.containerEl).setName('Use Obsidian font').setDesc('T3 controls its colors and theme. Only the font follows Obsidian.').addToggle(t =>
       t.setValue(this.plugin.settings.followAppearance).onChange(async value => {
         this.plugin.settings.followAppearance = value;
         await this.plugin.saveSettings();

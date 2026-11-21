@@ -6,7 +6,7 @@ This development adapter requires the patch in `t3-0.1.11-obsidian-host-v1.patch
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The approved adapter is `obsidian-host-v1.1`, protocol 1. Its client manifest SHA-256 is `cc9349a098cbd359dbf693c09b308d78789b2a1034ed08f55dedcd040b098968`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The approved adapter is `obsidian-host-v1.2`, protocol 1. Its client manifest SHA-256 is `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 

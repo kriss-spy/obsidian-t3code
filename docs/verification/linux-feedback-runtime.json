@@ -1,0 +1,21 @@
+{
+  "platform": "Linux",
+  "checks": {
+    "realGuestIsolation": {
+      "sandbox": true,
+      "contextIsolation": true,
+      "webSecurity": true,
+      "nodeIntegration": false
+    },
+    "realVaultChip": true,
+    "realExternalChipLine2": true,
+    "projectChoicesExcludeSibling": true,
+    "searchPositiveIncluded": true,
+    "searchNegativeExcluded": true,
+    "excludedRestoredRoute": true,
+    "excludedReconnect": true,
+    "excludedDomObservations": 0,
+    "concurrentOpenOneView": true
+  },
+  "checkedAt": "2026-11-21T11:48:32.654Z"
+}

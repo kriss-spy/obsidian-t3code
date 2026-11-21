@@ -12,13 +12,34 @@ Admission requires server 0.1.11, protocol 2, a nonce proof of the same local fi
 
 The patched client starts empty in embedded mode. Canonical host verdicts filter raw shell snapshots, merged thread families, archived RPC results, search matches, project choices, draft membership, and route loading. Pending and remote identities remain empty. Owning project metadata stays available for an eligible worktree without making the outside project a new-thread choice. Epochs invalidate approvals on reconnect. Conflicting active/archive metadata is excluded.
 
-The real MarkdownFileLink callback sends semantic environment/path/line/column/modifier requests. Native navigation resolves existing files, reuses editors, opens external Markdown through an isolated `file:` adapter, and applies bounded cursor positions. Missing files show a notice without creating a note. Stale route requests cannot open a different target.
+The real MarkdownFileLink callback sends semantic environment/path/line/column/modifier requests. Native navigation resolves existing files, reuses editors, opens external Markdown through an isolated `file:` adapter, and applies bounded cursor positions. Plain clicks retain T3 previews; Ctrl/Cmd-click and the explicit default-app menu action open native note tabs. New notes share T3's tab group by default, with a split option. Missing files show a notice without creating a note. Stale route requests cannot open a different target.
 
 Explicit note commands and editor-menu actions capture in-memory content before changing focus. The public composer handle appends readable source context and focuses the composer. Existing text and attachments remain. No clipboard writes, saves, or submissions occur in the command implementation. If no composer exists, the normal T3 new-thread action opens a known in-scope draft. Target changes cancel insertion.
 
-Safe thread/draft routes restore through workspace and plugin lifecycle changes. Pairing data is excluded from saved fields. Appearance follows Obsidian colors and font values, updates live, and can be removed. Settings contain connection/reset, appearance, diagnostics, and the official agent-skills recommendation.
+Safe thread/draft routes restore through workspace and plugin lifecycle changes. Pairing data is excluded from saved fields. T3 owns its full color palette. Optional Obsidian font matching updates live and can be removed. Settings contain connection/reset, appearance, diagnostics, and the official agent-skills recommendation.
 
-## Runtime evidence
+
+## First-trial feedback update
+
+The current artifact is adapter `obsidian-host-v1.2`. The feedback changes the accepted default: plain Markdown clicks stay in T3's thread-linked preview. Ctrl/Cmd-click and **Open in default app** open a native note. New native notes share T3's tab group by default. An explicit split option remains. Existing editors can be reused in their current group.
+
+Removed the injected color palette that overrode T3 theme changes. T3 controls all colors; **Use Obsidian font** changes only the font. The **Focus T3 Code** command reveals T3 and collapses Obsidian's left sidebar. See [recommended layout](layout.md).
+
+Observed in isolated Obsidian 1.15.1 after this change:
+
+- Plain chip click opened the T3 workspace file preview without activating a native editor.
+- Ctrl-click opened the vault note in T3's tab group. The explicit menu action opened the external original in the same group.
+- The focus command collapsed Obsidian's left sidebar and selected the existing T3 workspace.
+- T3's Ocean/light theme changed the chat and surrounding background surfaces together while Obsidian font matching remained enabled.
+- The terminal executed `printf` and rendered its fixture marker. See [actual terminal canvas](verification/terminal-fixture.png).
+- Browser preview loaded a local fixture page and rendered it. A real guest mouse click reached the fixture's click endpoint. Back, forward, and reload produced the expected addresses. See [actual preview canvas](verification/browser-fixture.png).
+- The repeated scope/isolation/search/route checks passed with zero excluded-content observations. See [feedback runtime assertions](verification/linux-feedback-runtime.json).
+
+Validation for this update: 28 plugin tests and the plugin build pass. Upstream targeted lint, web typecheck, server/web builds, and 10 adjacent Markdown-link tests pass. The full `check:changed` command did not pass in the filtered checkout: unrelated mobile/marketing dependencies were absent, and its root test configuration could not load `gt-react-native`. Its results are not counted as a passing full check. The earlier full changed-file pass below applies to the previous development artifact.
+
+The [feature matrix](verification/feature-matrix.md) records the remaining broader workflows. Basic terminal/browser success is not full parity. Aliases are tracked in #14, folder/project actions and reference drops in #15, optional setup guidance in #16, and verified theme mappings in #17.
+
+## Earlier development runtime evidence
 
 All checks used disposable development vaults and separate T3 data. No personal notes or live database were edited. The installed Obsidian app was 1.15.1 on Linux Flatpak, installer 1.15.0. The patched source was `59651c1761f6c63e9b6056839067066968e6a406`.
 
@@ -53,7 +74,7 @@ All checks used disposable development vaults and separate T3 data. No personal 
 - Patched server and web production builds pass. The source checks used the available pnpm 11.25.0 tooling. The packaged preparation script also passed in a fresh checkout with the exact pinned Node 26.13.1 and pnpm 12.14.0. It cloned the base, applied the patch, installed dependencies, built the server, and verified the copied client assets.
 - Local Obsidian review: zero source errors. Warnings concern deliberate filesystem access and specified product names/command labels. The report script also printed a numeric-summary parsing warning; the individual report is committed.
 
-The client manifest SHA-256 is `cc9349a098cbd359dbf693c09b308d78789b2a1034ed08f55dedcd040b098968`. `src/approved-client.ts` admits only this exact artifact. The package includes it without source maps and retains T3's license and third-party notices.
+The client manifest SHA-256 is `9c936011bf14dc76553f80df5a5c341e6de1ab4b7ad522e3b8bbd7b3afd62437`. `src/approved-client.ts` admits only this exact artifact. The package includes it without source maps and retains T3's license and third-party notices.
 
 ## Release blockers
 

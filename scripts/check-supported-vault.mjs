@@ -18,13 +18,17 @@ try {
   assert.deepEqual(await guest(`({require:typeof require,process:typeof process})`),{require:'undefined',process:'undefined'});
   const security=await parent(`(()=>{const g=app.workspace.getLeavesOfType('t3-code-workspace')[0].view.contentEl.querySelector('webview');const p=require('electron').remote.webContents.fromId(g.getWebContentsId()).getLastWebPreferences();return {sandbox:p.sandbox,contextIsolation:p.contextIsolation,webSecurity:p.webSecurity,nodeIntegration:p.nodeIntegration}})()`);
   assert.deepEqual(security,{sandbox:true,contextIsolation:true,webSecurity:true,nodeIntegration:false});evidence.checks.realGuestIsolation=security;
-  await guest(`document.querySelector('a.chat-markdown-file-link').click()`);
+  await guest(`document.querySelector('a.chat-markdown-file-link').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}))`);
   for(let i=0;i<30;i++){if(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path==='Test 空 格#.md')`))break;await new Promise(r=>setTimeout(r,100));}
   assert.equal(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path==='Test 空 格#.md')`),true);evidence.checks.realVaultChip=true;
-  await guest(`[...document.querySelectorAll('a.chat-markdown-file-link')].find(e=>e.textContent.includes('External')).click()`);
+  await parent(`app.plugins.plugins['t3-code'].openWorkspace().then(()=>true)`);
+  await waitFor(`[...document.querySelectorAll('a.chat-markdown-file-link')].some(e=>e.textContent.includes('External'))`);
+  await guest(`[...document.querySelectorAll('a.chat-markdown-file-link')].find(e=>e.textContent.includes('External')).dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true}))`);
   await new Promise(r=>setTimeout(r,400));
   assert.equal(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path?.startsWith('file:/')&&l.view.editor.getCursor().line===1)`),true);evidence.checks.realExternalChipLine2=true;
-  await guest(`document.querySelector('button[aria-label="Filter threads by project"]')?.click()`);
+  await parent(`app.plugins.plugins['t3-code'].openWorkspace().then(()=>true)`);
+  await waitFor(`!!document.querySelector('button[aria-label="Filter threads by project"]')`);
+  await guest(`document.querySelector('button[aria-label="Filter threads by project"]').click()`);
   await waitFor(`document.body.textContent.includes('All projects')`);
   assert.equal(await guest(`document.body.textContent.includes('Excluded project')`),false);evidence.checks.projectChoicesExcludeSibling=true;
   await guest(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);

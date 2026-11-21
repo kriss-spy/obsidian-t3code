@@ -6,6 +6,8 @@ Status: a Linux development build runs the real T3 workspace in Obsidian 1.15.1.
 
 See [try the development build](docs/development-install.md) for installation.
 
+- [Recommended layout](docs/layout.md)
+- [Feature verification matrix](docs/verification/feature-matrix.md)
 - [Implementation spec](docs/spec.md)
 - [Implementation roadmap and GitHub issues](docs/roadmap.md)
 - [Technical spike and verification limits](docs/technical-spike.md)
