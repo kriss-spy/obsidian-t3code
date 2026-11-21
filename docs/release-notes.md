@@ -1,6 +1,6 @@
 # T3 Code 0.1.0 release notes draft
 
-Status: release candidate for Linux testing. Stable publication is blocked by the [release assessment](release-readiness.md).
+Status: release candidate for Linux testing. The user authorized a GitHub prerelease. Stable publication waits for the user's real behavior testing on Windows and the remaining [release assessment](release-readiness.md) gates.
 
 Use T3's workspace inside Obsidian with vault-scoped session navigation. Open local Markdown originals in Obsidian through explicit file actions. Add selections, unsaved notes, and note/folder references to a draft for review. Search note aliases and open exact vault folders as T3 projects.
 

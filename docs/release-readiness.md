@@ -1,6 +1,6 @@
 # Stable release assessment
 
-Date: 2026-11-22. Decision: **do not publish a stable release yet**.
+Date: 2026-11-22. Decision: **do not publish a stable release yet**. The user authorized a GitHub prerelease for testing. Stable publication must wait for the user's real behavior testing on Windows, as well as resolution of the required gates below.
 
 The Linux candidate is reviewable and installable. The [rc.3 HTTP link repair](verification/http-links.md) addresses the reported system-browser failure. The [rc.2 menu update](verification/obsidian-menu.md) adds the shorter Obsidian label and gem icon. Use the [manual checklist](user-test-checklist.md) for the next user pass. Required reference comparisons remain incomplete. The candidate archive is `dist/obsidian-t3code-0.1.0-rc.3-linux.zip`. Its metadata explicitly blocks stable publication. No release, tag, PR, or merge was created by this review.
 
@@ -51,7 +51,7 @@ The approved client remains contract `obsidian-host-v1.4` at upstream revision `
 | Responsive and performance behavior | Narrow panes, keyboard/menu accessibility, large drafts/attachments, and large-vault search. Immediate embedded persistence adds synchronous serialization work; measure it with realistic large drafts before approving stable use. |
 | Final installation rehearsal | Re-extract the final archive on a clean machine, run its server preparation script with exact Node/pnpm versions, pair in a fresh vault, and complete the required journeys. Earlier preparation success belongs to an older patch. |
 
-Windows, macOS, mobile, and remote filesystem mapping remain outside the supported candidate. They are not additional platforms promised for this launch. Verified theme-name mapping remains optional and disabled; T3 owns its colors.
+This candidate has Linux runtime evidence. Windows behavior testing is pending and is required before stable publication. macOS, mobile, and remote filesystem mapping have no support claim. Verified theme-name mapping remains optional and disabled; T3 owns its colors.
 
 ## Candidate handling
 
