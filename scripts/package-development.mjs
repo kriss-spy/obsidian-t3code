@@ -1,0 +1,25 @@
+// Package only the already verified client. Never build or start T3 here.
+import {readFile,mkdir,copyFile,cp,writeFile} from 'node:fs/promises';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import path from 'node:path';
+const [checkout]=process.argv.slice(2);
+if(!checkout)throw Error('Supply the pinned patched T3 checkout.');
+const web=path.resolve(checkout,'apps/web/dist');
+execFileSync(process.execPath,['scripts/verify-packaged-client.mjs',web],{stdio:'inherit'});
+const dist=path.resolve('dist');await mkdir(dist,{recursive:true});
+const stage=path.join(dist,'obsidian-t3code-development-linux');
+try{await mkdir(stage);}catch{throw Error('Choose a clean dist directory before packaging.');}
+await mkdir(path.join(stage,'plugin/t3-code'),{recursive:true});
+for(const file of ['main.js','manifest.json','styles.css'])await copyFile(file,path.join(stage,'plugin/t3-code',file));
+for(const dir of ['scripts','upstream'])await mkdir(path.join(stage,dir));
+for(const file of ['prepare-t3-development.sh','verify-packaged-client.mjs'])await copyFile('scripts/'+file,path.join(stage,'scripts',file));
+await copyFile('upstream/t3-0.1.11-obsidian-host-v1.patch',path.join(stage,'upstream/t3-0.1.11-obsidian-host-v1.patch'));
+await copyFile('docs/development-install.md',path.join(stage,'DEVELOPMENT.md'));
+await copyFile(path.join(checkout,'LICENSE'),path.join(stage,'T3-LICENSE'));
+await cp(web,path.join(stage,'t3-web'),{recursive:true,filter:source=>!source.endsWith('.map')});
+const zip=path.join(dist,'obsidian-t3code-0.1.0-development-linux.zip');
+execFileSync('zip',['-q','-r',zip,path.basename(stage)],{cwd:dist});
+const digest=createHash('sha256').update(await readFile(zip)).digest('hex');
+await writeFile(zip+'.sha256',digest+'  '+path.basename(zip)+'\n');
+console.log(JSON.stringify({artifact:zip,sha256:digest,bytes:(await readFile(zip)).length}));

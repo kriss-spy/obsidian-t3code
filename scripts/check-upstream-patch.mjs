@@ -12,4 +12,4 @@ catch { throw new Error('Refuse a checkout with tracked edits. Use a clean isola
 const patch = fileURLToPath(new URL('../upstream/t3-0.1.11-obsidian-host-v1.patch', import.meta.url));
 git('apply', '--check', patch);
 if (mode === '--apply') git('apply', patch);
-console.log(`${mode === '--apply' ? 'Applied' : 'Patch applies to'} ${revision}. Compatibility remains unapproved.`);
+console.log(`${mode === '--apply' ? 'Applied' : 'Patch applies to'} ${revision}. Install the matching verified client bundle before connecting.`);

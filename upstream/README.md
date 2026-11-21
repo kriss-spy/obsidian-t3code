@@ -1,51 +1,38 @@
-# Experimental T3 host patch
+# Pinned T3 host patch
 
-This patch is implementation work for issue #4. It does not pass the integration gate yet. Do not install it over a live T3 AppImage or approve it in the plugin compatibility table.
+This development adapter requires the patch in `t3-0.1.11-obsidian-host-v1.patch` and the matching compiled client. Unmodified T3 stays unsupported. See [installation](../docs/development-install.md) and [verification limits](../docs/implementation-status.md).
 
-## Source identity
+## Exact source and artifact
 
-The running Linux AppImage's `resources/app.asar/package.json` contains:
+The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-```json
-{"version":"0.1.11","buildVersion":"0.1.11","t3codeCommitHash":"59651c1761f6"}
+The approved adapter is `obsidian-host-v1.1`, protocol 1. Its client manifest SHA-256 is `cc9349a098cbd359dbf693c09b308d78789b2a1034ed08f55dedcd040b098968`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
+
+Apply the patch only in a clean exact-revision checkout:
+
+```sh
+node scripts/check-upstream-patch.mjs /absolute/T3/checkout --check
+node scripts/check-upstream-patch.mjs /absolute/T3/checkout --apply
 ```
 
-`git ls-remote https://github.com/pingdotgg/t3code.git refs/tags/v0.1.11` resolves to `59651c1761f6c63e9b6056839067066968e6a406`. The patch targets that full revision. The previously inspected main revision is not its base.
+Use the preparation script from the extracted development ZIP for a complete trial installation. It builds the server and copies the verified client. Rebuilding the web client can change its hashes and needs another integration gate run. Never overwrite the approved digest merely to make a rebuilt client load.
 
-## Apply in an isolated source checkout
+## Contract
 
-1. Fetch tag `v0.1.11` from `https://github.com/pingdotgg/t3code.git`.
-2. Check out `59651c1761f6c63e9b6056839067066968e6a406`.
-3. Run `node scripts/check-upstream-patch.mjs /absolute/T3/checkout --check` from this plugin repository.
-4. Run the same command with `--apply` to apply the patch.
-5. Use T3's pinned Node and package manager versions from its `package.json` to install dependencies and build the web client.
+`?obsidian-host=1` selects embedded mode before services start. Ordinary clients retain their original path. Embedded startup waits for `window.t3ObsidianHostV1.initialize` with an independently verified environment identity and a document generation.
 
-The patch changes the web client. A descriptor capability flag cannot install it. A complete integration will require the patched web bundle to be served by the target T3 installation. Rebuilding this Obsidian plugin alone cannot provide the T3 hooks.
+A nonce file proves shared filesystem access. A keyed Linux machine-identity response rejects a remote server that merely shares mounted files. The challenge file is private, opened without following symlinks, read through one descriptor, and removed after verification. Detection never invokes a CLI or opens a T3 database.
 
-Use a disposable T3 data directory for runtime checks. Do not start a test backend against `~/.t3/userdata`. This repository's patch installer neither invokes T3 nor opens its database.
+The public bounded queue allows eight outstanding operations with ten-second timeouts. Every request/reply carries the document generation. The plugin checks origin before and after asynchronous evaluation. Navigation, reconnect, and teardown invalidate stale work. Pairing document redirects remove the old guest before mounting a new marked document.
 
-## Implemented contract
+Canonical verdicts apply before rendering. Independent entry points include the shell projection, merged thread families, detail reads, older settled/search rows, archived RPC snapshots, routes, drafts, side chats, linked-thread suggestions, notifications, project choices, first-run import choices, and scratch-workspace choices. Unknown and pending rows stay excluded. Scope epochs invalidate old approvals. Empty scope stays empty. Owning metadata can resolve an eligible worktree without exposing its outside parent project as a choice.
 
-Embedded mode requires `?obsidian-host=1` before application startup. Ordinary clients keep their existing path. Embedded startup waits for `window.t3ObsidianHostV1.initialize`. The host supplies a document generation and an independently verified local environment identity. A server descriptor alone does not establish local filesystem identity.
+The actual MarkdownFileLink primary callback resolves its absolute semantic file path and asks the host before normal T3 callbacks. It preserves environment, line, column, modifier intent, and requesting route. Remote, non-Markdown, timed-out, or declined requests retain T3 behavior. Stale route responses cannot navigate a replacement target.
 
-Requests use a bounded queue with eight outstanding operations and ten-second timeouts. `drain` and `reply` carry document generations. The plugin transport checks guest origin before and after asynchronous JavaScript execution. Closing the transport invalidates the host session.
+The composer hook registers the existing public composer handle. Explicit host requests append through that handle. They neither access private React state nor edit persisted stores. A normal new-thread handler can prepare an in-scope composer if none exists. Scope decisions do not change server visibility, tags, or database schemas.
 
-The initial shell snapshot projection requests canonical membership decisions for project and thread metadata. Pending decisions expose empty arrays. Changed worktree metadata requires a new decision. The host resolves filesystem identities through `threadScope`. Remote identities receive no approvals. Empty approvals stay empty.
+## Evidence and remaining work
 
-The actual `MarkdownFileLink` primary callback calls the semantic hook before its normal custom actions. It supplies environment, absolute target path, line, and modifier intent. Remote, relative, non-Markdown, timed-out, and declined requests use the existing T3 actions. This patch targets the Linux gate; Windows absolute paths remain unsupported.
+The exact patch module and proof endpoint execute in focused tests. The production plugin also passed real Obsidian guest chip clicks, file saves, scope/reconnect assertions, project/search/recents/archive checks, pairing, explicit context, and reload checks. See the [recorded evidence](../docs/implementation-status.md).
 
-## Missing coverage and checks
-
-- Thread families can add raw rows after the shell snapshot projection. Those rows still need the same scope hook.
-- Older settled pages and search results have separate readers. The current patch does not prove their coverage.
-- Thread detail loading and restored routes can bypass shell membership. They must be guarded before mounting `ChatView`.
-- Draft restoration, project choices, recents, scope widening, and reconnect need complete runtime coverage.
-- Project records needed to resolve an included worktree must remain available without exposing out-of-scope new-thread project choices.
-- The bridge is implemented but intentionally not connected to the production view. File navigation and lifecycle polling remain unwired.
-- The actual Obsidian guest and real chip clicks have not passed.
-
-`npm test` executes the exact host module extracted from the patch in a JavaScript VM. It checks startup waiting, pending and empty scope, metadata changes, remote fallback, semantic request fields, queue bounds, timeouts, and ordinary-client behavior. It does not mount React, run T3, or establish UI parity.
-
-All compatibility results remain unsupported. Issues #1 through #10 remain open. The patch is not a distributable supported T3 build.
-
-`pnpm exec vp run check:changed HEAD` passes in the patched upstream checkout. It covers format, lint, both knip passes, type checking, 11 adjacent tests, and React compiler checks. `pnpm --filter @t3tools/web build` also passes. Neither command runs the full T3 test suite or verifies a guest session.
+Changed-file upstream checks cover 34 adjacent test files and 29 React compiler checks. The full upstream test suite and complete reference UI parity remain unverified. This patch is a development dependency, not an official upstream release.

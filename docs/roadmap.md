@@ -2,7 +2,7 @@
 
 Track delivery in [release issue #1](https://github.com/kriss-spy/obsidian-t3code/issues/1) and the [v0.1.0 milestone](https://github.com/kriss-spy/obsidian-t3code/milestone/1).
 
-The [spec](spec.md) defines behavior and release gates. GitHub issues track implementation progress. The plugin foundation is implemented. No implementation task meets all acceptance criteria yet. See [implementation status](implementation-status.md) for checks and remaining work.
+The [spec](spec.md) defines behavior and release gates. GitHub issues track implementation progress. A Linux development build now hosts the scoped real T3 UI, native Markdown navigation, explicit note context, restoration, and appearance. Full v0.1.0 release verification remains incomplete. See [implementation status](implementation-status.md) for checks and remaining work.
 
 ## Tasks
 
@@ -21,4 +21,4 @@ The [spec](spec.md) defines behavior and release gates. GitHub issues track impl
 Issue #4 must prove real T3 file actions and pre-render session filtering. A synthetic bridge or CSS-hidden session rows cannot pass that gate. Document any required T3 patch before proceeding with dependent features.
 
 
-An [experimental pinned T3 patch](../upstream/README.md) now implements the initial host contract. Complete scope coverage and real guest acceptance remain pending. The plugin still approves no T3 build.
+The [pinned T3 patch](../upstream/README.md) now implements the scope and semantic-action contract. The exact compiled client passed the isolated development integration checks and is approved by its manifest digest. Unmodified T3 stays unsupported. See [trial installation](development-install.md) and [recorded verification limits](implementation-status.md).

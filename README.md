@@ -2,7 +2,9 @@
 
 Project goal: use T3 Code in the Obsidian GUI with its web UI capabilities and natural note workflows.
 
-Status: incomplete development build. The desktop plugin foundation builds and passes focused checks. Embedding stays disabled until strict scope and real T3 file actions pass the integration gate.
+Status: a Linux development build runs the real T3 workspace in Obsidian 1.15.1. It requires a pinned T3 0.1.11 patch and matching compiled client. Full release verification remains incomplete.
+
+See [try the development build](docs/development-install.md) for installation.
 
 - [Implementation spec](docs/spec.md)
 - [Implementation roadmap and GitHub issues](docs/roadmap.md)
@@ -17,4 +19,4 @@ Status: incomplete development build. The desktop plugin foundation builds and p
 
 Run `npm ci`, `npm test`, and `npm run build`. The build produces `main.js`. Copy it with `manifest.json` and `styles.css` into a disposable vault’s `.obsidian/plugins/t3-code/` directory. Enable T3 Code and run Open T3 Code.
 
-The current build shows compatibility status and a normal-app fallback. It cannot yet run the scoped T3 workspace. See [implementation status and evidence](docs/implementation-status.md).
+Run `node scripts/package-development.mjs /absolute/patched/T3/checkout` after building and verifying the exact client. It creates a private development ZIP in `dist/`. See [implementation status and evidence](docs/implementation-status.md).

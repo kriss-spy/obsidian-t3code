@@ -9,3 +9,5 @@ main.js
 coverage/
 test-results/
 playwright-report/
+
+dist/

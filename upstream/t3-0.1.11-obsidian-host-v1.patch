@@ -1,13 +1,501 @@
+diff --git a/apps/server/src/http.ts b/apps/server/src/http.ts
+index 44bca4bf..8ceaacbf 100644
+--- a/apps/server/src/http.ts
++++ b/apps/server/src/http.ts
+@@ -1,3 +1,4 @@
++import { obsidianHostProof } from "./obsidianHostProof.ts";
+ import * as Mime from "effect/http/Mime";
+ import {
+   AuthOrchestrationOperateScope,
+@@ -635,6 +636,19 @@ const handleStaticAndDevRequest = Effect.fn("handleStaticAndDevRequest")(
+       return HttpServerResponse.text("Bad Request", { status: 400 });
+     }
+ 
++    if (url.value.pathname === "/.well-known/t3/obsidian-host") {
++      const environment = yield* Effect.serviceOption(ServerEnvironment.ServerEnvironment);
++      if (Option.isNone(environment)) return HttpServerResponse.empty({ status: 404 });
++      const descriptor = yield* environment.value.getDescriptor;
++      const proof = obsidianHostProof(
++        url.value.searchParams.get("challenge") ?? "",
++        descriptor.environmentId,
++      );
++      return HttpServerResponse.jsonUnsafe(
++        proof ?? { error: "Local filesystem proof unavailable" },
++        { status: proof ? 200 : 404, headers: { "Cache-Control": "no-store" } },
++      );
++    }
+     const config = yield* ServerConfig.ServerConfig;
+     if (config.devUrl && isDevProxiedPath(url.value.pathname)) {
+       return HttpServerResponse.text("Not Found", { status: 404 });
+diff --git a/apps/server/src/obsidianHostProof.ts b/apps/server/src/obsidianHostProof.ts
+new file mode 100644
+index 00000000..f532bc60
+--- /dev/null
++++ b/apps/server/src/obsidianHostProof.ts
+@@ -0,0 +1,40 @@
++// @effect-diagnostics-next-line nodeBuiltinImport:off -- The proof uses the same SHA-256 format as the Electron host.
++import * as NodeCrypto from "node:crypto";
++// @effect-diagnostics-next-line nodeBuiltinImport:off -- The proof needs O_NOFOLLOW and fstat on the same descriptor.
++import * as NodeFS from "node:fs";
++// @effect-diagnostics-next-line nodeBuiltinImport:off -- Validate the challenge filename synchronously before opening it.
++import * as NodePath from "node:path";
++
++export function obsidianHostProof(file: string, environmentId: string) {
++  if (!NodePath.isAbsolute(file) || !/^t3-code-host-[0-9a-f-]{36}$/.test(NodePath.basename(file)))
++    return null;
++  let fd: number | undefined;
++  try {
++    fd = NodeFS.openSync(file, NodeFS.constants.O_RDONLY | NodeFS.constants.O_NOFOLLOW);
++    const stat = NodeFS.fstatSync(fd);
++    if (
++      !stat.isFile() ||
++      stat.size !== 64 ||
++      (stat.mode & 0o777) !== 0o600 ||
++      stat.uid !== process.getuid?.()
++    )
++      return null;
++    const token = NodeFS.readFileSync(fd, "utf8");
++    if (!/^[a-f0-9]{64}$/.test(token)) return null;
++    return {
++      adapterBuild: "obsidian-host-v1.1",
++      revision: "59651c1761f6c63e9b6056839067066968e6a406",
++      environmentId,
++      machineProof: NodeCrypto.createHmac("sha256", token)
++        .update("machine:" + NodeFS.readFileSync("/etc/machine-id", "utf8").trim())
++        .digest("hex"),
++      proof: NodeCrypto.createHash("sha256")
++        .update(token + ":" + environmentId)
++        .digest("hex"),
++    };
++  } catch {
++    return null;
++  } finally {
++    if (fd !== undefined) NodeFS.closeSync(fd);
++  }
++}
+diff --git a/apps/web/src/components/ChatMarkdown.tsx b/apps/web/src/components/ChatMarkdown.tsx
+index f6062475..93c44f4d 100644
+--- a/apps/web/src/components/ChatMarkdown.tsx
++++ b/apps/web/src/components/ChatMarkdown.tsx
+@@ -960,6 +960,7 @@ function useChatMarkdownState({
+         workspaceRelativePath={fileLinkMeta.workspaceRelativePath}
+         panelPath={isAppBundle ? null : panelPath}
+         line={fileLinkMeta.line}
++        column={fileLinkMeta.column}
+         label={fileLinkLabel(
+           {
+             path: fileLinkMeta.filePath,
+diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
+index 128f3b16..4e72327e 100644
+--- a/apps/web/src/components/ChatView.tsx
++++ b/apps/web/src/components/ChatView.tsx
+@@ -1,3 +1,4 @@
++import { registerObsidianComposer } from "../obsidianHost";
+ import { m } from "../i18n/messages";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { useGT, useMessages } from "gt-react";
+@@ -1881,6 +1882,16 @@ export default function ChatView(props: ChatViewProps) {
+ 
+   const { focusComposer: focusComposerStable, scheduleComposerFocus: scheduleComposerFocusStable } =
+     useComposerFocus(composerRef);
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- registers the public composer handle with the optional host and removes it when the route changes
++  useEffect(() => {
++    if (embedded || backgroundThread || !canOperateThread) return;
++    return registerObsidianComposer(JSON.stringify([environmentId, threadId, draftId]), (text) => {
++      const current = composerRef.current;
++      if (!current || !current.insertTextAtEnd(text, { ensureLeadingBoundary: true })) return false;
++      current.focusAtEnd();
++      return true;
++    });
++  }, [environmentId, threadId, draftId, composerRef, embedded, backgroundThread, canOperateThread]);
+   const canInterruptRunningThread =
+     canOperateThread && deriveCanInterruptRunningThread(activeThread !== undefined, activeRuntime);
+   const onInterrupt = async () => {
+diff --git a/apps/web/src/components/CommandPalette.tsx b/apps/web/src/components/CommandPalette.tsx
+index 3349902a..7b183c68 100644
+--- a/apps/web/src/components/CommandPalette.tsx
++++ b/apps/web/src/components/CommandPalette.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { decodeMsg, msg, T, useGT, useMessages, Var } from "gt-react";
+ import { m, type MessageResolver } from "../i18n/messages";
+@@ -1929,7 +1930,7 @@ function OpenCommandPaletteDialog(props: {
+                   linkedThreadSearch.linkedThreads.environmentId,
+                   linkedThreadRefs,
+                   hiddenKeys,
+-                  hidingAnywhere,
++                  hidingAnywhere || isObsidianEmbedded(),
+                 ),
+                 query: linkedThreadSearch.query,
+                 icon: <MessageSquareIcon className={ITEM_ICON_CLASS} />,
+diff --git a/apps/web/src/components/NoProjectsHero.tsx b/apps/web/src/components/NoProjectsHero.tsx
+index cea7285d..b601dfdd 100644
+--- a/apps/web/src/components/NoProjectsHero.tsx
++++ b/apps/web/src/components/NoProjectsHero.tsx
+@@ -1,3 +1,7 @@
++import { useAtomValue } from "@effect/atom-react";
++import { hostScopeRevision } from "../state/shell";
++import { isObsidianEmbedded, isObsidianProjectAllowed } from "../obsidianHost";
++import { ObsidianVaultSetup } from "./ObsidianVaultSetup";
+ import { workspaceAreaProps } from "../lib/workspaceFocus";
+ import { T, useGT } from "gt-react";
+ import { MessageSquareDashedIcon, PlusIcon } from "lucide-react";
+@@ -13,11 +17,26 @@ import { WorkspacePageHeader } from "./WorkspacePageHeader";
+ 
+ export function NoProjectsHero() {
+   const gt = useGT();
++  const scopeRevision = useAtomValue(hostScopeRevision);
+   const contentArea = workspaceAreaProps("home", 1, gt("Home"));
+   const primaryEnvironmentId = usePrimaryEnvironmentId();
+-  const { scratchEnvironmentId, startScratchThread } = useScratchProject();
++  const { scratchEnvironmentId, startScratchThread, scratchWorkspaceRootFor } = useScratchProject();
+   const scratchTargetEnvironmentId = scratchEnvironmentId(primaryEnvironmentId);
+ 
++  const scratchRoot = scratchWorkspaceRootFor(scratchTargetEnvironmentId);
++  const canStartScratch =
++    scratchTargetEnvironmentId !== null &&
++    (!isObsidianEmbedded() ||
++      (scratchRoot !== null &&
++        isObsidianProjectAllowed(
++          scratchTargetEnvironmentId,
++          {
++            id: "scratch:" + scratchTargetEnvironmentId,
++            workspaceRoot: scratchRoot,
++          },
++          scopeRevision,
++        )));
++
+   return (
+     <SidebarInset
+       {...contentArea}
+@@ -34,16 +53,17 @@ export function NoProjectsHero() {
+                 <T>What should we work on?</T>
+               </EmptyTitle>
+               <EmptyDescription>
+-                {scratchTargetEnvironmentId === null
++                {!canStartScratch
+                   ? gt("Add a project to start your first thread.")
+                   : gt("Add a project, or start without one.")}
+               </EmptyDescription>
++              {isObsidianEmbedded() ? <ObsidianVaultSetup /> : null}
+               <div className="mt-6 flex justify-center gap-2">
+                 <Button size="sm" onClick={() => openCommandPalette({ open: "add-project" })}>
+                   <PlusIcon className="size-4" />
+                   <T>Add project</T>
+                 </Button>
+-                {scratchTargetEnvironmentId === null ? null : (
++                {!canStartScratch || scratchTargetEnvironmentId === null ? null : (
+                   <Button
+                     size="sm"
+                     variant="outline"
+diff --git a/apps/web/src/components/ObsidianThreadGate.tsx b/apps/web/src/components/ObsidianThreadGate.tsx
+new file mode 100644
+index 00000000..bac23a3a
+--- /dev/null
++++ b/apps/web/src/components/ObsidianThreadGate.tsx
+@@ -0,0 +1,111 @@
++import { T } from "gt-react";
++import type { ReactNode } from "react";
++import { useAtomValue } from "@effect/atom-react";
++import { Atom } from "effect/reactivity";
++import * as Option from "effect/Option";
++import { Link, Navigate } from "@tanstack/react-router";
++import { rawEnvironmentShell, hostScopeRevision } from "../state/shell";
++import { EMPTY_SHELL_STATE } from "@t3tools/client-runtime/state/shell";
++import { useRawEnvironmentThread } from "../state/threads";
++import { useComposerDraftStore } from "../composerDraftStore";
++import {
++  obsidianThreadDecision,
++  setObsidianScopeEpoch,
++  openNormalObsidianTarget,
++} from "../obsidianHost";
++import type { ThreadRouteTarget } from "../threadRoutes";
++import { ThreadLinkPrompt } from "./promptLinks/ThreadLinkPrompt";
++
++const emptyShell = Atom.make(EMPTY_SHELL_STATE);
++export function ObsidianThreadGate({
++  target,
++  children,
++}: {
++  target: ThreadRouteTarget;
++  children: ReactNode;
++}) {
++  const scopeRevision = useAtomValue(hostScopeRevision);
++  const session = useComposerDraftStore((store) =>
++    target.kind === "draft" ? store.getDraftSession(target.draftId) : null,
++  );
++  const redirect = useComposerDraftStore((store) =>
++    target.kind === "draft" ? store.getPromotedDraftRedirect(target.draftId) : null,
++  );
++  const env =
++    target.kind === "server" ? target.threadRef.environmentId : (session?.environmentId ?? null);
++  const shell = useAtomValue(env === null ? emptyShell : rawEnvironmentShell.stateValueAtom(env));
++  const detail = useRawEnvironmentThread(
++    target.kind === "server" ? env : null,
++    target.kind === "server" ? target.threadRef.threadId : null,
++  );
++  if (env !== null) setObsidianScopeEpoch(env, `${shell.generation}:${shell.status}`);
++  if (target.kind === "draft" && session === null && redirect)
++    return <Navigate to="/$environmentId/$threadId" params={redirect} replace />;
++  if (env === null || shell.status !== "live")
++    return (
++      <p>
++        <T>Checking vault session scope…</T>
++      </p>
++    );
++  const projects = Option.getOrNull(shell.snapshot)?.projects ?? [];
++  const snapshot = Option.getOrNull(shell.snapshot);
++  const authoritativeThread =
++    target.kind === "server"
++      ? [...(snapshot?.threads ?? []), ...(snapshot?.archivedThreads ?? [])].find(
++          (t) => t.id === target.threadRef.threadId,
++        )
++      : null;
++  const thread =
++    target.kind === "server"
++      ? (authoritativeThread ??
++        (detail.status === "live" ? Option.getOrNull(detail.data)?.thread : null))
++      : session
++        ? { ...session, id: session.threadId }
++        : null;
++  const decision = thread
++    ? obsidianThreadDecision(
++        env,
++        thread,
++        projects,
++        [...(snapshot?.threads ?? []), ...(snapshot?.archivedThreads ?? [])],
++        scopeRevision,
++      )
++    : "pending";
++  if (decision === "pending")
++    return (
++      <p>
++        <T>Checking vault session scope…</T>
++      </p>
++    );
++  if (decision === "excluded")
++    return (
++      <div>
++        <p>
++          <T>This session is outside this vault.</T>
++        </p>
++        <Link to="/">
++          <T>Return to vault sessions</T>
++        </Link>
++        {target.kind === "server" ? (
++          <a
++            href={`/${encodeURIComponent(env)}/${encodeURIComponent(target.threadRef.threadId)}`}
++            onClick={(event) => {
++              event.preventDefault();
++              if (target.kind === "server")
++                void openNormalObsidianTarget(env, target.threadRef.threadId);
++            }}
++            target="_blank"
++            rel="noopener noreferrer"
++          >
++            <T>Open in the normal T3 app</T>
++          </a>
++        ) : null}
++      </div>
++    );
++  return (
++    <>
++      {target.kind === "server" ? <ThreadLinkPrompt threadRef={target.threadRef} /> : null}
++      {children}
++    </>
++  );
++}
+diff --git a/apps/web/src/components/ObsidianVaultSetup.tsx b/apps/web/src/components/ObsidianVaultSetup.tsx
+new file mode 100644
+index 00000000..7762b164
+--- /dev/null
++++ b/apps/web/src/components/ObsidianVaultSetup.tsx
+@@ -0,0 +1,67 @@
++import { T } from "gt-react";
++import { useState } from "react";
++import { useAtomValue } from "@effect/atom-react";
++import { EnvironmentId } from "@t3tools/contracts";
++import { scopeProjectRef } from "@t3tools/client-runtime/environment";
++import { inferProjectTitleFromPath } from "@t3tools/client-runtime/state/projects";
++import { obsidianVaultSetup, obsidianScopePending } from "../obsidianHost";
++import { useEnvironmentShellStatus, hostScopeRevision } from "../state/shell";
++import { useAtomCommand } from "../state/use-atom-command";
++import { projectEnvironment } from "../state/projects";
++import { useNewThreadHandler } from "../hooks/useHandleNewThread";
++import { newProjectId } from "../lib/utils";
++import { Button } from "./ui/button";
++
++export function ObsidianVaultSetup() {
++  const vault = obsidianVaultSetup();
++  const scopeRevision = useAtomValue(hostScopeRevision);
++  const env = vault ? EnvironmentId.make(vault.environmentId) : null;
++  const status = useEnvironmentShellStatus(env);
++  const create = useAtomCommand(projectEnvironment.create);
++  const openThread = useNewThreadHandler();
++  const [busy, setBusy] = useState(false);
++  const [failed, setFailed] = useState(false);
++  if (!vault || !env || status !== "live" || obsidianScopePending(scopeRevision))
++    return (
++      <p>
++        <T>Checking vault session scope…</T>
++      </p>
++    );
++  const add = async () => {
++    if (busy) return;
++    setBusy(true);
++    setFailed(false);
++    try {
++      const projectId = newProjectId();
++      const result = await create({
++        environmentId: env,
++        input: {
++          projectId,
++          title: inferProjectTitleFromPath(vault.path),
++          workspaceRoot: vault.path,
++          createWorkspaceRootIfMissing: false,
++          defaultModelSelection: null,
++        },
++      });
++      if (result._tag === "Failure") {
++        setFailed(true);
++      } else await openThread(scopeProjectRef(env, projectId));
++    } catch {
++      setFailed(true);
++    }
++    setBusy(false);
++  };
++  return (
++    <div className="mt-4 flex flex-col items-center gap-2">
++      <code>{vault.path}</code>
++      <Button disabled={busy} onClick={() => void add()}>
++        <T>Use vault folder</T>
++      </Button>
++      {failed ? (
++        <p>
++          <T>Could not add the vault project.</T>
++        </p>
++      ) : null}
++    </div>
++  );
++}
+diff --git a/apps/web/src/components/Sidebar.tsx b/apps/web/src/components/Sidebar.tsx
+index 86a2d04c..cd502782 100644
+--- a/apps/web/src/components/Sidebar.tsx
++++ b/apps/web/src/components/Sidebar.tsx
+@@ -1,3 +1,4 @@
++import { useObsidianDraftFilter } from "../state/obsidianScope";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { msg, T, useGT, useMessages } from "gt-react";
+ import { m } from "../i18n/messages";
+@@ -1201,9 +1202,11 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
+       : { projectIds: scopedProjectRefs.map((projectRef) => projectRef.projectId) },
+   );
+   const routeDraftIdForRows = routeTarget?.kind === "draft" ? routeTarget.draftId : null;
++  const allowedDraft = useObsidianDraftFilter();
+   const visibleDraftSessionCount = useComposerDraftStore((store) => {
+     let count = 0;
+     for (const [draftKey, session] of Object.entries(store.draftThreadsByThreadKey)) {
++      if (!allowedDraft(session)) continue;
+       if (session.promotedTo != null) {
+         continue;
+       }
+diff --git a/apps/web/src/components/ThreadNotificationCoordinator.tsx b/apps/web/src/components/ThreadNotificationCoordinator.tsx
+index e2801c97..6165b904 100644
+--- a/apps/web/src/components/ThreadNotificationCoordinator.tsx
++++ b/apps/web/src/components/ThreadNotificationCoordinator.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { msg } from "gt-react";
+ import { m } from "../i18n/messages";
+ import {
+@@ -111,9 +112,10 @@ export function startThreadNotifications(
+   // one whose thread left the live list (archived) cannot be judged, so it closes too.
+   const closeHiddenPending = () => {
+     const hidden = registry.get(environmentThreadShells.hiddenThreadKeysAtom);
+-    const live = registry.get(environmentThreadShells.anyEnvironmentHidingAtom)
+-      ? new Set(registry.get(environmentThreadShells.threadRefsAtom).map(threadKey))
+-      : null;
++    const live =
++      isObsidianEmbedded() || registry.get(environmentThreadShells.anyEnvironmentHidingAtom)
++        ? new Set(registry.get(environmentThreadShells.threadRefsAtom).map(threadKey))
++        : null;
+     const shouldClose = (key: string) => hidden.has(key) || (live !== null && !live.has(key));
+     closeToasts(shouldClose);
+     const count = pending.size;
+@@ -136,6 +138,13 @@ export function startThreadNotifications(
+     kind: ThreadNotificationKind,
+   ) => {
+     const { thread, status } = state;
++    if (
++      isObsidianEmbedded() &&
++      registry.get(
++        environmentThreadShells.quietThreadShellAtom({ environmentId, threadId: thread.id }),
++      ) === null
++    )
++      return;
+     if (
+       registry
+         .get(environmentThreadShells.hiddenThreadKeysAtom)
+diff --git a/apps/web/src/components/ThreadRouteView.tsx b/apps/web/src/components/ThreadRouteView.tsx
+index 5217b068..b51808d7 100644
+--- a/apps/web/src/components/ThreadRouteView.tsx
++++ b/apps/web/src/components/ThreadRouteView.tsx
+@@ -1,3 +1,5 @@
++import { ObsidianThreadGate } from "./ObsidianThreadGate";
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { useAtomValue } from "@effect/atom-react";
+ import { parseScopedThreadKey, scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import { parseThreadKey, threadKey } from "@t3tools/client-runtime/state/entities";
+@@ -51,7 +53,7 @@ function useOpenThreadFamily(threadRef: ScopedThreadRef | null, missing: boolean
+  * promotion runs in the draft store; this only follows the redirect it leaves behind.
+  * `background` keeps the thread mounted, inert and in place under Settings or Usage.
+  */
+-export function ThreadRouteView({
++function UnscopedThreadRouteView({
+   target,
+   background = false,
+ }: {
+@@ -236,3 +238,13 @@ export function ThreadRouteView({
+     </SidebarInset>
+   );
+ }
++
++export function ThreadRouteView(props: { target: ThreadRouteTarget; background?: boolean }) {
++  return isObsidianEmbedded() ? (
++    <ObsidianThreadGate target={props.target}>
++      <UnscopedThreadRouteView {...props} />
++    </ObsidianThreadGate>
++  ) : (
++    <UnscopedThreadRouteView {...props} />
++  );
++}
 diff --git a/apps/web/src/components/chat/MarkdownFileLink.tsx b/apps/web/src/components/chat/MarkdownFileLink.tsx
-index 8e91e1ef..657f7395 100644
+index 8e91e1ef..df055f52 100644
 --- a/apps/web/src/components/chat/MarkdownFileLink.tsx
 +++ b/apps/web/src/components/chat/MarkdownFileLink.tsx
 @@ -1,3 +1,4 @@
-+import { openObsidianMarkdown } from "../../obsidianHost";
++import { openObsidianMarkdown, canOpenObsidianMarkdown } from "../../obsidianHost";
  import { useNativeFileDrag } from "../../useNativeFileDrag";
  import { useAssetUrlState } from "../../assets/assetUrls";
  import { formatFilePathForClipboard } from "@t3tools/client-runtime/media-actions";
-@@ -344,9 +345,18 @@ export const MarkdownFileLink = memo(function MarkdownFileLink({
+@@ -38,6 +39,7 @@ interface MarkdownFileLinkProps {
+   workspaceRelativePath: string | null;
+   panelPath: string | null;
+   line?: number | undefined;
++  column?: number | undefined;
+   label: string;
+   copyMarkdown: string;
+   theme: "light" | "dark";
+@@ -64,6 +66,7 @@ export const MarkdownFileLink = memo(function MarkdownFileLink({
+   workspaceRelativePath,
+   panelPath,
+   line,
++  column,
+   label,
+   copyMarkdown,
+   theme,
+@@ -344,9 +347,26 @@ export const MarkdownFileLink = memo(function MarkdownFileLink({
                render={<a href={href} />}
                className={MARKDOWN_FILE_LINK_CLASS_NAME}
                data-markdown-copy={copyMarkdown}
@@ -15,18 +503,398 @@ index 8e91e1ef..657f7395 100644
 +              onClick={async (event) => {
                  event.preventDefault();
                  event.stopPropagation();
-+                if (
-+                  await openObsidianMarkdown({
-+                    environmentId,
-+                    path: targetPath,
-+                    line,
-+                    newTab: event.metaKey || event.ctrlKey || event.shiftKey,
-+                  })
-+                )
-+                  return;
++                if (canOpenObsidianMarkdown(environmentId) && /\.md$/i.test(iconPath)) {
++                  const clickedRoute = location.pathname;
++                  try {
++                    const absolutePath = await resolveDragPath();
++                    if (location.pathname !== clickedRoute) return;
++                    const handled = await openObsidianMarkdown({
++                      environmentId,
++                      path: absolutePath,
++                      line,
++                      column,
++                      newTab: event.metaKey || event.ctrlKey || event.shiftKey,
++                    });
++                    if (handled || location.pathname !== clickedRoute) return;
++                  } catch {
++                    /* Keep the existing T3 action when its path cannot be resolved. */
++                  }
++                }
                  if (onOpen && shouldOpenMarkdownFileLinkInEditor(event)) {
                    handleOpenInEditor();
                    return;
+@@ -418,6 +438,7 @@ function areMarkdownFileLinkPropsEqual(
+     previous.workspaceRelativePath === next.workspaceRelativePath &&
+     previous.panelPath === next.panelPath &&
+     previous.line === next.line &&
++    previous.column === next.column &&
+     previous.label === next.label &&
+     previous.copyMarkdown === next.copyMarkdown &&
+     previous.theme === next.theme &&
+diff --git a/apps/web/src/components/chat/SideChatPane.tsx b/apps/web/src/components/chat/SideChatPane.tsx
+index ffd38450..28dbf093 100644
+--- a/apps/web/src/components/chat/SideChatPane.tsx
++++ b/apps/web/src/components/chat/SideChatPane.tsx
+@@ -1,3 +1,5 @@
++import { ObsidianThreadGate } from "../ObsidianThreadGate";
++import { isObsidianEmbedded } from "../../obsidianHost";
+ import { scopeThreadRef } from "@t3tools/client-runtime/environment";
+ import {
+   isAtomCommandInterrupted,
+@@ -152,15 +154,31 @@ export default function SideChatPane(props: {
+       ) : (
+         <BackgroundThreadContext value>
+           <ComposerHandleContext value={null}>
+-            <ChatView
+-              environmentId={parentRef.environmentId}
+-              threadId={threadId}
+-              routeKind="server"
+-              embedded={props.parentPanel}
+-            />
++            <SideChatScopeGate threadRef={{ environmentId: parentRef.environmentId, threadId }}>
++              <ChatView
++                environmentId={parentRef.environmentId}
++                threadId={threadId}
++                routeKind="server"
++                embedded={props.parentPanel}
++              />
++            </SideChatScopeGate>
+           </ComposerHandleContext>
+         </BackgroundThreadContext>
+       )}
+     </div>
+   );
+ }
++
++function SideChatScopeGate({
++  threadRef,
++  children,
++}: {
++  threadRef: ScopedThreadRef;
++  children: React.ReactNode;
++}) {
++  return isObsidianEmbedded() ? (
++    <ObsidianThreadGate target={{ kind: "server", threadRef }}>{children}</ObsidianThreadGate>
++  ) : (
++    children
++  );
++}
+diff --git a/apps/web/src/components/chat/ThreadRelationshipsControl.tsx b/apps/web/src/components/chat/ThreadRelationshipsControl.tsx
+index e8a5fc1f..a8cc5bc5 100644
+--- a/apps/web/src/components/chat/ThreadRelationshipsControl.tsx
++++ b/apps/web/src/components/chat/ThreadRelationshipsControl.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../../obsidianHost";
+ import { useAtomValue } from "@effect/atom-react";
+ import { threadKey } from "@t3tools/client-runtime/state/entities";
+ import { ThreadDetailsControl } from "./ThreadDetailsControl";
+@@ -410,6 +411,7 @@ function DelegatedFromRow(props: {
+       params: buildThreadRouteParams(parentRef),
+     });
+   };
++  if (isObsidianEmbedded() && parent === null) return null;
+   return (
+     <li className="group relative flex h-8 items-center rounded-lg">
+       <Tooltip>
+diff --git a/apps/web/src/components/issue/IssueThreadLinks.tsx b/apps/web/src/components/issue/IssueThreadLinks.tsx
+index e9d54ba1..1683eb6c 100644
+--- a/apps/web/src/components/issue/IssueThreadLinks.tsx
++++ b/apps/web/src/components/issue/IssueThreadLinks.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../../obsidianHost";
+ import { useAtomValue } from "@effect/atom-react";
+ import { squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
+ import { visibleLinkedThreads } from "@t3tools/client-runtime/state/threads";
+@@ -115,7 +116,7 @@ export function IssueThreadLinks({
+     environmentId,
+     loadedThreadRefs,
+     hiddenKeys,
+-    hidingAnywhere,
++    hidingAnywhere || isObsidianEmbedded(),
+   );
+   const linkedThreadsLabel =
+     linkedThreads.length > 0
+diff --git a/apps/web/src/components/onboarding/WelcomePage.tsx b/apps/web/src/components/onboarding/WelcomePage.tsx
+index 5c1b4218..b89fc070 100644
+--- a/apps/web/src/components/onboarding/WelcomePage.tsx
++++ b/apps/web/src/components/onboarding/WelcomePage.tsx
+@@ -1,3 +1,5 @@
++import { isObsidianProjectAllowed } from "../../obsidianHost";
++import { hostScopeRevision } from "../../state/shell";
+ import { useAuth } from "@clerk/react";
+ import { useAtomValue } from "@effect/atom-react";
+ import type {
+@@ -1518,13 +1520,25 @@ function useProjectImport({
+     };
+   }, []);
+ 
++  const scopeRevision = useAtomValue(hostScopeRevision);
+   const { available: candidates, recent: recentActive } = partitionOnboardingProjects(
+     scans.flatMap((scan) =>
+-      (scan.data?.candidates ?? []).map((candidate) => ({
+-        ...candidate,
+-        environmentId: scan.environmentId,
+-        key: onboardingProjectKey(scan.environmentId, candidate.path),
+-      })),
++      (scan.data?.candidates ?? [])
++        .map((candidate) => ({
++          ...candidate,
++          environmentId: scan.environmentId,
++          key: onboardingProjectKey(scan.environmentId, candidate.path),
++        }))
++        .filter((candidate) =>
++          isObsidianProjectAllowed(
++            candidate.environmentId,
++            {
++              id: candidate.key,
++              workspaceRoot: candidate.path,
++            },
++            scopeRevision,
++          ),
++        ),
+     ),
+   );
+   // Projects already in T3 Code stay in the list, but reopening the page does not import their
+diff --git a/apps/web/src/components/pullRequest/PullRequestThreadLinks.tsx b/apps/web/src/components/pullRequest/PullRequestThreadLinks.tsx
+index 66c43846..67ebbb4f 100644
+--- a/apps/web/src/components/pullRequest/PullRequestThreadLinks.tsx
++++ b/apps/web/src/components/pullRequest/PullRequestThreadLinks.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../../obsidianHost";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { Tooltip, TooltipTrigger, TooltipPopup } from "../ui/tooltip";
+ import { useAtomValue } from "@effect/atom-react";
+@@ -139,7 +140,7 @@ function EnabledPullRequestThreadLinks({
+     environmentId,
+     loadedThreadRefs,
+     hiddenKeys,
+-    hidingAnywhere,
++    hidingAnywhere || isObsidianEmbedded(),
+   );
+   const linkedThreadsLabel =
+     linkedThreads.length > 0
+diff --git a/apps/web/src/components/settings/ScheduledTasksSettings.tsx b/apps/web/src/components/settings/ScheduledTasksSettings.tsx
+index 39670ed2..d17df204 100644
+--- a/apps/web/src/components/settings/ScheduledTasksSettings.tsx
++++ b/apps/web/src/components/settings/ScheduledTasksSettings.tsx
+@@ -1,3 +1,5 @@
++import { useObsidianDraftFilter } from "../../state/obsidianScope";
++import { isObsidianEmbedded } from "../../obsidianHost";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { managedCapabilityDenial } from "@t3tools/client-runtime/contract-labels";
+ import { useAtomValue } from "@effect/atom-react";
+@@ -1285,13 +1287,23 @@ const THREAD_MODE_LABELS: Record<ScheduledTaskThreadMode, string> = {
+ };
+ 
+ function useScheduledTaskThread(environmentId: EnvironmentId, threadId: ThreadId | null) {
++  const allowed = useObsidianDraftFilter();
+   const ref = threadId === null ? null : scopeThreadRef(environmentId, threadId);
+   const shell = useThreadShell(ref);
+   // The shell can omit older settled threads; their family read still carries the row.
+   const family = useEnvironmentQuery(
+     ref !== null && shell === null ? threadFamilies.familyAtom(environmentId, ref.threadId) : null,
+   );
+-  return shell ?? family.data?.threads.find((row) => row.id === threadId) ?? null;
++  const thread = shell ?? family.data?.threads.find((row) => row.id === threadId) ?? null;
++  return thread &&
++    allowed({
++      environmentId,
++      projectId: thread.projectId,
++      threadId: thread.id,
++      worktreePath: thread.worktreePath,
++    })
++    ? thread
++    : null;
+ }
+ 
+ function ScheduledTaskDestination({
+@@ -1320,7 +1332,8 @@ function ScheduledTaskDestination({
+   const thread = useScheduledTaskThread(environmentId, threadId);
+   const currentLabel =
+     ref !== null
+-      ? thread?.title.trim() || gt("Thread {id}", { id: ref.threadId })
++      ? thread?.title.trim() ||
++        (isObsidianEmbedded() ? gt("Select a thread") : gt("Thread {id}", { id: ref.threadId }))
+       : threadMode === "new_thread"
+         ? gt("New thread each run")
+         : gt("Started by the first run");
+diff --git a/apps/web/src/components/sidebar/SidebarDraftBlock.tsx b/apps/web/src/components/sidebar/SidebarDraftBlock.tsx
+index 60c47004..38f8abdf 100644
+--- a/apps/web/src/components/sidebar/SidebarDraftBlock.tsx
++++ b/apps/web/src/components/sidebar/SidebarDraftBlock.tsx
+@@ -1,3 +1,4 @@
++import { useObsidianDraftFilter } from "../../state/obsidianScope";
+ import { discardComposerDraft } from "../../lib/discardComposerDraft";
+ import type { ContextMenuSource } from "@t3tools/contracts";
+ import { contextMenuSourceOf } from "../../contextMenuSource";
+@@ -163,6 +164,7 @@ export const SidebarDraftBlock = memo(function SidebarDraftBlock(props: {
+     source: ContextMenuSource,
+   ) => void;
+ }) {
++  const allowedDraft = useObsidianDraftFilter();
+   const draftThreadsByThreadKey = useComposerDraftStore((store) => store.draftThreadsByThreadKey);
+   const draftsByThreadKey = useComposerDraftStore(
+     useShallow((store) =>
+@@ -215,7 +217,7 @@ export const SidebarDraftBlock = memo(function SidebarDraftBlock(props: {
+       rows.push({ draftId: DraftId.make(draftKey), session, composer });
+     }
+     rows.sort((left, right) => right.session.createdAt.localeCompare(left.session.createdAt));
+-    return rows;
++    return rows.filter((row) => allowedDraft(row.session));
+   })();
+   if (drafts.length === 0) {
+     return null;
+diff --git a/apps/web/src/hooks/useHandleNewThread.ts b/apps/web/src/hooks/useHandleNewThread.ts
+index 49e88126..298f5ba3 100644
+--- a/apps/web/src/hooks/useHandleNewThread.ts
++++ b/apps/web/src/hooks/useHandleNewThread.ts
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../obsidianHost";
+ import {
+   scopedProjectKey,
+   scopeProjectRef,
+@@ -161,6 +162,7 @@ export function createNewThreadHandler(router: AnyRouter) {
+         candidate.id === projectRef.projectId &&
+         candidate.environmentId === projectRef.environmentId,
+     );
++    if (isObsidianEmbedded() && project === undefined) return Promise.resolve(null);
+     const abandonedSinceRequest = () =>
+       routeChangedSinceRequest() || (project !== undefined && readProject(projectRef) === null);
+     const projectSettings = resolveProjectSettings(
+@@ -198,6 +200,7 @@ export function createNewThreadHandler(router: AnyRouter) {
+         destinationDraftId,
+       });
+     const resolveDefaultEnvMode = async (): Promise<DraftThreadEnvMode> => {
++      if (isObsidianEmbedded()) return "local";
+       // Environment queries wait for a connection, so reading the project file on an
+       // offline machine would never settle and the draft would never open.
+       const consultProjectFile =
+diff --git a/apps/web/src/hooks/useScratchProject.ts b/apps/web/src/hooks/useScratchProject.ts
+index 8cf6db23..89124cda 100644
+--- a/apps/web/src/hooks/useScratchProject.ts
++++ b/apps/web/src/hooks/useScratchProject.ts
+@@ -1,3 +1,6 @@
++import { isObsidianEmbedded, isObsidianProjectAllowed } from "../obsidianHost";
++import { hostScopeRevision } from "../state/shell";
++import { useAtomValue } from "@effect/atom-react";
+ import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
+ import { RegistryContext } from "@effect/atom-react";
+ import { scopeProjectRef } from "@t3tools/client-runtime/environment";
+@@ -38,6 +41,7 @@ type ScratchEnvironment = Pick<EnvironmentPresentation, "connection" | "serverCo
+ };
+ 
+ export function createScratchProjectActions(input: {
++  readonly scopeRevision?: number;
+   readonly environments: () => Iterable<ScratchEnvironment>;
+   readonly primaryEnvironmentId: () => EnvironmentId | null;
+   readonly registry: AtomRegistry.AtomRegistry;
+@@ -48,7 +52,22 @@ export function createScratchProjectActions(input: {
+     for (const entry of input.environments()) {
+       if (entry.environmentId === environmentId) environment = entry;
+     }
+-    return availableScratchWorkspaceRoot(environment?.connection.phase, environment?.serverConfig);
++    const root = availableScratchWorkspaceRoot(
++      environment?.connection.phase,
++      environment?.serverConfig,
++    );
++    if (
++      isObsidianEmbedded() &&
++      (!environmentId ||
++        !root ||
++        !isObsidianProjectAllowed(
++          environmentId,
++          { id: "scratch:" + environmentId, workspaceRoot: root },
++          input.scopeRevision,
++        ))
++    )
++      return null;
++    return root;
+   };
+ 
+   // The primary (local) environment wins; `fallback` only applies when it offers no scratch root.
+@@ -66,6 +85,7 @@ export function createScratchProjectActions(input: {
+     environmentId: EnvironmentId,
+     failureTitle = m(msg("Could not start without a project")),
+   ): Promise<EnvironmentProject | null> => {
++    if (isObsidianEmbedded() && !scratchWorkspaceRootFor(environmentId)) return null;
+     const command = projectEnvironment.openScratch;
+     const result = await runAtomCommand(
+       input.registry,
+@@ -95,11 +115,13 @@ export function createScratchProjectActions(input: {
+ }
+ 
+ export function useScratchProject() {
++  const scopeRevision = useAtomValue(hostScopeRevision);
+   const { environments } = useEnvironments();
+   const primaryEnvironmentId = usePrimaryEnvironmentId();
+   const registry = useContext(RegistryContext);
+   const handleNewThread = useNewThreadHandler();
+   return createScratchProjectActions({
++    scopeRevision,
+     environments: () => environments,
+     primaryEnvironmentId: () => primaryEnvironmentId,
+     registry,
+diff --git a/apps/web/src/lib/archivedThreadsState.ts b/apps/web/src/lib/archivedThreadsState.ts
+index fbd17226..093a1e7d 100644
+--- a/apps/web/src/lib/archivedThreadsState.ts
++++ b/apps/web/src/lib/archivedThreadsState.ts
+@@ -1,3 +1,6 @@
++import { AsyncResult, Atom } from "effect/reactivity";
++import { isObsidianEmbedded, scopeObsidianSnapshot, setObsidianScopeEpoch } from "../obsidianHost";
++import { rawEnvironmentShell, hostScopeRevision } from "../state/shell";
+ import { useAtomValue } from "@effect/atom-react";
+ import {
+   type ArchivedSnapshotEntry,
+@@ -11,13 +14,30 @@ import { serverEnvironment } from "../state/server";
+ import { environmentThreadShells } from "../state/threads";
+ import { appAtomRegistry } from "../rpc/atomRegistry";
+ 
+-function archivedSnapshotAtom(environmentId: EnvironmentId) {
++function archivedQueryAtom(environmentId: EnvironmentId) {
+   return orchestrationEnvironment.archivedShellSnapshot({
+     environmentId,
+     input: {},
+   });
+ }
+ 
++const archivedSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
++  Atom.make((get) => {
++    const result = get(archivedQueryAtom(environmentId));
++    if (!isObsidianEmbedded()) return result;
++    get(hostScopeRevision);
++    const shell = get(rawEnvironmentShell.stateValueAtom(environmentId));
++    setObsidianScopeEpoch(environmentId, `${shell.generation}:${shell.status}`);
++    return AsyncResult.map(result, (snapshot) => {
++      const scoped = scopeObsidianSnapshot(environmentId, {
++        ...snapshot,
++        archivedThreads: [],
++        ...(shell.status === "live" ? {} : { projects: [], threads: [] }),
++      });
++      return { ...snapshot, projects: scoped.projects, threads: scoped.threads };
++    });
++  }),
++);
+ const archivedSnapshotsAtom = createArchivedThreadSnapshotsAtomFamily({
+   getSnapshotAtom: archivedSnapshotAtom,
+   hiddenThreadTagsAtom: serverEnvironment.hiddenThreadTagsAtom,
+@@ -28,7 +48,7 @@ const archivedSnapshotsAtom = createArchivedThreadSnapshotsAtomFamily({
+ });
+ 
+ export function refreshArchivedThreadsForEnvironment(environmentId: EnvironmentId): void {
+-  appAtomRegistry.refresh(archivedSnapshotAtom(environmentId));
++  appAtomRegistry.refresh(archivedQueryAtom(environmentId));
+ }
+ 
+ export function useArchivedThreadSnapshots(environmentIds: ReadonlyArray<EnvironmentId>): {
+@@ -41,7 +61,7 @@ export function useArchivedThreadSnapshots(environmentIds: ReadonlyArray<Environ
+   const result = useAtomValue(archivedSnapshotsAtom(environmentKey));
+   const refresh = () => {
+     for (const environmentId of environmentIds) {
+-      appAtomRegistry.refresh(archivedSnapshotAtom(environmentId));
++      appAtomRegistry.refresh(archivedQueryAtom(environmentId));
+     }
+   };
+ 
 diff --git a/apps/web/src/main.tsx b/apps/web/src/main.tsx
 index 112de484..b6c87f41 100644
 --- a/apps/web/src/main.tsx
@@ -48,11 +916,27 @@ index 112de484..b6c87f41 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 00000000..aab0fb53
+index 00000000..4f15624f
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,159 @@
+@@ -0,0 +1,390 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
++const SCOPE_COVERAGE = [
++  "active",
++  "pinned",
++  "working",
++  "snoozed",
++  "settled",
++  "recents",
++  "search",
++  "archive",
++  "projects",
++  "routes",
++  "drafts",
++  "reconnect",
++  "side-chats",
++  "onboarding",
++];
 +const OBSIDIAN_HOST_REVISION = "59651c1761f6c63e9b6056839067066968e6a406";
 +const embedded =
 +  typeof location !== "undefined" &&
@@ -60,16 +944,27 @@ index 00000000..aab0fb53
 +type Row = {
 +  id: string;
 +  projectId: string;
-+  workspaceRoot: string;
++  workspaceRoot: string | null;
 +  worktreePath: string | null;
 +  kind: "project" | "thread";
 +};
 +type Request = Record<string, unknown> & { id: string; generation: string };
-+type Reply = { id: string; generation: string; allowed?: string[]; handled?: boolean };
++type Reply = {
++  id: string;
++  generation: string;
++  allowed?: string[];
++  rootProjects?: string[];
++  handled?: boolean;
++};
 +let generation = "";
 +let environmentId = "";
++let vaultRoot: string | null = null;
 +let initialized = false;
 +let sequence = 0;
++let composerSequence = 0;
++let newComposer: (() => Promise<boolean>) | null = null;
++let composer: { target: string; pathname: string; append: (text: string) => boolean } | null = null;
++const roots = new Set<string>();
 +const queue: Request[] = [];
 +const pending = new Map<
 +  string,
@@ -99,9 +994,10 @@ index 00000000..aab0fb53
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
++      build: "obsidian-host-v1.1",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
-+      initialize(input: { generation: string; environmentId: string }) {
++      initialize(input: { generation: string; environmentId: string; vaultRoot?: string }) {
 +        if (
 +          initialized ||
 +          !input ||
@@ -113,9 +1009,39 @@ index 00000000..aab0fb53
 +          throw new Error("Invalid host initialization");
 +        generation = input.generation;
 +        environmentId = input.environmentId;
++        vaultRoot =
++          typeof input.vaultRoot === "string" && input.vaultRoot.startsWith("/")
++            ? input.vaultRoot
++            : null;
 +        initialized = true;
 +        readyResolve();
-+        return { protocol: 1, revision: OBSIDIAN_HOST_REVISION, generation };
++        return {
++          protocol: 1,
++          revision: OBSIDIAN_HOST_REVISION,
++          generation,
++          build: "obsidian-host-v1.1",
++          coverage: SCOPE_COVERAGE,
++        };
++      },
++      async prepareComposer(expectedPath: string) {
++        if (expectedPath !== location.pathname || composer || !newComposer) return null;
++        return (await newComposer()) ? location.pathname : null;
++      },
++      composerTarget() {
++        return composer?.pathname === location.pathname ? composer.target : null;
++      },
++      appendContext(input: { generation: string; target: string; text: string }) {
++        if (
++          !initialized ||
++          input.generation !== generation ||
++          !composer ||
++          input.target !== composer.target ||
++          composer.pathname !== location.pathname ||
++          typeof input.text !== "string" ||
++          input.text.length > 2000000
++        )
++          return false;
++        return composer.append(input.text);
 +      },
 +      drain() {
 +        return queue.splice(0, 8);
@@ -131,6 +1057,36 @@ index 00000000..aab0fb53
 +      },
 +    }),
 +  });
++export function registerObsidianNewComposer(create: () => Promise<boolean>) {
++  if (!embedded) return;
++  newComposer = create;
++  return () => {
++    if (newComposer === create) newComposer = null;
++  };
++}
++export function registerObsidianComposer(identity: string, append: (text: string) => boolean) {
++  if (!embedded || !initialized) return;
++  const registration = {
++    target: JSON.stringify([generation, identity, ++composerSequence]),
++    pathname: location.pathname,
++    append,
++  };
++  composer = registration;
++  return () => {
++    if (composer === registration) composer = null;
++  };
++}
++export function isObsidianRootProject(env: string, project: Project) {
++  return roots.has(
++    rowKey(env, {
++      kind: "project",
++      id: project.id,
++      projectId: project.id,
++      workspaceRoot: project.workspaceRoot,
++      worktreePath: null,
++    }),
++  );
++}
 +export function waitForObsidianHost() {
 +  return embedded ? ready : undefined;
 +}
@@ -140,14 +1096,92 @@ index 00000000..aab0fb53
 +    listeners.delete(listener);
 +  };
 +}
++type Project = { id: string; workspaceRoot: string };
++type Thread = { id: string; projectId: string; worktreePath: string | null };
++let scopeEpoch = 0;
++const epochs = new Map<string, string>();
++export function obsidianVaultSetup() {
++  return embedded && initialized && vaultRoot ? { environmentId, path: vaultRoot } : null;
++}
++export function obsidianScopePending(_revision?: number) {
++  return embedded && (!initialized || inFlight.size > 0);
++}
++export function isObsidianEmbedded() {
++  return embedded;
++}
++export function setObsidianScopeEpoch(env: string, token: string) {
++  if (!embedded || env !== environmentId || epochs.get(env) === token) return;
++  epochs.set(env, token);
++  scopeEpoch++;
++  decisions.clear();
++  roots.clear();
++  inFlight.clear();
++}
++function rowKey(env: string, row: Row) {
++  return JSON.stringify([
++    env,
++    row.kind,
++    row.id,
++    row.projectId,
++    row.workspaceRoot,
++    row.worktreePath,
++  ]);
++}
++function allowedRows(env: string, rows: Row[]): ReadonlySet<string> {
++  const result = new Set<string>();
++  if (!initialized || env !== environmentId) return result;
++  const missing = rows.filter((row) => {
++    const key = rowKey(env, row);
++    const answer = decisions.get(key);
++    if (answer?.has(row.kind + ":" + row.id)) result.add(row.kind + ":" + row.id);
++    return !answer && !inFlight.has(key);
++  });
++  if (missing.length && missing.length <= 20000) {
++    const epoch = scopeEpoch;
++    for (const row of missing) inFlight.add(rowKey(env, row));
++    void request({ type: "scope", environmentId: env, rows: missing })
++      .then((reply) => {
++        if (
++          epoch !== scopeEpoch ||
++          !Array.isArray(reply.allowed) ||
++          !reply.allowed.every((id) => typeof id === "string")
++        )
++          return;
++        const answer = new Set(reply.allowed);
++        for (const row of missing) {
++          const key = rowKey(env, row);
++          decisions.set(key, answer);
++          if (row.kind === "project" && reply.rootProjects?.includes(row.id)) roots.add(key);
++        }
++        while (decisions.size > 40000) {
++          const key = decisions.keys().next().value;
++          if (key === undefined) break;
++          decisions.delete(key);
++          roots.delete(key);
++        }
++        for (const row of missing) inFlight.delete(rowKey(env, row));
++        for (const listener of listeners) listener();
++      })
++      .catch(() => {
++        if (epoch !== scopeEpoch) return;
++        for (const row of missing) {
++          decisions.set(rowKey(env, row), new Set());
++          inFlight.delete(rowKey(env, row));
++        }
++        for (const listener of listeners) listener();
++      })
++      .finally(() => {
++        if (epoch === scopeEpoch) for (const row of missing) inFlight.delete(rowKey(env, row));
++      });
++  }
++  return result;
++}
 +export function scopeObsidianSnapshot<
-+  P extends { id: string; workspaceRoot: string },
-+  T extends { id: string; projectId: string; worktreePath: string | null },
++  P extends Project,
++  T extends Thread,
 +  S extends { projects: readonly P[]; threads: readonly T[]; archivedThreads: readonly T[] },
 +>(env: string, snapshot: S): S {
 +  if (!embedded) return snapshot;
-+  if (!initialized || env !== environmentId)
-+    return { ...snapshot, projects: [], threads: [], archivedThreads: [] };
 +  const projects = new Map(snapshot.projects.map((p) => [p.id, p]));
 +  const rows: Row[] = snapshot.projects.map((p) => ({
 +    id: p.id,
@@ -156,45 +1190,110 @@ index 00000000..aab0fb53
 +    worktreePath: null,
 +    kind: "project",
 +  }));
++  const seen = new Map<string, T>();
++  const conflicts = new Set<string>();
 +  for (const t of [...snapshot.threads, ...snapshot.archivedThreads]) {
 +    const p = projects.get(t.projectId);
-+    if (p)
++    const previous = seen.get(t.id);
++    if (
++      previous &&
++      (previous.projectId !== t.projectId || previous.worktreePath !== t.worktreePath)
++    )
++      conflicts.add(t.id);
++    if (!previous) {
++      seen.set(t.id, t);
 +      rows.push({
 +        id: t.id,
-+        projectId: p.id,
-+        workspaceRoot: p.workspaceRoot,
++        projectId: t.projectId,
++        workspaceRoot: p?.workspaceRoot ?? null,
 +        worktreePath: t.worktreePath,
 +        kind: "thread",
 +      });
++    }
 +  }
-+  const key = JSON.stringify([env, rows]);
-+  const allowed = decisions.get(key);
-+  if (!allowed && !inFlight.has(key) && rows.length <= 20000) {
-+    inFlight.add(key);
-+    void request({ type: "scope", environmentId: env, rows })
-+      .then((reply) => {
-+        if (!Array.isArray(reply.allowed) || !reply.allowed.every((id) => typeof id === "string"))
-+          return;
-+        if (decisions.size >= 64) decisions.clear();
-+        decisions.set(key, new Set(reply.allowed));
-+        for (const listener of listeners) listener();
-+      })
-+      .catch(() => {})
-+      .finally(() => {
-+        inFlight.delete(key);
-+      });
-+  }
++  const allowed = allowedRows(
++    env,
++    rows.filter((row) => row.kind === "project" || !conflicts.has(row.id)),
++  );
++  const threads = snapshot.threads.filter(
++    (t) => !conflicts.has(t.id) && allowed.has("thread:" + t.id),
++  );
++  const archivedThreads = snapshot.archivedThreads.filter(
++    (t) => !conflicts.has(t.id) && allowed.has("thread:" + t.id),
++  );
++  const ownerIds = new Set([...threads, ...archivedThreads].map((t) => t.projectId));
 +  return {
 +    ...snapshot,
-+    projects: snapshot.projects.filter((p) => allowed?.has("project:" + p.id)),
-+    threads: snapshot.threads.filter((t) => allowed?.has("thread:" + t.id)),
-+    archivedThreads: snapshot.archivedThreads.filter((t) => allowed?.has("thread:" + t.id)),
++    projects: snapshot.projects.filter((p) => allowed.has("project:" + p.id) || ownerIds.has(p.id)),
++    threads,
++    archivedThreads,
 +  };
++}
++export function isObsidianProjectAllowed(
++  env: string,
++  project: Project,
++  _revision?: number,
++): boolean {
++  if (!embedded) return true;
++  return allowedRows(env, [
++    {
++      id: project.id,
++      projectId: project.id,
++      workspaceRoot: project.workspaceRoot,
++      worktreePath: null,
++      kind: "project",
++    },
++  ]).has("project:" + project.id);
++}
++export function obsidianThreadDecision(
++  env: string,
++  thread: Thread,
++  projects: readonly Project[],
++  peers: readonly Thread[] = [],
++  _revision?: number,
++): "pending" | "included" | "excluded" {
++  if (!embedded) return "included";
++  if (
++    peers.some(
++      (p) =>
++        p.id === thread.id &&
++        (p.projectId !== thread.projectId || p.worktreePath !== thread.worktreePath),
++    )
++  )
++    return "excluded";
++  if (!initialized || env !== environmentId) return "excluded";
++  const project = projects.find((p) => p.id === thread.projectId);
++  const row: Row = {
++    kind: "thread",
++    id: thread.id,
++    projectId: thread.projectId,
++    workspaceRoot: project?.workspaceRoot ?? null,
++    worktreePath: thread.worktreePath,
++  };
++  allowedRows(env, [row]);
++  const answer = decisions.get(rowKey(env, row));
++  return answer === undefined
++    ? "pending"
++    : answer.has("thread:" + thread.id)
++      ? "included"
++      : "excluded";
++}
++export async function openNormalObsidianTarget(env: string, threadId: string) {
++  if (!embedded || !initialized) return;
++  await request({
++    type: "external",
++    environmentId: env,
++    path: `/${encodeURIComponent(env)}/${encodeURIComponent(threadId)}`,
++  });
++}
++export function canOpenObsidianMarkdown(env: string | null) {
++  return embedded && initialized && env === environmentId;
 +}
 +export async function openObsidianMarkdown(input: {
 +  environmentId: string | null;
 +  path: string;
 +  line?: number | undefined;
++  column?: number | undefined;
 +  newTab: boolean;
 +}): Promise<boolean> {
 +  if (
@@ -206,17 +1305,225 @@ index 00000000..aab0fb53
 +  )
 +    return false;
 +  try {
-+    return (await request({ type: "file", ...input })).handled === true;
++    return (await request({ type: "file", ...input, route: location.pathname })).handled === true;
 +  } catch {
 +    return false;
 +  }
 +}
+diff --git a/apps/web/src/routes/_chat.index.tsx b/apps/web/src/routes/_chat.index.tsx
+index 2e6ee538..d7a8a5a8 100644
+--- a/apps/web/src/routes/_chat.index.tsx
++++ b/apps/web/src/routes/_chat.index.tsx
+@@ -1,3 +1,4 @@
++import { isObsidianRootProject } from "../obsidianHost";
+ import { workspaceAreaProps } from "../lib/workspaceFocus";
+ import { RefreshIcon } from "~/components/ui/refresh-icon";
+ import { scopeProjectRef } from "@t3tools/client-runtime/environment";
+@@ -45,12 +46,15 @@ function IndexDraftLanding() {
+   const startedAttemptRef = useRef<number | null>(null);
+   const [startState, setStartState] = useState({ failed: false, retryRequest: 0 });
+ 
++  const sortedProjects = sortScopedProjectsForSidebar(
++    projects.filter((project) => project.archivedAt == null),
++    threads,
++    "updated_at",
++  );
+   const mostRecentProject =
+-    sortScopedProjectsForSidebar(
+-      projects.filter((project) => project.archivedAt == null),
+-      threads,
+-      "updated_at",
+-    )[0] ?? null;
++    sortedProjects.find((p) => isObsidianRootProject(p.environmentId, p)) ??
++    sortedProjects[0] ??
++    null;
+   const attempt = startState.retryRequest;
+ 
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- starts a draft thread in the most recent project and navigates to it while still on the index
+diff --git a/apps/web/src/routes/_chat.tsx b/apps/web/src/routes/_chat.tsx
+index c65ed390..c221c71f 100644
+--- a/apps/web/src/routes/_chat.tsx
++++ b/apps/web/src/routes/_chat.tsx
+@@ -1,3 +1,12 @@
++import { useEffect } from "react";
++import { readProjects } from "../state/entities";
++import { scopeProjectRef } from "@t3tools/client-runtime/environment";
++import { useNewThreadHandler } from "../hooks/useHandleNewThread";
++import {
++  registerObsidianNewComposer,
++  isObsidianRootProject,
++  isObsidianEmbedded,
++} from "../obsidianHost";
+ import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+ 
+ import { ThreadRouteView } from "../components/ThreadRouteView";
+@@ -12,9 +21,22 @@ import { useShownThreadRouteTarget } from "../hooks/useShownThreadRouteTarget";
+ function ChatRouteLayout() {
+   // Render both routes here so draft promotion keeps the same ChatView mounted.
+   const { shownTarget, modalOpen } = useShownThreadRouteTarget();
++  const openThread = useNewThreadHandler();
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- exposes the normal new-thread action only during this authenticated layout's lifetime
++  useEffect(
++    () =>
++      registerObsidianNewComposer(async () => {
++        const projects = readProjects().filter((p) => p.archivedAt == null);
++        const project =
++          projects.find((p) => isObsidianRootProject(p.environmentId, p)) ?? projects[0];
++        if (!project) return false;
++        return (await openThread(scopeProjectRef(project.environmentId, project.id))) !== null;
++      }),
++    [openThread],
++  );
+   return (
+     <>
+-      {shownTarget?.kind === "server" && !modalOpen ? (
++      {shownTarget?.kind === "server" && !modalOpen && !isObsidianEmbedded() ? (
+         <ThreadLinkPrompt threadRef={shownTarget.threadRef} />
+       ) : null}
+       {shownTarget ? (
+diff --git a/apps/web/src/state/obsidianScope.ts b/apps/web/src/state/obsidianScope.ts
+new file mode 100644
+index 00000000..509e55f9
+--- /dev/null
++++ b/apps/web/src/state/obsidianScope.ts
+@@ -0,0 +1,42 @@
++import { useAtomValue } from "@effect/atom-react";
++import { enabledEnvironmentIds } from "@t3tools/client-runtime/state/connections";
++import type { EnvironmentId, ProjectId, ThreadId } from "@t3tools/contracts";
++import * as Option from "effect/Option";
++import { Atom } from "effect/reactivity";
++import { environmentCatalog } from "../connection/catalog";
++import type { EnvironmentShellState } from "@t3tools/client-runtime/state/shell";
++import { rawEnvironmentShell, hostScopeRevision } from "./shell";
++import { isObsidianEmbedded, obsidianThreadDecision, setObsidianScopeEpoch } from "../obsidianHost";
++const shellsAtom = Atom.make((get) => {
++  get(hostScopeRevision);
++  return new Map(
++    [...enabledEnvironmentIds(get(environmentCatalog.catalogValueAtom))].map(
++      (env) => [env, get(rawEnvironmentShell.stateValueAtom(env))] as const,
++    ),
++  );
++});
++const emptyShellsAtom = Atom.make<ReadonlyMap<EnvironmentId, EnvironmentShellState>>(new Map());
++export function useObsidianDraftFilter() {
++  const shells = useAtomValue(isObsidianEmbedded() ? shellsAtom : emptyShellsAtom);
++  return (session: {
++    environmentId: EnvironmentId;
++    projectId: ProjectId;
++    threadId: ThreadId;
++    worktreePath: string | null;
++  }) => {
++    if (!isObsidianEmbedded()) return true;
++    const state = shells.get(session.environmentId);
++    if (!state || state.status !== "live") return false;
++    setObsidianScopeEpoch(session.environmentId, `${state.generation}:${state.status}`);
++    const snapshot = Option.getOrNull(state.snapshot);
++    const projects = snapshot?.projects ?? [];
++    return (
++      obsidianThreadDecision(
++        session.environmentId,
++        { ...session, id: session.threadId },
++        projects,
++        [...(snapshot?.threads ?? []), ...(snapshot?.archivedThreads ?? [])],
++      ) === "included"
++    );
++  };
++}
+diff --git a/apps/web/src/state/projects.ts b/apps/web/src/state/projects.ts
+index 816ac88b..95ea3e4e 100644
+--- a/apps/web/src/state/projects.ts
++++ b/apps/web/src/state/projects.ts
+@@ -1,3 +1,4 @@
++import { isObsidianProjectAllowed } from "../obsidianHost";
+ import { createEnvironmentProjectAtoms } from "@t3tools/client-runtime/state/projects";
+ import { createProjectEnvironmentAtoms } from "@t3tools/client-runtime/state/projects";
+ import { createEnvironmentRpcQueryAtomFamily } from "@t3tools/client-runtime/state/runtime";
+@@ -5,17 +6,38 @@ import { WS_METHODS } from "@t3tools/contracts";
+ 
+ import { environmentCatalog } from "../connection/catalog";
+ import { connectionAtomRuntime } from "../connection/runtime";
+-import { environmentShell, environmentSnapshotAtom, expectsPrimaryEnvironment } from "./shell";
++import {
++  environmentShell,
++  environmentSnapshotAtom,
++  hostScopeRevision,
++  expectsPrimaryEnvironment,
++} from "./shell";
+ import { parseScopedProjectKey } from "@t3tools/client-runtime/environment";
+ import { AVAILABLE_CONNECTION_STATE } from "@t3tools/client-runtime/connection";
+ import { AsyncResult, Atom } from "effect/reactivity";
+ import { serverEnvironment } from "./server";
+ 
+-export const environmentProjects = createEnvironmentProjectAtoms({
++const projectMetadata = createEnvironmentProjectAtoms({
+   catalogValueAtom: environmentCatalog.catalogValueAtom,
+   snapshotAtom: environmentSnapshotAtom,
+   serverConfigValueAtom: serverEnvironment.configValueAtom,
+ });
++export const environmentProjects = {
++  ...projectMetadata,
++  projectsAtom: Atom.make((get) => {
++    get(hostScopeRevision);
++    return get(projectMetadata.projectsAtom).filter((p) =>
++      isObsidianProjectAllowed(p.environmentId, p),
++    );
++  }),
++  projectRefsAtom: Atom.make((get) => {
++    get(hostScopeRevision);
++    return get(projectMetadata.projectRefsAtom).filter((ref) => {
++      const project = get(projectMetadata.projectAtom(ref));
++      return project !== null && isObsidianProjectAllowed(ref.environmentId, project);
++    });
++  }),
++};
+ export const projectEnvironment = createProjectEnvironmentAtoms(connectionAtomRuntime, {
+   projectAtom: environmentProjects.projectAtom,
+ });
+diff --git a/apps/web/src/state/queries.ts b/apps/web/src/state/queries.ts
+index 62f37a1f..17e80d1b 100644
+--- a/apps/web/src/state/queries.ts
++++ b/apps/web/src/state/queries.ts
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { errorDisplayMessage } from "@t3tools/client-runtime/errors";
+ import { useAtomValue } from "@effect/atom-react";
+ import { msg } from "gt-react";
+@@ -41,7 +42,7 @@ import { m, type MessageResolver } from "../i18n/messages";
+ import { appAtomRegistry } from "../rpc/atomRegistry";
+ import { useFilesystemReadAccess } from "./filesystem";
+ import { orchestrationEnvironment } from "./orchestration";
+-import { olderSettledThreads, threadFamilies } from "./threads";
++import { olderSettledThreads, threadFamilies, environmentThreadShells } from "./threads";
+ import { isPaginatedBranchesNextPagePending } from "./paginatedBranches";
+ import { projectContentSearch, projectEnvironment } from "./projects";
+ import { useEnvironmentQuery } from "./query";
+@@ -170,8 +171,14 @@ export function useThreadSearch(
+       for (const release of releases) release();
+     };
+   }, [shownKey]);
++  const scopedThreads = useAtomValue(environmentThreadShells.threadShellsAtom);
++  const allowedKeys = new Set(scopedThreads.map((t) => JSON.stringify([t.environmentId, t.id])));
+   return {
+-    matches: visible.matches,
++    matches: isObsidianEmbedded()
++      ? visible.matches.filter((m) =>
++          allowedKeys.has(JSON.stringify([m.environmentId, m.threadId])),
++        )
++      : visible.matches,
+     query: visible.query,
+     isPending,
+     failed,
 diff --git a/apps/web/src/state/shell.ts b/apps/web/src/state/shell.ts
-index ef46e498..2564a6aa 100644
+index ef46e498..7ec2b804 100644
 --- a/apps/web/src/state/shell.ts
 +++ b/apps/web/src/state/shell.ts
-@@ -1,9 +1,12 @@
-+import { scopeObsidianSnapshot, subscribeObsidianScope } from "../obsidianHost";
+@@ -1,10 +1,16 @@
++import {
++  scopeObsidianSnapshot,
++  subscribeObsidianScope,
++  setObsidianScopeEpoch,
++  isObsidianEmbedded,
++} from "../obsidianHost";
 +import { appAtomRegistry } from "../rpc/atomRegistry";
  import {
    AVAILABLE_CONNECTION_STATE,
@@ -224,41 +1531,175 @@ index ef46e498..2564a6aa 100644
  } from "@t3tools/client-runtime/connection";
  import {
    createEnvironmentShellAtoms,
-+  EMPTY_SHELL_STATE,
-   createEnvironmentSnapshotAtom,
+-  createEnvironmentSnapshotAtom,
    createShellEnvironmentAtoms,
    type EnvironmentShellState,
-@@ -24,7 +27,32 @@ import { isHostedStaticApp } from "../hostedPairing";
+   type EnvironmentShellStatus,
+@@ -24,8 +30,46 @@ import { isHostedStaticApp } from "../hostedPairing";
  import { isLocalEnvironmentDisabled } from "../localEnvironment";
  
  export const shellEnvironment = createShellEnvironmentAtoms(connectionAtomRuntime);
 -export const environmentShell = createEnvironmentShellAtoms(connectionAtomRuntime);
-+const rawEnvironmentShell = createEnvironmentShellAtoms(connectionAtomRuntime);
-+const hostScopeRevision = Atom.make(0);
+-export const environmentSnapshotAtom = createEnvironmentSnapshotAtom(environmentShell.stateAtom);
++export const rawEnvironmentShell = createEnvironmentShellAtoms(connectionAtomRuntime);
++export const hostScopeRevision = Atom.make(0);
 +const unsubscribeHostScope = subscribeObsidianScope(() => {
 +  appAtomRegistry.set(hostScopeRevision, appAtomRegistry.get(hostScopeRevision) + 1);
 +});
 +if (import.meta.hot) import.meta.hot.dispose(unsubscribeHostScope);
-+const scopedStateAtom = Atom.family((environmentId: EnvironmentId) =>
++export const environmentSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
 +  Atom.make((get) => {
 +    get(hostScopeRevision);
-+    return AsyncResult.map(get(rawEnvironmentShell.stateAtom(environmentId)), (state) => ({
-+      ...state,
-+      snapshot: Option.map(state.snapshot, (snapshot) =>
-+        scopeObsidianSnapshot(environmentId, snapshot),
-+      ),
-+    }));
++    const state = get(rawEnvironmentShell.stateValueAtom(environmentId));
++    setObsidianScopeEpoch(environmentId, `${state.generation}:${state.status}`);
++    const snapshot = Option.getOrNull(state.snapshot);
++    return snapshot === null
++      ? null
++      : scopeObsidianSnapshot(
++          environmentId,
++          isObsidianEmbedded() && state.status !== "live"
++            ? { ...snapshot, projects: [], threads: [], archivedThreads: [] }
++            : snapshot,
++        );
 +  }),
++);
++const scopedStateAtom = Atom.family((environmentId: EnvironmentId) =>
++  Atom.make((get) =>
++    AsyncResult.map(get(rawEnvironmentShell.stateAtom(environmentId)), (state) => ({
++      ...state,
++      snapshot: Option.fromNullOr(get(environmentSnapshotAtom(environmentId))),
++    })),
++  ),
 +);
 +export const environmentShell = {
 +  ...rawEnvironmentShell,
 +  stateAtom: scopedStateAtom,
 +  stateValueAtom: Atom.family((environmentId: EnvironmentId) =>
-+    Atom.make((get) =>
-+      AsyncResult.getOrElse(get(scopedStateAtom(environmentId)), () => EMPTY_SHELL_STATE),
-+    ),
++    Atom.make((get) => ({
++      ...get(rawEnvironmentShell.stateValueAtom(environmentId)),
++      snapshot: Option.fromNullOr(get(environmentSnapshotAtom(environmentId))),
++    })),
 +  ),
 +};
- export const environmentSnapshotAtom = createEnvironmentSnapshotAtom(environmentShell.stateAtom);
  
  const NO_SHELL_STATUS_ATOM = Atom.make<EnvironmentShellStatus | null>(null).pipe(
+   Atom.withLabel("web-environment-shell-status:none"),
+diff --git a/apps/web/src/state/threads.ts b/apps/web/src/state/threads.ts
+index 6d2ce2a0..a633779d 100644
+--- a/apps/web/src/state/threads.ts
++++ b/apps/web/src/state/threads.ts
+@@ -19,29 +19,77 @@ import { AsyncResult, Atom } from "effect/reactivity";
+ import { environmentCatalog } from "../connection/catalog";
+ import { connectionAtomRuntime } from "../connection/runtime";
+ import { serverEnvironment } from "./server";
+-import { environmentShell } from "./shell";
++import { rawEnvironmentShell, hostScopeRevision } from "./shell";
++import {
++  scopeObsidianSnapshot,
++  setObsidianScopeEpoch,
++  isObsidianEmbedded,
++  obsidianThreadDecision,
++} from "../obsidianHost";
+ 
+ export const threadFamilies = createThreadFamilyAtoms(
+   connectionAtomRuntime,
+-  environmentShell.stateAtom,
++  rawEnvironmentShell.stateAtom,
+ );
+ export const olderSettledThreads = createOlderSettledThreadAtoms(
+   connectionAtomRuntime,
+-  environmentShell.stateAtom,
++  rawEnvironmentShell.stateAtom,
++);
++export const scopedThreadSnapshotAtom = Atom.family((environmentId: EnvironmentId) =>
++  Atom.make((get) => {
++    get(hostScopeRevision);
++    const state = get(rawEnvironmentShell.stateValueAtom(environmentId));
++    setObsidianScopeEpoch(environmentId, `${state.generation}:${state.status}`);
++    const snapshot = get(threadFamilies.snapshotAtom(environmentId));
++    return snapshot === null
++      ? null
++      : scopeObsidianSnapshot(
++          environmentId,
++          isObsidianEmbedded() && state.status !== "live"
++            ? { ...snapshot, projects: [], threads: [], archivedThreads: [] }
++            : snapshot,
++        );
++  }),
+ );
+ export const threadEnvironment = createThreadEnvironmentAtoms(
+   connectionAtomRuntime,
+-  threadFamilies.snapshotAtom,
++  scopedThreadSnapshotAtom,
+ );
+ const environmentThreads = createEnvironmentThreadStateAtoms(connectionAtomRuntime);
+-export const environmentThreadDetails = createEnvironmentThreadDetailAtoms(
+-  environmentThreads.stateAtom,
++const scopedDetailAtom = Atom.family((key: string) =>
++  Atom.make((get) => {
++    const [env, threadId] = JSON.parse(key) as [EnvironmentId, ThreadId];
++    const result = get(environmentThreads.stateAtom(env, threadId));
++    if (!isObsidianEmbedded()) return result;
++    get(hostScopeRevision);
++    const shell = get(rawEnvironmentShell.stateValueAtom(env));
++    setObsidianScopeEpoch(env, `${shell.generation}:${shell.status}`);
++    const snapshot = Option.getOrNull(shell.snapshot);
++    return AsyncResult.map(result, (state) => {
++      if (shell.status !== "live") return EMPTY_ENVIRONMENT_THREAD_STATE;
++      const thread =
++        [...(snapshot?.threads ?? []), ...(snapshot?.archivedThreads ?? [])].find(
++          (t) => t.id === threadId,
++        ) ?? (state.status === "live" ? Option.getOrNull(state.data)?.thread : null);
++      return thread &&
++        obsidianThreadDecision(env, thread, snapshot?.projects ?? [], [
++          ...(snapshot?.threads ?? []),
++          ...(snapshot?.archivedThreads ?? []),
++        ]) === "included"
++        ? state
++        : EMPTY_ENVIRONMENT_THREAD_STATE;
++    });
++  }),
++);
++export const environmentThreadDetails = createEnvironmentThreadDetailAtoms((env, threadId) =>
++  scopedDetailAtom(JSON.stringify([env, threadId])),
+ );
+-export const environmentThreadShells = createEnvironmentThreadShellAtoms({
++const scopedThreadShells = createEnvironmentThreadShellAtoms({
+   catalogValueAtom: environmentCatalog.catalogValueAtom,
+   snapshotAtom: threadEnvironment.snapshotAtom,
+   hiddenThreadTagsAtom: serverEnvironment.hiddenThreadTagsAtom,
+ });
++export const environmentThreadShells = scopedThreadShells;
+ export const childThreadApprovalsAtom = createChildThreadApprovalsAtom({
+   childThreadInputsAtom: environmentThreadShells.childThreadInputsAtom,
+   pendingRequestsAtom: environmentThreadDetails.pendingRequestsAtom,
+@@ -51,7 +99,7 @@ const EMPTY_THREAD_STATE_ATOM = Atom.make(AsyncResult.success(EMPTY_ENVIRONMENT_
+   Atom.withLabel("web-environment-thread:empty"),
+ );
+ 
+-export function useEnvironmentThread(
++export function useRawEnvironmentThread(
+   environmentId: EnvironmentId | null,
+   threadId: ThreadId | null,
+ ): EnvironmentThreadState {
+@@ -64,6 +112,20 @@ export function useEnvironmentThread(
+   return state;
+ }
+ 
++export function useEnvironmentThread(
++  env: EnvironmentId | null,
++  threadId: ThreadId | null,
++): EnvironmentThreadState {
++  return AsyncResult.getOrElse(
++    useAtomValue(
++      env !== null && threadId !== null
++        ? scopedDetailAtom(JSON.stringify([env, threadId]))
++        : EMPTY_THREAD_STATE_ATOM,
++    ),
++    () => EMPTY_ENVIRONMENT_THREAD_STATE,
++  );
++}
++
+ const isRunning = (status: string) =>
+   status === "preparing" || status === "queued" || status === "starting" || status === "running";
+ 

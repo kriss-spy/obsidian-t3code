@@ -27,7 +27,7 @@ function fixture() {
   const revealed: Leaf[] = [];
   const pending: Array<{ resolve: () => void; reject: (error: Error) => void }> = [];
   const workspace = {
-    get activeLeaf() { return { view: { containerEl: { ownerDocument: owner } } }; },
+    getMostRecentLeaf: () => ({ view: { containerEl: { ownerDocument: owner } } }),
     getLeavesOfType: () => leaves,
     getLeaf: () => {
       const leaf: Leaf = {
@@ -37,6 +37,7 @@ function fixture() {
       leaves.push(leaf);
       return leaf;
     },
+    setActiveLeaf: () => {},
     revealLeaf: async (leaf: Leaf) => { revealed.push(leaf); },
   };
   Object.defineProperty(plugin, 'app', { value: { workspace } });

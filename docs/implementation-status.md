@@ -1,93 +1,64 @@
 # Development implementation status
 
-Date: 2026-11-21. This is an incomplete development build. No supported embedded T3 build exists yet.
+Date: 2026-11-21. A Linux development build is available to try. It requires the pinned T3 patch and matching compiled client. This is not a release or a full T3 parity claim.
 
-## Implemented foundation
+See [installation](development-install.md), [runtime assertions](verification/linux-development-runtime.json), and [local plugin review](verification/plugin-review.md).
 
-- Desktop manifest, TypeScript build, and CI checks.
-- Dedicated main-area ItemView, Open command, and ribbon button.
-- Concurrent Open calls reuse one workspace. Windows are distinguished by their owning document.
-- Canonical vault and server identities determine a dedicated persistent partition.
-- Server-origin validation accepts HTTPS or loopback HTTP. It rejects credentials and pairing URLs.
-- Descriptor parsing uses the running server version and protocol. It never invokes a CLI or accesses T3's database.
-- Unsupported descriptors leave the guest unmounted and offer the normal T3 app.
-- Connection reset clears only the current vault/server partition. It reports unavailable host session APIs.
-- Plugin unload removes its guest and pane. Pending descriptor results cannot remount a closed view.
-- Workspace serialization rejects pairing data. Full route restoration remains pending.
-- Filesystem scope decisions resolve existing directories and symlinks. Missing metadata, remote identities, sibling paths, and outside worktrees are excluded.
+## Implemented
 
-The scope function is not connected to T3 lists yet. The guest constructor is implemented, but compatibility deliberately returns unsupported for every build. This prevents an unfiltered workspace from appearing during development.
+The ItemView now hosts the real T3 web UI. Pairing uses T3's own form and a persistent vault/server partition. The plugin never starts a backend or invokes the standalone CLI.
 
-The appearance preference is stored for the future adapter. Appearance synchronization is not implemented. Context commands, Markdown navigation, Use vault folder, and pairing inside an approved guest remain pending.
+Admission requires server 0.1.11, protocol 2, a nonce proof of the same local filesystem and Linux machine identity, and a pinned client manifest. The plugin hashes the served entry document and 17 integration/entry assets before creating the guest. It then requires the complete versioned scope handshake. A copied capability declaration cannot approve another client. The unmodified running server remains unmounted.
 
-## Integration gate: issue #4 remains open
+The patched client starts empty in embedded mode. Canonical host verdicts filter raw shell snapshots, merged thread families, archived RPC results, search matches, project choices, draft membership, and route loading. Pending and remote identities remain empty. Owning project metadata stays available for an eligible worktree without making the outside project a new-thread choice. Epochs invalidate approvals on reconnect. Conflicting active/archive metadata is excluded.
 
-The live `/.well-known/t3/environment` descriptor reports server `0.1.11` and protocol `2`. It advertises no semantic Obsidian host contract.
+The real MarkdownFileLink callback sends semantic environment/path/line/column/modifier requests. Native navigation resolves existing files, reuses editors, opens external Markdown through an isolated `file:` adapter, and applies bounded cursor positions. Missing files show a notice without creating a note. Stale route requests cannot open a different target.
 
-Source inspected at upstream revision `13226b1c21b703e1ddce8bd1d60ae54bca85ab42`:
+Explicit note commands and editor-menu actions capture in-memory content before changing focus. The public composer handle appends readable source context and focuses the composer. Existing text and attachments remain. No clipboard writes, saves, or submissions occur in the command implementation. If no composer exists, the normal T3 new-thread action opens a known in-scope draft. Target changes cancel insertion.
 
-- `apps/web/src/components/chat/MarkdownFileLink.tsx` handles clicks through custom callbacks, including `handleOpenInFilePreview`. A navigation listener cannot intercept these actions reliably.
-- `apps/web/src/state/shell.ts` exposes environment snapshot atoms. A host filter must also cover consumers outside the active sidebar, route loading, archive/search results, caches, and project selection.
+Safe thread/draft routes restore through workspace and plugin lifecycle changes. Pairing data is excluded from saved fields. Appearance follows Obsidian colors and font values, updates live, and can be removed. Settings contain connection/reset, appearance, diagnostics, and the official agent-skills recommendation.
 
-This inspection is not runtime proof. The upstream revision is not established as the exact source revision of the installed server. An experimental patch is now included in `upstream/t3-0.1.11-obsidian-host-v1.patch`. It is not installed in the running app. Unmodified-T3 compatibility is not claimed.
+## Runtime evidence
 
-The next implementation must add a narrow, versioned T3 host contract. Its required behavior is:
+All checks used disposable development vaults and separate T3 data. No personal notes or live database were edited. The installed Obsidian app was 1.15.1 on Linux Flatpak, installer 1.15.0. The patched source was `59651c1761f6c63e9b6056839067066968e6a406`.
 
-1. Select embedded mode before loading cached projects, threads, or restored routes. Render no workspace until the host scope is ready.
-2. Accept only a verified local environment and canonical directory scope. Pass thread worktree and project root metadata through the same membership decision before rendering.
-3. Apply the decision to search, recents, archive, lifecycle lists, route loaders, reconnects, and project choices. Empty scope must remain empty.
-4. Emit semantic file actions from the real Markdown chip callback. Include environment ID, absolute path, line, column, modifier intent, and the current document generation. Preserve T3 behavior for unmatched remote or non-Markdown targets.
-5. Bound requests and validate each shape and origin. Invalidate requests during navigation, reconnect, target changes, and teardown.
-6. Identify a stable composer target before appending text. Do not submit prompts or modify attachments.
-7. Pin the patch to an exact T3 revision. Test real chips and every scope entry point in the actual guest before adding that build to compatibility.
+| Scenario | Observed result |
+| --- | --- |
+| Actual supported guest | `require` and `process` unavailable; sandbox, context isolation, web security enabled; Node integration disabled |
+| Real agent conversation | Two completed Codex turns returned actual vault/external Markdown links |
+| Actual chip clicks | Unicode/space/encoded-`#` vault file opened; external original opened at line 2; modifier click created another editor |
+| Original file saves | Both disposable original files edited and saved through Obsidian |
+| Scope | Included conversation rendered; excluded saved route showed a scope explanation; reconnect stayed blocked |
+| Search and project choices | Positive included search matched; excluded search returned no rows; only in-vault project choices appeared |
+| Archive reference comparison | Normal T3 archive showed the sibling thread; embedded archive showed no archived threads |
+| Recents | Command palette showed the included recent thread without the sibling project/thread |
+| Initial pairing redirect | Old guest removed before replacement; observed excluded-content count remained zero |
+| Empty vault | First-run project scan exposed no unrelated projects; exact path and Use vault folder appeared; explicit action opened an in-scope draft |
+| Setup filesystem | Empty vault gained no `.git`, `AGENTS.md`, or provider configuration |
+| Context | Selection and unsaved note appended to nonempty composer; text and file attachment remained; focus moved to composer; clipboard unchanged; no prompt submitted |
+| No active composer | Explicit insertion opened a vault-project draft and appended once |
+| Reload | Guest removed on disable; same draft route and unsent text returned after enable |
+| Concurrent Open | Six overlapping Open calls produced one workspace |
+| Appearance | Light and dark backgrounds matched Obsidian; disabling synchronization restored T3 black background |
+| Unmodified server | Actual 0.1.11/protocol-2 server rejected with no guest and a normal-app fallback |
 
-Do not enable the dormant guest path by changing `supported` to true. That would bypass the required scope handshake. Do not replace this gate with CSS, DOM label parsing, a synthetic event, or private React state.
+`scripts/check-supported-vault.mjs` repeats the production guest, real-chip, search, project-choice, restored-route, reconnect, DOM-observation, and duplicate-Open assertions. It refuses any vault outside the disposable fixture naming convention. The committed JSON records a passing production run. Additional manual CDP checks are listed above; they are not all automated by that script.
 
-## Verification evidence
+## Source and build checks
 
-`npm test`: eight passing tests cover origin policy, descriptor validation, partition identity, safe serialized targets, canonical scope, and platform directory boundaries. Filesystem fixtures include spaces, Unicode, `#`, inside/outside symlinks, absent paths, and an outside worktree. Windows path tests only verify path rules. They do not establish Windows runtime support.
+- `npm test`: 28 passing tests. These cover path identity, context encoding, local proofs, executable integrity, stale requests, exact patch contract behavior, scope epochs, conflicting metadata, and per-window Open races.
+- `npm run build`: TypeScript and CommonJS bundle pass.
+- `node scripts/check-upstream-patch.mjs /tmp/obsidian-t3-patch-check --check`: patch applies to a clean exact-revision checkout.
+- Upstream `pnpm exec vp run check:changed HEAD`: format, lint, both knip passes, GraphQL, four-package typecheck, 34 adjacent test files, and 29 React compiler checks pass. This is not the full upstream test suite.
+- Patched server and web production builds pass. The source checks used the available pnpm 11.25.0 tooling. The packaged preparation script also passed in a fresh checkout with the exact pinned Node 26.13.1 and pnpm 12.14.0. It cloned the base, applied the patch, installed dependencies, built the server, and verified the copied client assets.
+- Local Obsidian review: zero source errors. Warnings concern deliberate filesystem access and specified product names/command labels. The report script also printed a numeric-summary parsing warning; the individual report is committed.
 
-The two workspace regression tests exercise the production plugin with a mocked Obsidian runtime. They cover overlapping requests from two windows, same-window deduplication, reverse completion order, and recovery after failure. Both fail against the original plugin-wide pending promise. Both pass after pending operations are keyed by the captured owner document. This follow-up did not rerun Obsidian GUI checks.
+The client manifest SHA-256 is `cc9349a098cbd359dbf693c09b308d78789b2a1034ed08f55dedcd040b098968`. `src/approved-client.ts` admits only this exact artifact. The package includes it without source maps and retains T3's license and third-party notices.
 
-`npm run build`: TypeScript checking and production CommonJS bundling pass.
+## Release blockers
 
-`node scripts/check-development-vault.mjs <CDP endpoint> <disposable vault path>` passed in an isolated Obsidian profile. The test refuses a vault whose exact path does not match its argument. The profile contained one disposable note and this plugin only. No personal notes were changed.
+Issue #10 remains open. The complete reference comparison has not covered question/permission prompts, streamed tool activity, stop/continue through reconnect, terminal execution, browser preview, every lifecycle ordering transition, or all pane/crash cases. Do not claim full parity or publish v0.1.0 until these pass.
 
-Observed runtime results on Linux Obsidian `1.15.1`:
+Canonical membership fixtures cover root/nested paths, prefix siblings, symlinks, outside worktrees, missing metadata, and remote identities. Those unit checks do not establish runtime support for remote servers or other operating systems. Linux is the only development target.
 
-```json
-{
-  "isolation": {
-    "contextIsolation": true,
-    "sandbox": true,
-    "nodeIntegration": false,
-    "webSecurity": true
-  },
-  "singleWorkspace": true,
-  "unsupportedGuestUnmounted": true,
-  "descriptorChecked": true,
-  "credentialsNotPersisted": true,
-  "partitionResetIsolated": true,
-  "reset": "This vault connection was reset.",
-  "reload": true,
-  "diagnostic": "T3 0.1.11, protocol 2: no verified strict-scope host adapter. Guest not mounted."
-}
-```
-
-The isolation test mounts only `about:blank` with the production guest constructor. Both `require` and `process` are undefined in the guest. This does not test the complete T3 UI.
-
-The reset test creates a disposable cookie in the intended partition and another partition. Reset removes only the intended cookie. It does not prove real T3 pairing persistence.
-
-All complete UI parity journeys in the spec remain unverified. No implementation issue is closed by this foundation. There is no release artifact or release approval.
-
-## Pinned host implementation follow-up
-
-The packaged app reports `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to `59651c1761f6c63e9b6056839067066968e6a406`. The patch uses that exact base. This replaces the earlier unknown source identity for the installed version.
-
-The patch adds an opt-in startup handshake, bounded request queue, shell snapshot projection, and a semantic call from the real `MarkdownFileLink` primary callback. `src/host-contract.ts` validates requests and computes canonical scope decisions. `src/host-bridge.ts` validates origin before and after guest evaluation and invalidates closed sessions. Neither module enables production guest mounting.
-
-`npm test` passes 16 tests. Eight new tests cover host request validation, canonical verdicts, stale generations, origin changes, and the exact patched host module in a JavaScript VM. `npm run build` passes. `git apply --check` passes against the exact base files. These checks do not prove React behavior or an actual guest chip click.
-
-The gate remains incomplete. Thread-family merging, older settled/search readers, direct detail routes, draft restoration, and reconnect need complete scope coverage. The transport still needs lifecycle wiring and verified local server identity. Real file navigation and full UI acceptance remain pending. See [the patch dependency and limits](../upstream/README.md).
-
-The patched upstream checkout passes `pnpm exec vp run check:changed HEAD` and `pnpm --filter @t3tools/web build`. The changed-file run includes 11 upstream tests, type checking, format, lint, knip, and React compiler checks. The initial run failed on three patch defects; those defects were fixed before the passing run. Full upstream tests and Obsidian runtime acceptance were not run for this follow-up.
+The required source patch is broader than the initial shell-only experiment because T3 has independent readers for archives, thread families, drafts, onboarding, and routes. It changes no database schema and remains opt-in for embedded clients. It is not an official upstream T3 release.

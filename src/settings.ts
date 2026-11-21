@@ -23,9 +23,12 @@ export class SettingsTab extends PluginSettingTab {
       t.setValue(this.plugin.settings.followAppearance).onChange(async value => {
         this.plugin.settings.followAppearance = value;
         await this.plugin.saveSettings();
+        this.plugin.syncAppearance();
       }));
     new Setting(this.containerEl).setName('Reset connection').setDesc('Clears only this vault and server browser partition.').addButton(b =>
       b.setButtonText('Reset').onClick(async () => { await this.plugin.resetConnection(); this.display(); }));
+    this.containerEl.createEl('p', {text:'Recommended: the official Obsidian agent skills teach Markdown, Bases, Canvas, and Obsidian tools. Install them in your T3 agent setup.'});
+    this.containerEl.createEl('a', {text:'Obsidian agent skills: current installation instructions', href:'https://github.com/obsidianmd/obsidian-skills#installation', attr:{target:'_blank',rel:'noopener noreferrer'}});
     new Setting(this.containerEl).setName('Compatibility').setDesc(this.plugin.diagnostic);
     this.containerEl.createEl('textarea', { attr: { readonly: 'true', 'aria-label': 'Compatibility diagnostics' }, text: this.plugin.diagnostic });
   }
