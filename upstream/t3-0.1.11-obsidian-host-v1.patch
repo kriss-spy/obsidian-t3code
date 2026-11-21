@@ -1,0 +1,264 @@
+diff --git a/apps/web/src/components/chat/MarkdownFileLink.tsx b/apps/web/src/components/chat/MarkdownFileLink.tsx
+index 8e91e1ef..657f7395 100644
+--- a/apps/web/src/components/chat/MarkdownFileLink.tsx
++++ b/apps/web/src/components/chat/MarkdownFileLink.tsx
+@@ -1,3 +1,4 @@
++import { openObsidianMarkdown } from "../../obsidianHost";
+ import { useNativeFileDrag } from "../../useNativeFileDrag";
+ import { useAssetUrlState } from "../../assets/assetUrls";
+ import { formatFilePathForClipboard } from "@t3tools/client-runtime/media-actions";
+@@ -344,9 +345,18 @@ export const MarkdownFileLink = memo(function MarkdownFileLink({
+               render={<a href={href} />}
+               className={MARKDOWN_FILE_LINK_CLASS_NAME}
+               data-markdown-copy={copyMarkdown}
+-              onClick={(event) => {
++              onClick={async (event) => {
+                 event.preventDefault();
+                 event.stopPropagation();
++                if (
++                  await openObsidianMarkdown({
++                    environmentId,
++                    path: targetPath,
++                    line,
++                    newTab: event.metaKey || event.ctrlKey || event.shiftKey,
++                  })
++                )
++                  return;
+                 if (onOpen && shouldOpenMarkdownFileLinkInEditor(event)) {
+                   handleOpenInEditor();
+                   return;
+diff --git a/apps/web/src/main.tsx b/apps/web/src/main.tsx
+index 112de484..b6c87f41 100644
+--- a/apps/web/src/main.tsx
++++ b/apps/web/src/main.tsx
+@@ -1,4 +1,5 @@
+ import React from "react";
++import { waitForObsidianHost } from "./obsidianHost";
+ import ReactDOM from "react-dom/client";
+ 
+ import "@fontsource-variable/inter";
+@@ -11,6 +12,8 @@ import { AppRoot } from "./AppRoot";
+ import { whenLocaleReady } from "./i18n/runtime";
+ import { reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
+ 
++const hostStartup = waitForObsidianHost();
++if (hostStartup) await hostStartup;
+ const router = startAppServices();
+ 
+ const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
+new file mode 100644
+index 00000000..aab0fb53
+--- /dev/null
++++ b/apps/web/src/obsidianHost.ts
+@@ -0,0 +1,159 @@
++// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
++const OBSIDIAN_HOST_REVISION = "59651c1761f6c63e9b6056839067066968e6a406";
++const embedded =
++  typeof location !== "undefined" &&
++  new URLSearchParams(location.search).get("obsidian-host") === "1";
++type Row = {
++  id: string;
++  projectId: string;
++  workspaceRoot: string;
++  worktreePath: string | null;
++  kind: "project" | "thread";
++};
++type Request = Record<string, unknown> & { id: string; generation: string };
++type Reply = { id: string; generation: string; allowed?: string[]; handled?: boolean };
++let generation = "";
++let environmentId = "";
++let initialized = false;
++let sequence = 0;
++const queue: Request[] = [];
++const pending = new Map<
++  string,
++  { resolve: (reply: Reply) => void; timer: ReturnType<typeof setTimeout> }
++>();
++const listeners = new Set<() => void>();
++const decisions = new Map<string, ReadonlySet<string>>();
++const inFlight = new Set<string>();
++let readyResolve: () => void;
++const ready = new Promise<void>((resolve) => {
++  readyResolve = resolve;
++});
++function request(value: Record<string, unknown>): Promise<Reply> {
++  if (!initialized || pending.size >= 8) return Promise.reject(new Error("Host unavailable"));
++  const id = String(++sequence);
++  return new Promise((resolve, reject) => {
++    const timer = setTimeout(() => {
++      pending.delete(id);
++      const index = queue.findIndex((r) => r.id === id);
++      if (index >= 0) queue.splice(index, 1);
++      reject(new Error("Host request timed out"));
++    }, 10000);
++    pending.set(id, { resolve, timer });
++    queue.push({ ...value, id, generation });
++  });
++}
++if (embedded)
++  Object.defineProperty(window, "t3ObsidianHostV1", {
++    value: Object.freeze({
++      protocol: 1,
++      revision: OBSIDIAN_HOST_REVISION,
++      initialize(input: { generation: string; environmentId: string }) {
++        if (
++          initialized ||
++          !input ||
++          typeof input.generation !== "string" ||
++          !input.generation ||
++          typeof input.environmentId !== "string" ||
++          !input.environmentId
++        )
++          throw new Error("Invalid host initialization");
++        generation = input.generation;
++        environmentId = input.environmentId;
++        initialized = true;
++        readyResolve();
++        return { protocol: 1, revision: OBSIDIAN_HOST_REVISION, generation };
++      },
++      drain() {
++        return queue.splice(0, 8);
++      },
++      reply(reply: Reply) {
++        if (reply.generation !== generation) return false;
++        const entry = pending.get(reply.id);
++        if (!entry) return false;
++        pending.delete(reply.id);
++        clearTimeout(entry.timer);
++        entry.resolve(reply);
++        return true;
++      },
++    }),
++  });
++export function waitForObsidianHost() {
++  return embedded ? ready : undefined;
++}
++export function subscribeObsidianScope(listener: () => void) {
++  listeners.add(listener);
++  return () => {
++    listeners.delete(listener);
++  };
++}
++export function scopeObsidianSnapshot<
++  P extends { id: string; workspaceRoot: string },
++  T extends { id: string; projectId: string; worktreePath: string | null },
++  S extends { projects: readonly P[]; threads: readonly T[]; archivedThreads: readonly T[] },
++>(env: string, snapshot: S): S {
++  if (!embedded) return snapshot;
++  if (!initialized || env !== environmentId)
++    return { ...snapshot, projects: [], threads: [], archivedThreads: [] };
++  const projects = new Map(snapshot.projects.map((p) => [p.id, p]));
++  const rows: Row[] = snapshot.projects.map((p) => ({
++    id: p.id,
++    projectId: p.id,
++    workspaceRoot: p.workspaceRoot,
++    worktreePath: null,
++    kind: "project",
++  }));
++  for (const t of [...snapshot.threads, ...snapshot.archivedThreads]) {
++    const p = projects.get(t.projectId);
++    if (p)
++      rows.push({
++        id: t.id,
++        projectId: p.id,
++        workspaceRoot: p.workspaceRoot,
++        worktreePath: t.worktreePath,
++        kind: "thread",
++      });
++  }
++  const key = JSON.stringify([env, rows]);
++  const allowed = decisions.get(key);
++  if (!allowed && !inFlight.has(key) && rows.length <= 20000) {
++    inFlight.add(key);
++    void request({ type: "scope", environmentId: env, rows })
++      .then((reply) => {
++        if (!Array.isArray(reply.allowed) || !reply.allowed.every((id) => typeof id === "string"))
++          return;
++        if (decisions.size >= 64) decisions.clear();
++        decisions.set(key, new Set(reply.allowed));
++        for (const listener of listeners) listener();
++      })
++      .catch(() => {})
++      .finally(() => {
++        inFlight.delete(key);
++      });
++  }
++  return {
++    ...snapshot,
++    projects: snapshot.projects.filter((p) => allowed?.has("project:" + p.id)),
++    threads: snapshot.threads.filter((t) => allowed?.has("thread:" + t.id)),
++    archivedThreads: snapshot.archivedThreads.filter((t) => allowed?.has("thread:" + t.id)),
++  };
++}
++export async function openObsidianMarkdown(input: {
++  environmentId: string | null;
++  path: string;
++  line?: number | undefined;
++  newTab: boolean;
++}): Promise<boolean> {
++  if (
++    !embedded ||
++    !initialized ||
++    input.environmentId !== environmentId ||
++    !/\.md$/i.test(input.path) ||
++    !input.path.startsWith("/")
++  )
++    return false;
++  try {
++    return (await request({ type: "file", ...input })).handled === true;
++  } catch {
++    return false;
++  }
++}
+diff --git a/apps/web/src/state/shell.ts b/apps/web/src/state/shell.ts
+index ef46e498..2564a6aa 100644
+--- a/apps/web/src/state/shell.ts
++++ b/apps/web/src/state/shell.ts
+@@ -1,9 +1,12 @@
++import { scopeObsidianSnapshot, subscribeObsidianScope } from "../obsidianHost";
++import { appAtomRegistry } from "../rpc/atomRegistry";
+ import {
+   AVAILABLE_CONNECTION_STATE,
+   connectionProjectionPhase,
+ } from "@t3tools/client-runtime/connection";
+ import {
+   createEnvironmentShellAtoms,
++  EMPTY_SHELL_STATE,
+   createEnvironmentSnapshotAtom,
+   createShellEnvironmentAtoms,
+   type EnvironmentShellState,
+@@ -24,7 +27,32 @@ import { isHostedStaticApp } from "../hostedPairing";
+ import { isLocalEnvironmentDisabled } from "../localEnvironment";
+ 
+ export const shellEnvironment = createShellEnvironmentAtoms(connectionAtomRuntime);
+-export const environmentShell = createEnvironmentShellAtoms(connectionAtomRuntime);
++const rawEnvironmentShell = createEnvironmentShellAtoms(connectionAtomRuntime);
++const hostScopeRevision = Atom.make(0);
++const unsubscribeHostScope = subscribeObsidianScope(() => {
++  appAtomRegistry.set(hostScopeRevision, appAtomRegistry.get(hostScopeRevision) + 1);
++});
++if (import.meta.hot) import.meta.hot.dispose(unsubscribeHostScope);
++const scopedStateAtom = Atom.family((environmentId: EnvironmentId) =>
++  Atom.make((get) => {
++    get(hostScopeRevision);
++    return AsyncResult.map(get(rawEnvironmentShell.stateAtom(environmentId)), (state) => ({
++      ...state,
++      snapshot: Option.map(state.snapshot, (snapshot) =>
++        scopeObsidianSnapshot(environmentId, snapshot),
++      ),
++    }));
++  }),
++);
++export const environmentShell = {
++  ...rawEnvironmentShell,
++  stateAtom: scopedStateAtom,
++  stateValueAtom: Atom.family((environmentId: EnvironmentId) =>
++    Atom.make((get) =>
++      AsyncResult.getOrElse(get(scopedStateAtom(environmentId)), () => EMPTY_SHELL_STATE),
++    ),
++  ),
++};
+ export const environmentSnapshotAtom = createEnvironmentSnapshotAtom(environmentShell.stateAtom);
+ 
+ const NO_SHELL_STATUS_ATOM = Atom.make<EnvironmentShellStatus | null>(null).pipe(

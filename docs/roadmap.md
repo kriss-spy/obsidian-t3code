@@ -20,3 +20,5 @@ The [spec](spec.md) defines behavior and release gates. GitHub issues track impl
 
 Issue #4 must prove real T3 file actions and pre-render session filtering. A synthetic bridge or CSS-hidden session rows cannot pass that gate. Document any required T3 patch before proceeding with dependent features.
 
+
+An [experimental pinned T3 patch](../upstream/README.md) now implements the initial host contract. Complete scope coverage and real guest acceptance remain pending. The plugin still approves no T3 build.
