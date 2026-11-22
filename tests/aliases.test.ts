@@ -1,13 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, renameSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, symlinkSync, renameSync, rmSync, realpathSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { AliasIndex, metadataAliases } from '../src/aliases';
 import { ReferenceDrags } from '../src/references';
 
 test('alias metadata merges canonical identities, updates, renames, duplicates and Unicode within the requested directory', async () => {
-  const root=mkdtempSync(path.join(os.tmpdir(),'t3-alias-'));
+  const root=realpathSync.native(mkdtempSync(path.join(os.tmpdir(),'t3-alias-')));
   try {
     const vault=path.join(root,'vault');mkdirSync(vault);mkdirSync(path.join(vault,'nested'));
     for (const file of ['one.md','two.md','nested/空 格.md']) writeFileSync(path.join(vault,file),'fixture');
@@ -34,7 +34,7 @@ test('alias metadata merges canonical identities, updates, renames, duplicates a
 });
 
 test('reference tokens are single-use, canonical, and reject missing or outside originals', async () => {
-  const root=mkdtempSync(path.join(os.tmpdir(),'t3-drag-'));
+  const root=realpathSync.native(mkdtempSync(path.join(os.tmpdir(),'t3-drag-')));
   try {
     const vault=path.join(root,'vault');mkdirSync(vault);mkdirSync(path.join(vault,'空 folder'));writeFileSync(path.join(vault,'note.md'),'fixture');
     const outside=path.join(root,'outside');mkdirSync(outside);writeFileSync(path.join(outside,'note.md'),'outside');
@@ -47,7 +47,7 @@ test('reference tokens are single-use, canonical, and reject missing or outside 
 });
 
 test('exact alias results survive a full normal-result limit', async () => {
-  const root=mkdtempSync(path.join(os.tmpdir(),'t3-alias-full-'));
+  const root=realpathSync.native(mkdtempSync(path.join(os.tmpdir(),'t3-alias-full-')));
   try {
     const index=new AliasIndex();mkdirSync(path.join(root,'Blue Archive'));writeFileSync(path.join(root,'Blue Archive/Blue Archive.md'),'fixture');
     index.update({path:'Blue Archive/Blue Archive.md',aliases:['蔚蓝档案']});
