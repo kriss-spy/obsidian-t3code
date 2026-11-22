@@ -1,4 +1,4 @@
-# T3 Code for Obsidian
+# T3 Code Workspace
 
 Bring your T3 Code workspace into Obsidian. Work with agents alongside your notes, add vault context to a prompt, and open Markdown files in Obsidian's editor.
 
@@ -37,11 +37,11 @@ This release was tested with T3 0.1.11 and Obsidian 1.15.1. Other operating syst
 2. Create the folder `<vault>/.obsidian/plugins/t-three-code-workspace/`.
 3. Copy the three files into that folder.
 4. Reload Obsidian.
-5. Enable **T3 Code** under **Settings → Community plugins**.
+5. Enable **T3 Code Workspace** under **Settings → Community plugins**.
 
 ### Connect to T3
 
-1. Open **Settings → T3 Code**.
+1. Open **Settings → T3 Code Workspace**.
 2. Select **Download necessary files**.
 3. Enter your existing T3 server address.
 4. Select **Connect**.
