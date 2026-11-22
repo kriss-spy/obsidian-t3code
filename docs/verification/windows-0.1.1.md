@@ -41,4 +41,8 @@ Added six regression cases for Windows files, folders, Unicode, mixed separators
 
 The Checks workflow now runs `npm ci`, `npm test`, and `npm run build` on both `ubuntu-latest` and `windows-latest`, using Node 22. Matrix jobs run independently so a failure on one platform does not cancel the other.
 
-Filesystem fixtures use directory junctions on Windows and directory symlinks on Linux. Alias and reference fixtures resolve files through linked directories, preserving coverage for duplicate canonical paths and links escaping the vault without requiring Windows symlink privileges. All 48 plugin tests and the production build pass locally on native Windows and on Linux through WSL, with no skipped tests. The hosted Actions run will occur after the changes are pushed.
+Filesystem fixtures use directory junctions on Windows and directory symlinks on Linux. Alias and reference fixtures resolve files through linked directories, preserving coverage for duplicate canonical paths and links escaping the vault without requiring Windows symlink privileges. All 48 plugin tests and the production build pass locally on native Windows and on Linux through WSL, with no skipped tests. The hosted Windows and Ubuntu jobs both passed in Actions run 45004150579 after normalizing short-form temporary paths and CRLF patch fixtures in the test helpers.
+
+## Published refresh
+
+Replaced main.js, manifest.json, and styles.css on release 0.1.1, and published pinned core/font archives under components-0.1.1-windows. Downloaded every published asset again and verified all SHA-256 checksums against the local build. Installed both downloaded component archives in a disposable directory and verified their receipts. The original components-0.1.1 release and source tag remain unchanged; release notes link the refreshed binary source commit de515a2 and explain manual reinstallation for the unchanged version number.
