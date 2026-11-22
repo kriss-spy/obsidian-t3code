@@ -12,9 +12,9 @@ const output = await build({entryPoints:['src/main.ts'],bundle:true,write:false,
   name:'candidate-admission-for-integration-tests',
   setup(builder) {builder.onLoad({filter:/approved-client\.ts$/},async () => ({loader:'ts',contents:'export const APPROVED_CLIENT = '+JSON.stringify({build:JSON.parse(manifestText).build,manifestSha256})+';'}));},
 }]});
-const folder=path.join(vault,'.obsidian/plugins/t3-code');await mkdir(folder,{recursive:true});
+const folder=path.join(vault,'.obsidian/plugins/t-three-code');await mkdir(folder,{recursive:true});
 await writeFile(path.join(folder,'main.js'),output.outputFiles[0].text);
 for(const file of ['manifest.json','styles.css'])await copyFile(file,path.join(folder,file));
 await writeFile(path.join(folder,'data.json'),JSON.stringify({origin,followAppearance:true,target}));
-await writeFile(path.join(vault,'.obsidian/community-plugins.json'),'["t3-code"]');
+await writeFile(path.join(vault,'.obsidian/community-plugins.json'),'["t-three-code"]');
 console.log('Installed candidate for isolated gate verification. Production admission is unchanged.');

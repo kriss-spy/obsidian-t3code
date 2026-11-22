@@ -4,7 +4,7 @@ The plugin connects to a standard T3 server. Do not apply this repository's clie
 
 ## Plugin
 
-Run `npm ci`, `npm test`, and `npm run build`. Copy `main.js`, `manifest.json`, and `styles.css` to `<vault>/.obsidian/plugins/t3-code/`. Preserve existing `data.json` when upgrading.
+Run `npm ci`, `npm test`, and `npm run build`. Copy `main.js`, `manifest.json`, and `styles.css` to `<vault>/.obsidian/plugins/t-three-code/`. Preserve existing `data.json` when upgrading. If you installed an earlier build with the ID `t3-code`, disable it first. Rename its plugin folder to `t-three-code`, then copy the new release files and enable T3 Code again. This preserves your settings.
 
 Enable the plugin. In **Settings → T3 Code**, download necessary files, enter the existing server origin, and connect. Complete pairing in the embedded T3 interface.
 

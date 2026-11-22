@@ -44,9 +44,9 @@ try {
     } finally {guest.remove();}
   })()`);
   const result = await evaluate(`(async () => {
-    await app.plugins.disablePlugin('t3-code');
-    await app.plugins.enablePlugin('t3-code');
-    const plugin = app.plugins.plugins['t3-code'];
+    await app.plugins.disablePlugin('t-three-code');
+    await app.plugins.enablePlugin('t-three-code');
+    const plugin = app.plugins.plugins['t-three-code'];
     if (!plugin) throw new Error('Plugin not loaded');
     await Promise.all([plugin.openWorkspace(), plugin.openWorkspace()]);
     const leaves = app.workspace.getLeavesOfType('t3-code-workspace');
@@ -69,13 +69,13 @@ try {
     if ((await otherSession.cookies.get({name:'reset-fixture'})).length !== 1) throw new Error('Reset cleared another partition');
     await otherSession.clearStorageData();
     const reset = plugin.diagnostic;
-    await app.plugins.disablePlugin('t3-code');
+    await app.plugins.disablePlugin('t-three-code');
     if (document.querySelector('.t3-code-guest')) throw new Error('Guest leaked after disable');
-    await app.plugins.enablePlugin('t3-code');
-    await app.plugins.plugins['t3-code'].openWorkspace();
-    if (!app.plugins.plugins['t3-code'].diagnostic.includes('0.1.11, protocol 2')) throw new Error('Reload retained an old plugin instance');
+    await app.plugins.enablePlugin('t-three-code');
+    await app.plugins.plugins['t-three-code'].openWorkspace();
+    if (!app.plugins.plugins['t-three-code'].diagnostic.includes('0.1.11, protocol 2')) throw new Error('Reload retained an old plugin instance');
     return {singleWorkspace:true, unsupportedGuestUnmounted:true, descriptorChecked:true,
-      credentialsNotPersisted:true, partitionResetIsolated:true, reset, reload:true, diagnostic:app.plugins.plugins['t3-code'].diagnostic};
+      credentialsNotPersisted:true, partitionResetIsolated:true, reset, reload:true, diagnostic:app.plugins.plugins['t-three-code'].diagnostic};
   })()`);
   console.log(JSON.stringify({isolation,...result}, null, 2));
 } finally { socket.close(); }
