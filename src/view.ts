@@ -38,6 +38,7 @@ export class T3View extends ItemView {
     this.bridge?.close();
     this.bridge = undefined;
     this.guest?.remove();
+    this.contentEl.removeClass('t3-code-workspace-connected');
     this.guest = undefined;
     this.cssKey = undefined;
   }
@@ -104,6 +105,7 @@ export class T3View extends ItemView {
       this.cleanup.push(() => guest.removeEventListener('will-navigate', navigate), () => guest.removeEventListener('render-process-gone', gone), () => guest.removeEventListener('did-navigate-in-page', routeChanged));
       this.contentEl.empty();
       this.contentEl.appendChild(guest);
+      this.contentEl.addClass('t3-code-workspace-connected');
       await new Promise<void>((resolve, reject) => {
         const timer = hostWindow.setTimeout(() => reject(new Error('T3 guest loading timed out.')), 15000);
         const ready = () => { hostWindow.clearTimeout(timer); resolve(); };
@@ -152,8 +154,8 @@ export class T3View extends ItemView {
     const bridge = this.bridge, guest = this.guest, generation = this.generation;
     if (!bridge || !guest) return null;
     if(this.getState().target!==expectedRoute)return null;
-    await this.app.workspace.revealLeaf(this.leaf);
-    this.app.workspace.setActiveLeaf(this.leaf,{focus:true});
+    const visibleBox = guest.getBoundingClientRect();
+    if (visibleBox.width<=0 || visibleBox.height<=0) return null;
     const hostWindow=this.contentEl.ownerDocument.defaultView ?? window;
     let target=await bridge.referenceDropTarget();
     for(let attempt=0;!target && attempt<20;attempt++){
@@ -162,13 +164,13 @@ export class T3View extends ItemView {
       target=await bridge.referenceDropTarget();
     }
     if(target?.route!==expectedRoute)return null;
-    if (!target || bridge !== this.bridge || guest !== this.guest) return null;
+    if (!target || generation !== this.generation || this.getState().target!==expectedRoute || bridge !== this.bridge || guest !== this.guest) return null;
     const box = guest.getBoundingClientRect();
     if (box.width<=0 || box.height<=0) return null;
     const scaleX = box.width / target.viewport.width, scaleY = box.height / target.viewport.height;
-    const zone = this.contentEl.ownerDocument.createElement('div');
-    zone.className = 't3-code-reference-drop';
-    zone.textContent = 'Drop reference into T3';
+    const zone = this.contentEl.ownerDocument.createDocumentFragment().createDiv({
+      cls: 't3-code-reference-drop', text: 'Drop reference into T3',
+    });
     const values = {left:box.x+target.rect.x*scaleX,top:box.y+target.rect.y*scaleY,width:target.rect.width*scaleX,height:target.rect.height*scaleY};
     for (const [key,value] of Object.entries(values)) zone.style.setProperty('--t3-drop-'+key,value+'px');
     this.contentEl.ownerDocument.body.appendChild(zone);

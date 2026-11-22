@@ -7,8 +7,13 @@ export interface Guest extends HTMLElement {
   insertCSS(css: string): Promise<string>;
   removeInsertedCSS(key: string): Promise<void>;
 }
+declare global {
+  interface HTMLElementTagNameMap {
+    webview: Guest;
+  }
+}
 export function createGuest(document: Document, partition: string, url: string): Guest {
-  const guest = document.createElement('webview') as Guest;
+  const guest = document.createDocumentFragment().createEl('webview');
   guest.classList.add('t3-code-guest');
   guest.setAttribute('partition', partition);
   guest.setAttribute('webpreferences', 'contextIsolation=yes,sandbox=yes,nodeIntegration=no,webSecurity=yes');

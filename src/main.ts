@@ -82,9 +82,9 @@ export default class T3Plugin extends Plugin {
       });
     });
     const open = () => { void this.openWorkspace().catch(() => new Notice('Could not open T3 Code.')); };
-    this.addCommand({ id: 'open', name: 'Open T3 Code', callback: open });
+    this.addCommand({ id: 'open', name: 'Open workspace', callback: open });
     this.addRibbonIcon('terminal', 'Open T3 Code', open);
-    this.addCommand({id:'focus-workspace',name:'Focus T3 Code',callback:()=>{
+    this.addCommand({id:'focus-workspace',name:'Focus workspace',callback:()=>{
       void this.openWorkspace().then(()=>this.app.workspace.leftSplit.collapse()).catch(()=>new Notice('Could not focus T3 Code.'));
     }});
     const add = (editor: import('obsidian').Editor, view: import('obsidian').MarkdownView, selection: boolean) => {

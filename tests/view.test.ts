@@ -9,7 +9,7 @@ const nativeRequire = createRequire(import.meta.url);
 function fixture() {
   const module = {exports:{} as {T3View:new (...args:any[])=>T3View}};
   const body = {};
-  class ItemView {contentEl={ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};}
+  class ItemView {contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};}
   new Function('require','module','exports',bundle)((name:string)=>name==='obsidian'?{ItemView}:nativeRequire(name),module,module.exports);
   const plugin = {settings:{origin:'http://127.0.0.1:39176',followAppearance:true}};
   const view = new module.exports.T3View({},plugin);

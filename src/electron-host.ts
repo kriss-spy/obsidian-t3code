@@ -16,6 +16,6 @@ interface DesktopElectron {
 }
 // Obsidian exposes Electron only at runtime. Keep this desktop compatibility boundary typed.
 export function electronHost(): DesktopElectron {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Electron is provided by the desktop host at runtime.
   return require('electron') as DesktopElectron;
 }

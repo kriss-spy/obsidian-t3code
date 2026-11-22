@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Keep the active note unchanged when dragging files or folders outside the T3 composer.
+- Preserve reference drops into a visible T3 composer.
+- Address plugin review findings in element creation, command labels, CSS, and manifest text.
+- Include macOS local vault verification and the cross-platform client from the verified 0.1.1 source.
+
 ## 0.1.1
 
 - Publish the normal Obsidian plugin files separately from downloadable components.

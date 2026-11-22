@@ -10,7 +10,7 @@ export function registerExplorerDrops(plugin: T3Plugin, doc: Document) {
   let drag: Drag | null = null;
   const cancel = () => { if (!drag) return; drag.ended=true; for(const zone of drag.zones)zone.cancel();drag=null; };
   plugin.register(cancel);
-  const activate = (current: Drag) => {
+  const prepareZones = (current: Drag) => {
     if(current.started || current.ended)return;
     current.started=true;
     for(const {view,route} of current.views) {
@@ -41,14 +41,14 @@ export function registerExplorerDrops(plugin: T3Plugin, doc: Document) {
     const views=plugin.app.workspace.getLeavesOfType(VIEW_TYPE).filter(leaf=>leaf.view.containerEl.ownerDocument===doc).map(leaf=>({view:leaf.view as T3View,route:(leaf.view as T3View).getState().target}));
     drag={x:event.clientX,y:event.clientY,token:plugin.referenceDrags.capture([file.path]),zones:[],ended:false,started:false,views};
   },{capture:true});
-  plugin.registerDomEvent(doc,'pointermove',event=>{if(drag && Math.hypot(event.clientX-drag.x,event.clientY-drag.y)>=6)activate(drag);},{capture:true});
+  plugin.registerDomEvent(doc,'pointermove',event=>{if(drag && Math.hypot(event.clientX-drag.x,event.clientY-drag.y)>=6)prepareZones(drag);},{capture:true});
   plugin.registerDomEvent(doc,'pointerup',finish,{capture:true});
   plugin.registerDomEvent(doc,'mouseup',event=>{if(consumedPointer){event.preventDefault();event.stopImmediatePropagation();consumedPointer=false;return;}finish(event);},{capture:true});
   plugin.registerDomEvent(doc,'keydown',event=>{if(event.key==='Escape')cancel();},{capture:true});
   plugin.registerDomEvent(doc,'dragend',cancel);
   plugin.registerDomEvent(doc,'dragstart',event=>{
     if(!event.dataTransfer)return;
-    if(drag){event.dataTransfer.setData(REFERENCE_MIME,drag.token);activate(drag);return;}
+    if(drag){event.dataTransfer.setData(REFERENCE_MIME,drag.token);prepareZones(drag);return;}
     const Element=doc.defaultView?.Element;
     if(!Element || !(event.target instanceof Element))return;
     const source=event.target.closest('.nav-file-title[data-path], .nav-folder-title[data-path]')?.getAttribute('data-path');
