@@ -1,6 +1,6 @@
-# T3 Code Workspace
+# threecode
 
-Bring your T3 Code workspace into Obsidian. Work with agents alongside your notes, add vault context to a prompt, and open Markdown files in Obsidian's editor.
+threecode brings your T3 Code workspace into Obsidian. Work with agents alongside your notes, add vault context to a prompt, and open Markdown files in Obsidian's editor.
 
 [Watch the demo on YouTube](https://youtu.be/K0_4F2DAwRs)
 
@@ -34,14 +34,14 @@ This release was tested with T3 0.1.11 and Obsidian 1.15.1. Other operating syst
 ### Install the plugin manually
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/kriss-spy/obsidian-t3code/releases/latest).
-2. Create the folder `<vault>/.obsidian/plugins/t-three-code-workspace/`.
+2. Create the folder `<vault>/.obsidian/plugins/threecode/`.
 3. Copy the three files into that folder.
 4. Reload Obsidian.
-5. Enable **T3 Code Workspace** under **Settings → Community plugins**.
+5. Enable **threecode** under **Settings → Community plugins**.
 
 ### Connect to T3
 
-1. Open **Settings → T3 Code Workspace**.
+1. Open **Settings → threecode**.
 2. Select **Download necessary files**.
 3. Enter your existing T3 server address.
 4. Select **Connect**.

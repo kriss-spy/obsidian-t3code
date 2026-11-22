@@ -1,6 +1,6 @@
 {
-  "id": "t-three-code-workspace",
-  "name": "T3 Code Workspace",
+  "id": "threecode",
+  "name": "threecode",
   "version": "0.1.1",
   "minAppVersion": "1.15.1",
   "description": "Use T3 Code in Obsidian with note context and vault-scoped navigation.",

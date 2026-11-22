@@ -21,12 +21,12 @@ try {
   await guest(`document.querySelector('a.chat-markdown-file-link').dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true,cancelable:true}))`);
   for(let i=0;i<30;i++){if(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path==='Test 空 格#.md')`))break;await new Promise(r=>setTimeout(r,100));}
   assert.equal(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path==='Test 空 格#.md')`),true);evidence.checks.realVaultChip=true;
-  await parent(`app.plugins.plugins['t-three-code-workspace'].openWorkspace().then(()=>true)`);
+  await parent(`app.plugins.plugins['threecode'].openWorkspace().then(()=>true)`);
   await waitFor(`[...document.querySelectorAll('a.chat-markdown-file-link')].some(e=>e.textContent.includes('External'))`);
   await guest(`[...document.querySelectorAll('a.chat-markdown-file-link')].find(e=>e.textContent.includes('External')).dispatchEvent(new MouseEvent('click',{bubbles:true,ctrlKey:true,cancelable:true}))`);
   await new Promise(r=>setTimeout(r,400));
   assert.equal(await parent(`app.workspace.getLeavesOfType('markdown').some(l=>l.view.file?.path?.startsWith('file:/')&&l.view.editor.getCursor().line===1)`),true);evidence.checks.realExternalChipLine2=true;
-  await parent(`app.plugins.plugins['t-three-code-workspace'].openWorkspace().then(()=>true)`);
+  await parent(`app.plugins.plugins['threecode'].openWorkspace().then(()=>true)`);
   await waitFor(`!!document.querySelector('button[aria-label="Filter threads by project"]')`);
   await guest(`document.querySelector('button[aria-label="Filter threads by project"]').click()`);
   await waitFor(`document.body.textContent.includes('All projects')`);
@@ -42,6 +42,6 @@ try {
   await waitFor(`document.body.textContent.includes('This session is outside this vault.')`);evidence.checks.excludedReconnect=true;
   assert.equal(await parent('window.__integrationLeaks'),0);evidence.checks.excludedDomObservations=0;
   await route(includedRoute);await waitFor(`!!document.querySelector('a.chat-markdown-file-link')`);
-  const count=await parent(`(async()=>{await Promise.all(Array.from({length:6},()=>app.plugins.plugins['t-three-code-workspace'].openWorkspace()));return app.workspace.getLeavesOfType('t3-code-workspace').length})()`);assert.equal(count,1);evidence.checks.concurrentOpenOneView=true;
+  const count=await parent(`(async()=>{await Promise.all(Array.from({length:6},()=>app.plugins.plugins['threecode'].openWorkspace()));return app.workspace.getLeavesOfType('t3-code-workspace').length})()`);assert.equal(count,1);evidence.checks.concurrentOpenOneView=true;
   evidence.checkedAt=new Date().toISOString();await writeFile(output,JSON.stringify(evidence,null,2)+'\n');console.log(JSON.stringify(evidence,null,2));
 } finally {c.close();}

@@ -26,8 +26,8 @@ const name=`obsidian-t3code-${manifest.version}-${label}-linux`;
 const stage=path.join(dist,name),zip=path.join(dist,name+'.zip');
 try{await stat(zip);throw Error('Candidate ZIP already exists. Choose a new label.');}catch(error){if(error.code!=='ENOENT')throw error;}
 await mkdir(stage);
-await mkdir(path.join(stage,'plugin/t-three-code-workspace'),{recursive:true});
-for(const file of ['main.js','manifest.json','styles.css'])await copyFile(file,path.join(stage,'plugin/t-three-code-workspace',file));
+await mkdir(path.join(stage,'plugin/threecode'),{recursive:true});
+for(const file of ['main.js','manifest.json','styles.css'])await copyFile(file,path.join(stage,'plugin/threecode',file));
 for(const dir of ['scripts','upstream'])await mkdir(path.join(stage,dir));
 for(const file of ['prepare-t3-development.sh','verify-packaged-client.mjs','verify-candidate.mjs'])await copyFile('scripts/'+file,path.join(stage,'scripts',file));
 await copyFile('upstream/t3-0.1.11-obsidian-host-v1.patch',path.join(stage,'upstream/t3-0.1.11-obsidian-host-v1.patch'));
