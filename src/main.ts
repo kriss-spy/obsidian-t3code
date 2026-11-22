@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { requestUrl } from 'obsidian';
-import { componentStatus, installComponents, type ComponentKind } from './components';
+import { componentStatus, installComponents, removeComponents, type ComponentKind } from './components';
 import { COMPONENT_ASSETS } from './component-release';
 import { registerExplorerDrops } from './explorer-drops';
 import { ReferenceDrags } from './references';
@@ -25,6 +25,9 @@ export default class T3Plugin extends Plugin {
   componentMessage = 'Checking required files…';
   fontMessage = 'Extra fonts are optional.';
   downloading = false;
+  deleting: ComponentKind | null = null;
+  componentsInstalled = false;
+  fontsInstalled = false;
   private stopped = new AbortController();
   private settingsTab?: SettingsTab;
   get componentDirectory() {
@@ -33,12 +36,15 @@ export default class T3Plugin extends Plugin {
   }
   async checkComponents() {
     const missing = await componentStatus(this.componentDirectory, COMPONENT_ASSETS.core);
+    this.componentsInstalled = missing === null;
     this.componentMessage = missing ?? 'Required files are installed.';
-    this.fontMessage = (await componentStatus(this.componentDirectory, COMPONENT_ASSETS.fonts)) ?? 'Extra fonts are installed.';
+    const fontsMissing = await componentStatus(this.componentDirectory, COMPONENT_ASSETS.fonts);
+    this.fontsInstalled = fontsMissing === null;
+    this.fontMessage = fontsMissing ?? 'Extra fonts are installed.';
     return missing;
   }
   async downloadComponents(kind: ComponentKind) {
-    if (this.downloading) return;
+    if (this.downloading || this.deleting) return;
     this.downloading = true;
     this.settingsTab?.update();
     try {
@@ -60,6 +66,23 @@ export default class T3Plugin extends Plugin {
         new Notice(message);
       }
     } finally { this.downloading = false; if (!this.stopped.signal.aborted) this.settingsTab?.update(); }
+  }
+  async deleteComponents(kind: ComponentKind) {
+    if (this.downloading || this.deleting) return;
+    this.deleting = kind;
+    this.settingsTab?.update();
+    try {
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) (leaf.view as T3View).disconnect();
+      await removeComponents(this.componentDirectory, COMPONENT_ASSETS[kind], this.stopped.signal);
+      await this.checkComponents();
+      new Notice(kind === 'core' ? 'Required T3 files deleted.' : 'Extra fonts deleted. System fonts are used.');
+      await this.reconnect();
+    } catch (error) {
+      if (!this.stopped.signal.aborted) {
+        await this.checkComponents();
+        new Notice(error instanceof Error ? error.message : 'Could not delete component files.');
+      }
+    } finally { this.deleting = null; if (!this.stopped.signal.aborted) this.settingsTab?.update(); }
   }
   private opening = new WeakMap<Document, Promise<T3View>>();
   async onload() {

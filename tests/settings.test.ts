@@ -74,6 +74,38 @@ test('Connect from settings creates a workspace and attempts a connection when n
   assert.ok(f.notices.includes('T3 descriptor unavailable.'));
 });
 
+test('component buttons switch between download and delete and block concurrent operations', async () => {
+  const f = fixture();
+  const actions: string[] = [];
+  f.plugin.downloadComponents = async kind => { actions.push('download ' + kind); };
+  f.plugin.deleteComponents = async kind => { actions.push('delete ' + kind); };
+  const render = (name: string) => {
+    const definition = f.tab.getSettingDefinitions().find(item => 'name' in item && item.name === name);
+    assert.ok(definition && 'render' in definition && definition.render);
+    definition.render({addButton: (callback: (button: any) => void) => callback(f.button), setDesc: () => {}} as any, {} as any);
+    return f.button;
+  };
+  assert.equal(render('Necessary files').text, 'Download necessary files');
+  await f.button.click();
+  assert.equal(render('Extra fonts').text, 'Download extra fonts');
+  await f.button.click();
+  f.plugin.componentsInstalled = true;
+  f.plugin.fontsInstalled = true;
+  assert.equal(render('Necessary files').text, 'Delete');
+  await f.button.click();
+  assert.equal(render('Extra fonts').text, 'Delete');
+  await f.button.click();
+  assert.deepEqual(actions, ['download core', 'download fonts', 'delete core', 'delete fonts']);
+  f.plugin.deleting = 'core';
+  assert.equal(render('Necessary files').text, 'Deleting…');
+  assert.equal(f.button.disabled, true);
+  assert.equal(render('Extra fonts').disabled, true);
+  f.plugin.deleting = null;
+  f.plugin.downloading = true;
+  assert.equal(render('Necessary files').disabled, true);
+  assert.equal(render('Extra fonts').disabled, true);
+});
+
 test('Connect resets and reveals an existing workspace without opening another tab', async () => {
   const f = fixture();
   await f.plugin.openWorkspace();

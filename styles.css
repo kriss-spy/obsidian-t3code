@@ -6,5 +6,8 @@
 
 .t3-code-guest.t3-code-pending { visibility: hidden; }
 
+.t3-code-compatibility .setting-item-control { display: none; }
+.t3-code-compatibility-status { margin-top: var(--size-4-2); padding: var(--size-4-3); border-radius: var(--radius-s); background: var(--background-secondary); color: var(--text-normal); white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; }
+
 .t3-code-reference-drop { position: fixed; left: var(--t3-drop-left); top: var(--t3-drop-top); width: var(--t3-drop-width); height: var(--t3-drop-height); z-index: var(--layer-modal, 1000); opacity: 0; display: flex; align-items: center; justify-content: center; border: 2px solid var(--interactive-accent); border-radius: var(--radius-m); background: var(--background-primary); color: var(--text-normal); pointer-events: auto; }
 .t3-code-reference-drop.is-active { opacity: 0.9; }

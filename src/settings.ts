@@ -10,11 +10,11 @@ export class SettingsTab extends PluginSettingTab {
     let address = this.plugin.settings.origin;
     return [
       {name:'Necessary files', desc:this.plugin.componentMessage,render:setting => {
-        setting.addButton(b => b.setButtonText(this.plugin.downloading ? 'Downloading…' : 'Download necessary files').setDisabled(this.plugin.downloading).onClick(() => this.plugin.downloadComponents('core')));
+        setting.addButton(b => b.setButtonText(this.plugin.deleting === 'core' ? 'Deleting…' : this.plugin.downloading ? 'Downloading…' : this.plugin.componentsInstalled ? 'Delete' : 'Download necessary files').setDisabled(this.plugin.downloading || this.plugin.deleting !== null).onClick(() => this.plugin.componentsInstalled ? this.plugin.deleteComponents('core') : this.plugin.downloadComponents('core')));
         setting.setDesc(this.plugin.componentMessage + ' Download: ' + (COMPONENT_ASSETS.core.bytes/1000000).toFixed(1) + ' MB. Office previews and bundled device models are excluded.');
       }},
       {name:'Extra fonts',desc:this.plugin.fontMessage,render:setting => {
-        setting.addButton(b => b.setButtonText('Download extra fonts').setDisabled(this.plugin.downloading).onClick(() => this.plugin.downloadComponents('fonts')));
+        setting.addButton(b => b.setButtonText(this.plugin.deleting === 'fonts' ? 'Deleting…' : this.plugin.fontsInstalled ? 'Delete' : 'Download extra fonts').setDisabled(this.plugin.downloading || this.plugin.deleting !== null).onClick(() => this.plugin.fontsInstalled ? this.plugin.deleteComponents('fonts') : this.plugin.downloadComponents('fonts')));
         setting.setDesc(this.plugin.fontMessage + ' Optional Inter and terminal symbols: ' + (COMPONENT_ASSETS.fonts.bytes/1000000).toFixed(1) + ' MB.');
       }},
 
@@ -55,10 +55,11 @@ export class SettingsTab extends PluginSettingTab {
         setting.addButton(b => b.setButtonText('Reset').onClick(async () => { await this.plugin.resetConnection(); this.update(); }));
       }},
       {name:'Obsidian agent skills',desc:'The official skills teach Markdown, Bases, Canvas, and Obsidian tools. Install them in your T3 agent setup.',render:setting => {
-        setting.controlEl.createEl('a', {text:'Installation instructions',href:'https://github.com/obsidianmd/obsidian-skills#installation',attr:{target:'_blank',rel:'noopener noreferrer'}});
+        setting.controlEl.createEl('a', {text:'Link',href:'https://github.com/obsidianmd/obsidian-skills#installation',attr:{target:'_blank',rel:'noopener noreferrer','aria-label':'Obsidian agent skills installation instructions'}});
       }},
-      {name:'Compatibility',desc:this.plugin.diagnostic,render:setting => {
-        setting.controlEl.createEl('textarea', {attr:{readonly:'true','aria-label':'Compatibility diagnostics'},text:this.plugin.diagnostic});
+      {name:'Compatibility',render:setting => {
+        setting.setClass('t3-code-compatibility');
+        setting.descEl.createEl('div', {cls:'t3-code-compatibility-status',attr:{role:'status'},text:this.plugin.diagnostic});
       }},
     ];
   }

@@ -92,3 +92,25 @@ export async function installComponents(directory: string, bytes: Uint8Array, as
     await rename(path.join(stage, 'receipt.json'), await safeDestination(root, receiptName(asset.kind)));
   } finally { await rm(stage, { recursive: true, force: true }); }
 }
+
+export async function removeComponents(directory: string, asset: ComponentAsset, signal?: AbortSignal): Promise<void> {
+  if (!path.isAbsolute(directory)) throw new Error('Select an absolute T3 client folder first.');
+  const root = await realpath(directory);
+  const receiptPath = await safeDestination(root, receiptName(asset.kind));
+  const receipt = JSON.parse(await readFile(receiptPath, 'utf8')) as Receipt;
+  if (receipt.version !== asset.version || receipt.sha256 !== asset.sha256 || !Array.isArray(receipt.files) || !receipt.files.length) throw new Error('Invalid installation record. Download the files again.');
+  // Resolve every destination before deleting anything, and retain the shared stylesheet.
+  const files = await Promise.all(receipt.files.filter(file => file.path !== optionalCSS).map(async file => {
+    if (asset.kind === 'fonts' && file.path !== 'fonts/LICENSES.txt' && !/^fonts\/[a-zA-Z0-9_.-]+\.(?:woff2?|ttf|otf)$/.test(file.path)) throw new Error('Invalid font installation record.');
+    if (asset.kind === 'core' && file.path.startsWith('fonts/')) throw new Error('Invalid installation record.');
+    return safeDestination(root, file.path);
+  }));
+  const css = await safeDestination(root, optionalCSS);
+  signal?.throwIfAborted();
+  if (asset.kind === 'fonts') await writeFile(css, '/* Extra fonts are not installed. */\n');
+  for (const file of files) {
+    signal?.throwIfAborted();
+    await rm(file, { force: true });
+  }
+  await rm(receiptPath);
+}

@@ -11,3 +11,5 @@ A future mapping must identify both packages and revisions, each supported light
 Synchronization would require an explicit opt-in ownership setting and a versioned public host method that calls T3's normal setter. An explicit T3 theme change must return ownership to T3 until the user enables synchronization again. Host appearance events must not repeatedly overwrite that choice. Disabling synchronization must retain the last complete palette rather than mix application colors.
 
 Issue #17 remains open until a concrete mapping and these runtime checks pass. Source inspection establishes the available integration boundary, not visual equivalence.
+
+See the [issue 17 feasibility investigation](research/issue-17-theme-sync-feasibility.md) for the clarified direction: embedded T3 follows Obsidian’s resolved theme colors and appearance. This proposes translating computed Obsidian colors into a complete T3 palette, rather than selecting themes by name. It broadens the earlier package-mapping design and still requires runtime validation. Omarchy is a research reference only.
