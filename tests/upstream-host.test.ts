@@ -6,17 +6,25 @@ import { transformSync } from 'esbuild';
 import { T3_REVISION } from '../src/host-contract';
 
 // Exercise the exact module shipped in the patch, rather than a second fixture implementation.
-function load(embedded = true) {
+function load(embedded = true, readFile?: (input: {cwd:string;relativePath:string}) => Promise<string>) {
   const module = {exports:{} as Record<string, (...args: any[]) => any>};
   const window: any = {innerWidth:1200,innerHeight:800};
   const location = {search:embedded ? "?obsidian-host=1" : "",pathname:"/local/thread"};
   const timers = new Map<number, () => void>();
   let nextTimer = 0;
-  const code = transformSync(readAddedPatchSource('apps/web/src/obsidianHost.ts'), {loader:'ts', format:'cjs'}).code;
+  const code = transformSync(readAddedPatchSource('apps/web/src/obsidianHost.ts'), {loader:'ts', format:'cjs'}).code.replace(/\bimport\(/g, 'loadModule(');
   vm.runInNewContext(code, {module, exports:module.exports, window, URLSearchParams, URL,
     location,
     setTimeout:(fn:() => void) => { timers.set(++nextTimer, fn); return nextTimer; },
     clearTimeout:(id:number) => timers.delete(id),
+    loadModule: async (name:string) => {
+      if(name === './state/projects')return {projectEnvironment:{readFile:({input}:any)=>input}};
+      if(name === './rpc/atomRegistry')return {appAtomRegistry:{}};
+      if(name === 'effect/reactivity/AtomRegistry')return {getResult:(_registry:any,input:any)=>({pipe:()=>input})};
+      if(name === 'effect/Effect')return {timeout:()=>{},runPromise:async(input:any)=>({contents:await readFile!(input),exists:true,truncated:false})};
+      if(name === '@t3tools/contracts')return {EnvironmentId:{make:(value:string)=>value}};
+      throw new Error('Unexpected test dependency: '+name);
+    },
   });
   return {api:window.t3ObsidianHostV1, exports:module.exports, timers, location};
 }
@@ -209,4 +217,46 @@ test('an unpatched server stays scoped empty until authenticated filesystem proo
   api.reply({id:request.id,generation:'g',allowed:['project:p','thread:t']});
   await flush();
   assert.equal(e.scopeObsidianSnapshot('local',snapshot).threads.length,1);
+});
+
+test('Windows vault paths survive initialization and native Markdown requests', async () => {
+  const {api, exports:e} = load();
+  const vaultRoot = 'C:\\Users\\tester\\空 vault';
+  api.initialize({generation:'g',environmentId:'local',vaultRoot});
+  assert.equal(e.obsidianVaultSetup()?.path, vaultRoot);
+  const file = vaultRoot + '\\note.md';
+  const opening = e.openObsidianMarkdown({environmentId:'local',path:file,newTab:false});
+  const [request] = api.drain();
+  assert.equal(request?.path, file);
+  api.reply({id:request.id,generation:'g',handled:true});
+  assert.equal(await opening, true);
+  const checking = e.verifyObsidianMarkdown('local', file);
+  const [check] = api.drain();
+  assert.equal(check?.type, 'file-check');
+  api.reply({id:check.id,generation:'g',handled:true});
+  assert.equal(await checking, true);
+});
+
+test('Windows proof reads both challenges through T3 and rejects stale or escaping requests', async () => {
+  const reads: string[] = [];
+  const vaultRoot = 'C:\\Users\\tester\\空 vault';
+  const file = vaultRoot + '\\.obsidian\\t3-code-host-12345678-1234-1234-1234-123456789abc';
+  const machinePath = 'C:\\Users\\tester\\AppData\\Local\\Temp\\t3-code-machine-12345678-1234-1234-1234-123456789abc';
+  const {api} = load(true, async input => {
+    assert.equal(input.cwd, vaultRoot);
+    reads.push(input.relativePath);
+    return input.relativePath === file ? 'vault-token' : 'host-token';
+  });
+  api.initialize({generation:'g',environmentId:'local',vaultRoot,requiresLocalProof:true});
+  const proof = await api.readLocalProof({generation:'g',path:file,machinePath});
+  assert.equal(proof.token, 'vault-token');
+  assert.equal(proof.machine, 'host-token');
+  assert.deepEqual(reads, [file,machinePath]);
+  for (const input of [
+    {generation:'stale',path:file,machinePath},
+    {generation:'g',path:file.replace('空 vault','空 vault-backup'),machinePath},
+    {generation:'g',path:file.replace('.obsidian', '..'),machinePath},
+    {generation:'g',path:file,machinePath:machinePath.replace('t3-code-machine-', 'other-')},
+  ]) await assert.rejects(api.readLocalProof(input), /Invalid local proof/);
+  assert.equal(reads.length, 2);
 });

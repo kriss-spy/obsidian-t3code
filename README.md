@@ -23,11 +23,11 @@ Vault filtering only changes which sessions appear in this view. It does not res
 
 ## Requirements
 
-- Desktop Obsidian 1.15.1 or later.
-- An existing local Linux T3 server using orchestration protocol 2.
+- Desktop Obsidian 1.14.5 or later.
+- An existing local Windows or Linux T3 server using orchestration protocol 2, running on the same computer and operating system as Obsidian.
 - Internet access to download the plugin's required components during setup.
 
-This release was tested with T3 0.1.11 and Obsidian 1.15.1. Other operating systems are not yet verified. Future incompatible T3 API changes may require a plugin update.
+The embedded client targets T3 0.1.11. Local vault verification was tested on Windows with Obsidian 1.14.5 and on Linux with Obsidian 1.15.1. Windows Obsidian with a T3 server in WSL is not supported; run T3 natively on Windows so both applications use the same paths. macOS hosts are not supported yet. Future incompatible T3 API changes may require a plugin update.
 
 ## Installation
 
@@ -44,9 +44,8 @@ This release was tested with T3 0.1.11 and Obsidian 1.15.1. Other operating syst
 1. Open **Settings → threecode**.
 2. Select **Download necessary files**.
 3. Enter your existing T3 server address.
-4. Select **Connect**.
-5. Run **Open T3 Code** from the command palette or select its ribbon icon.
-6. Complete T3's pairing flow.
+4. Select **Connect** to open the T3 workspace and check the connection. The result appears in a notice and under **Compatibility**.
+5. Complete T3's pairing flow in the workspace. You can also open it later with **Open T3 Code** from the command palette or its ribbon icon.
 
 If your vault has no T3 project, select **Use vault folder** to get started.
 

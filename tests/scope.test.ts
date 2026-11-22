@@ -12,8 +12,8 @@ test('canonical filesystem scope excludes siblings, outside worktrees, missing a
     const nested = path.join(vault, '子 folder #');
     const outside = path.join(root, 'vault-backup');
     mkdirSync(nested, { recursive: true }); mkdirSync(outside);
-    symlinkSync(nested, path.join(root, 'inside-link'));
-    symlinkSync(outside, path.join(vault, 'outside-link'));
+    symlinkSync(nested, path.join(root, 'inside-link'), process.platform === 'win32' ? 'junction' : 'dir');
+    symlinkSync(outside, path.join(vault, 'outside-link'), process.platform === 'win32' ? 'junction' : 'dir');
     writeFileSync(path.join(vault, 'note.md'), 'fixture');
     const project = { id: 'p', environmentId: 'local', workspaceRoot: vault };
     const thread = { projectId: 'p', environmentId: 'local' };

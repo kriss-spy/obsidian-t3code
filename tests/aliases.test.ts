@@ -11,11 +11,14 @@ test('alias metadata merges canonical identities, updates, renames, duplicates a
   try {
     const vault=path.join(root,'vault');mkdirSync(vault);mkdirSync(path.join(vault,'nested'));
     for (const file of ['one.md','two.md','nested/空 格.md']) writeFileSync(path.join(vault,file),'fixture');
-    writeFileSync(path.join(root,'outside.md'),'outside');symlinkSync(path.join(root,'outside.md'),path.join(vault,'escape.md'));
-    symlinkSync(path.join(vault,'one.md'),path.join(vault,'same.md'));
+    const outside=path.join(root,'outside');mkdirSync(outside);writeFileSync(path.join(outside,'note.md'),'outside');
+    // Junctions exercise canonical identity on Windows without requiring symlink privileges.
+    const linkType=process.platform === 'win32' ? 'junction' : 'dir';
+    symlinkSync(outside,path.join(vault,'escape'),linkType);
+    symlinkSync(vault,path.join(vault,'same'),linkType);
     const index=new AliasIndex();
-    for (const file of ['one.md','two.md','nested/空 格.md','escape.md','same.md']) index.update({path:file,aliases:['Café 空']});
-    const result=await index.search(vault,vault,'CAFE\u0301 空',[{path:'same.md',kind:'file'}],80);
+    for (const file of ['one.md','two.md','nested/空 格.md','escape/note.md','same/one.md']) index.update({path:file,aliases:['Café 空']});
+    const result=await index.search(vault,vault,'CAFE\u0301 空',[{path:'same/one.md',kind:'file'}],80);
     assert.deepEqual(result.map(e=>e.path),['one.md','two.md','nested/空 格.md']);
     assert.deepEqual((await index.search(vault,path.join(vault,'nested'),'空',[],80)).map(e=>e.path),['空 格.md']);
     index.update({path:'two.md',aliases:['changed']});
@@ -34,8 +37,9 @@ test('reference tokens are single-use, canonical, and reject missing or outside 
   const root=mkdtempSync(path.join(os.tmpdir(),'t3-drag-'));
   try {
     const vault=path.join(root,'vault');mkdirSync(vault);mkdirSync(path.join(vault,'空 folder'));writeFileSync(path.join(vault,'note.md'),'fixture');
-    writeFileSync(path.join(root,'outside.md'),'outside');symlinkSync(path.join(root,'outside.md'),path.join(vault,'outside.md'));
-    const drags=new ReferenceDrags();const token=drags.capture(['note.md','空 folder','outside.md','missing.md']);
+    const outside=path.join(root,'outside');mkdirSync(outside);writeFileSync(path.join(outside,'note.md'),'outside');
+    symlinkSync(outside,path.join(vault,'outside'),process.platform === 'win32' ? 'junction' : 'dir');
+    const drags=new ReferenceDrags();const token=drags.capture(['note.md','空 folder','outside/note.md','missing.md']);
     assert.deepEqual(await drags.consume(token,vault),[path.join(vault,'note.md'),path.join(vault,'空 folder')]);
     assert.deepEqual(await drags.consume(token,vault),[]);
     assert.deepEqual(await drags.consume('forged',vault),[]);

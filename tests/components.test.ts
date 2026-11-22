@@ -45,7 +45,7 @@ test('downloads reject corrupt bytes, traversal, symbolic links, and cancellatio
     const traversal=fixture({'index.html':'bad','obsidian-host-client.json':'{}','../escape':'bad'});
     assert.throws(()=>decodeComponents(traversal.bytes,traversal.asset),/Invalid/);
     await writeFile(path.join(root,'index.html'),'original');
-    await symlink(outside,path.join(root,'assets'));
+    await symlink(outside,path.join(root,'assets'),process.platform === 'win32' ? 'junction' : 'dir');
     await assert.rejects(installComponents(root,f.bytes,f.asset),/symbolic/);
     assert.equal(await readFile(path.join(root,'index.html'),'utf8'),'original');
     await unlink(path.join(root,'assets'));

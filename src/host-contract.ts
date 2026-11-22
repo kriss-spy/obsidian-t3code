@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { threadScope, canonicalDirectory, type Project, type Thread } from './scope';
 
 export const HOST_PROTOCOL = 1;
-export const ADAPTER_BUILD = 'obsidian-host-v1.4';
+export const ADAPTER_BUILD = 'obsidian-host-v1.5';
 export const SCOPE_COVERAGE = ['active','pinned','working','snoozed','settled','recents','search','archive','projects','routes','drafts','reconnect','side-chats','onboarding'] as const;
 export const T3_REVISION = '59651c1761f6c63e9b6056839067066968e6a406';
 export const MAX_SCOPE_ROWS = 20000;

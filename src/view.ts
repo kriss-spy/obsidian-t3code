@@ -121,7 +121,7 @@ export class T3View extends ItemView {
         verifying = true;
         try {
           if (!await bridge.localConnectionReady()) return;
-          await verifySharedFilesystem(path.join(this.plugin.vaultRoot,this.app.vault.configDir), file => bridge.readLocalProof(file));
+          await verifySharedFilesystem(path.join(this.plugin.vaultRoot,this.app.vault.configDir), (file, machineFile) => bridge.readLocalProof(file, machineFile));
           if (!current()) return;
           await bridge.confirmLocal();
           localVerified = true;
@@ -214,7 +214,7 @@ export class T3View extends ItemView {
     this.contentEl.empty();
     this.contentEl.createEl('p', { text: message });
     this.contentEl.createEl('a', { text: 'Open the normal T3 app', href: serverOrigin(origin), attr: { target: '_blank', rel: 'noopener noreferrer' } });
-    this.contentEl.createEl('p', { text: 'Download necessary files in T3 Code settings, then connect to your existing T3 server. Requires a local Linux T3 server with protocol 2. Tested with T3 0.1.11.' });
+    this.contentEl.createEl('p', { text: 'Download necessary files in T3 Code settings, then connect to T3 on the same computer and operating system as Obsidian. Supports Windows and Linux hosts with protocol 2. Tested with T3 0.1.11.' });
     const retry = this.contentEl.createEl('button', { text: 'Check again' });
     retry.onclick = () => { void this.connect(); };
   }

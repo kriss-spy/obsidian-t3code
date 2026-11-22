@@ -10,7 +10,7 @@ test('host scope uses canonical identities and never widens an empty result', ()
   try {
     const vault = path.join(root, 'vault'); const outside = path.join(root, 'vault-backup');
     mkdirSync(vault); mkdirSync(outside); mkdirSync(path.join(vault, 'nested'));
-    symlinkSync(outside, path.join(vault, 'escape'));
+    symlinkSync(outside, path.join(vault, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
     const host = new HostSession(vault, 'local');
     const request = {type:'scope', id:'1', generation:host.generation, environmentId:'local', rows:[
       {kind:'project', id:'p', projectId:'p', workspaceRoot:vault, worktreePath:null},

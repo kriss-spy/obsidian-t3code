@@ -56,7 +56,7 @@ export class HostBridge {
     }
   }
   async localConnectionReady() { return await this.evaluate('window.t3ObsidianHostV1.localConnectionReady()') === true; }
-  async readLocalProof(file: string) { return this.evaluate(`window.t3ObsidianHostV1.readLocalProof(${JSON.stringify({generation:this.session.generation,path:file})})`); }
+  async readLocalProof(file: string, machineFile?: string) { return this.evaluate(`window.t3ObsidianHostV1.readLocalProof(${JSON.stringify({generation:this.session.generation,path:file,machinePath:machineFile})})`); }
   async confirmLocal() {
     if (await this.evaluate(`window.t3ObsidianHostV1.confirmLocal(${JSON.stringify({generation:this.session.generation})})`) !== true) throw new Error('Local T3 handshake failed.');
   }

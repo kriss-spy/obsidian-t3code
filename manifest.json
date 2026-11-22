@@ -2,7 +2,7 @@
   "id": "threecode",
   "name": "threecode",
   "version": "0.1.1",
-  "minAppVersion": "1.15.1",
+  "minAppVersion": "1.14.5",
   "description": "Use T3 Code in Obsidian with note context and vault-scoped navigation.",
   "author": "kriss-spy",
   "isDesktopOnly": true

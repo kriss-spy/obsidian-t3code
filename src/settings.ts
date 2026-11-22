@@ -24,13 +24,18 @@ export class SettingsTab extends PluginSettingTab {
           let origin: string;
           try { origin = serverOrigin(address); }
           catch { new Notice('Enter an HTTPS origin or a loopback HTTP origin without credentials or a path.'); return; }
+          b.setDisabled(true).setButtonText('Connecting…');
           try {
             this.plugin.settings.origin = origin;
             this.plugin.settings.target = '/';
             await this.plugin.saveSettings();
             await this.plugin.reconnect(true);
+            // reconnect only visits existing views. First-run setup needs a tab too.
+            await this.plugin.openWorkspace();
+            new Notice(this.plugin.diagnostic);
             this.update();
           } catch { new Notice('Could not save or reconnect to T3. Check the connection status.'); }
+          finally { b.setDisabled(false).setButtonText('Connect'); }
         }));
       }},
       {name:'Open Markdown notes',desc:'Applies to explicit Obsidian opening. Plain clicks keep the T3 preview.',render:setting => {

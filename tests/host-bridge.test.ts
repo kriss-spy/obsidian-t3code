@@ -69,7 +69,7 @@ test('context cannot append after the intended route changes while waiting for i
 test('folder actions deduplicate canonical projects and cancel navigation after a route change', async () => {
   const {mkdtempSync,mkdirSync,symlinkSync,rmSync}=await import('node:fs');
   const {tmpdir}=await import('node:os');const path=await import('node:path');
-  const root=mkdtempSync(path.join(tmpdir(),'t3-project-'));mkdirSync(path.join(root,'folder'));symlinkSync(path.join(root,'folder'),path.join(root,'link'));
+  const root=mkdtempSync(path.join(tmpdir(),'t3-project-'));mkdirSync(path.join(root,'folder'));symlinkSync(path.join(root,'folder'),path.join(root,'link'),process.platform === 'win32' ? 'junction' : 'dir');
   try {
     const session=new HostSession(root,'local');let route='/intended';const opened:unknown[]=[];
     const guest={getURL:()=> 'http://127.0.0.1:3773'+route,executeJavaScript:async(code:string)=>{

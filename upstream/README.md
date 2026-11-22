@@ -1,12 +1,12 @@
 # Pinned T3 host patch
 
-This development adapter requires the patch in `t3-0.1.11-obsidian-host-v1.patch` and the matching compiled client. Unmodified T3 stays unsupported. See [installation](../docs/development-install.md) and [verification limits](../docs/implementation-status.md).
+This adapter requires the client-only patch in `t3-0.1.11-obsidian-host-v1.patch` and the matching compiled client. The plugin hosts this client locally and connects to an unmodified T3 server. See [installation](../docs/development-install.md).
 
 ## Exact source and artifact
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The approved adapter is `obsidian-host-v1.4`, protocol 1. Its client manifest SHA-256 is `dc2fe4490e9f702a1667942868eb3b7fba604b6edf297c9b10b9c407547627dc`. The plugin verifies the served entry document and compiled integration assets before creating a guest. It then performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The adapter is `obsidian-host-v1.5`, protocol 1. Its client manifest SHA-256 is `9990e37b5b76868d3eda952169037294a56283f4f5202bc9eff2d9d564801cb3`. The plugin verifies its installed component files and performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 
@@ -15,13 +15,13 @@ node scripts/check-upstream-patch.mjs /absolute/T3/checkout --check
 node scripts/check-upstream-patch.mjs /absolute/T3/checkout --apply
 ```
 
-Use the preparation script from the extracted development ZIP for a complete trial installation. It builds the server and copies the verified client. Rebuilding the web client can change its hashes and needs another integration gate run. Never overwrite the approved digest merely to make a rebuilt client load.
+Build and package the client using the [development guide](../docs/development-install.md). Rebuilding it changes its hashes and requires fresh component archives and verification. Do not patch the running server.
 
 ## Contract
 
 `?obsidian-host=1` selects embedded mode before services start. Ordinary clients retain their original path. Embedded startup waits for `window.t3ObsidianHostV1.initialize` with an independently verified environment identity and a document generation.
 
-A nonce file proves shared filesystem access. A keyed Linux machine-identity response rejects a remote server that merely shares mounted files. The challenge file is private, opened without following symlinks, read through one descriptor, and removed after verification. Detection never invokes a CLI or opens a T3 database.
+A fresh nonce in the vault proves shared filesystem access through T3's authenticated file-reading API. Linux also compares `/etc/machine-id`. Windows reads a second fresh nonce in the host user's temporary directory, so mounting only the vault on a remote server is insufficient. Both Windows challenges are removed after success or failure. The guest receives paths, never the expected nonce values. Detection never invokes a CLI or opens a T3 database.
 
 The public bounded queue allows eight outstanding operations with ten-second timeouts. Scope reads wait for a slot instead of caching saturation as exclusion. Every request/reply carries the document generation. The plugin checks origin before and after asynchronous evaluation. Navigation, reconnect, and teardown invalidate stale work. Pairing document redirects remove the old guest before mounting a new marked document.
 

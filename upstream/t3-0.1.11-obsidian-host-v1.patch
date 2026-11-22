@@ -1529,7 +1529,7 @@ new file mode 100644
 index 000000000..c9602d7e3
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,637 @@
+@@ -0,0 +1,651 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1585,6 +1585,14 @@ index 000000000..c9602d7e3
 +  references?: ((paths: string[]) => boolean) | undefined;
 +} | null = null;
 +const roots = new Set<string>();
++function absoluteHostPath(value: unknown): value is string {
++  return typeof value === "string" && !value.includes("\0") &&
++    (value.startsWith("/") || /^[a-z]:[\\/]/i.test(value) || /^\\\\[^\\/]+[\\/][^\\/]+[\\/]/.test(value));
++}
++function hostPathKey(value: string): string {
++  const normalized = value.replace(/\\/g, "/").replace(/\/$/, "");
++  return /^[a-z]:\//i.test(normalized) || normalized.startsWith("//") ? normalized.toLowerCase() : normalized;
++}
 +const queue: Request[] = [];
 +const pending = new Map<
 +  string,
@@ -1614,7 +1622,7 @@ index 000000000..c9602d7e3
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.4",
++      build: "obsidian-host-v1.5",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
 +      initialize(input: {
@@ -1635,7 +1643,7 @@ index 000000000..c9602d7e3
 +        generation = input.generation;
 +        environmentId = input.environmentId;
 +        vaultRoot =
-+          typeof input.vaultRoot === "string" && input.vaultRoot.startsWith("/")
++          absoluteHostPath(input.vaultRoot)
 +            ? input.vaultRoot
 +            : null;
 +        localReady = input.requiresLocalProof !== true;
@@ -1645,7 +1653,7 @@ index 000000000..c9602d7e3
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.4",
++          build: "obsidian-host-v1.5",
 +          coverage: SCOPE_COVERAGE,
 +        };
 +      },
@@ -1660,13 +1668,19 @@ index 000000000..c9602d7e3
 +          "live"
 +        );
 +      },
-+      async readLocalProof(input: { generation: string; path: string }) {
++      async readLocalProof(input: { generation: string; path: string; machinePath?: string }) {
 +        if (
 +          !initialized ||
 +          input.generation !== generation ||
 +          !vaultRoot ||
-+          !input.path.startsWith(vaultRoot + "/") ||
-+          !/t3-code-host-[a-f0-9-]{36}$/.test(input.path)
++          !absoluteHostPath(input.path) ||
++          !hostPathKey(input.path).startsWith(hostPathKey(vaultRoot) + "/") ||
++          input.path.split(/[\\/]/).some(part => part === "." || part === "..") ||
++          !/[\\/]t3-code-host-[a-f0-9-]{36}$/.test(input.path) ||
++          (input.machinePath !== undefined &&
++            (!/^[a-z]:[\\/]/i.test(vaultRoot) || !absoluteHostPath(input.machinePath) ||
++              input.machinePath.split(/[\\/]/).some(part => part === "." || part === "..") ||
++              !/[\\/]t3-code-machine-[a-f0-9-]{36}$/.test(input.machinePath)))
 +        )
 +          throw new Error("Invalid local proof request");
 +        const [
@@ -1696,7 +1710,7 @@ index 000000000..c9602d7e3
 +            throw new Error("Incomplete local proof");
 +          return result.contents;
 +        };
-+        return { token: await read(input.path), machine: (await read("/etc/machine-id")).trim() };
++        return { token: await read(input.path), machine: (await read(input.machinePath ?? "/etc/machine-id")).trim() };
 +      },
 +      confirmLocal(input: { generation: string }) {
 +        if (!initialized || input.generation !== generation) return false;
@@ -1748,7 +1762,7 @@ index 000000000..c9602d7e3
 +          input.target !== composer.target ||
 +          !Array.isArray(input.paths) ||
 +          input.paths.length > 100 ||
-+          !input.paths.every((p) => typeof p === "string" && p.startsWith("/"))
++          !input.paths.every(absoluteHostPath)
 +        )
 +          return false;
 +        return composer.references?.(input.paths) === true;
@@ -2056,7 +2070,7 @@ index 000000000..c9602d7e3
 +    !initialized ||
 +    input.environmentId !== environmentId ||
 +    !/\.md$/i.test(input.path) ||
-+    !input.path.startsWith("/")
++    !absoluteHostPath(input.path)
 +  )
 +    return false;
 +  try {
@@ -2067,7 +2081,7 @@ index 000000000..c9602d7e3
 +}
 +
 +export async function verifyObsidianMarkdown(env: string | null, path: string): Promise<boolean> {
-+  if (!canOpenObsidianMarkdown(env) || !path.startsWith("/") || !/\.md$/i.test(path)) return false;
++  if (!canOpenObsidianMarkdown(env) || !absoluteHostPath(path) || !/\.md$/i.test(path)) return false;
 +  const route = location.pathname;
 +  try {
 +    return (
@@ -2159,7 +2173,7 @@ index 000000000..c9602d7e3
 +        target.pathname !== location.pathname ||
 +        !target.owns(owner) ||
 +        !Array.isArray(reply.paths) ||
-+        !reply.paths.every((path) => typeof path === "string" && path.startsWith("/"))
++        !reply.paths.every(absoluteHostPath)
 +      )
 +        return;
 +      if (reply.paths.length) target.append(reply.paths.map(serialize).join(" ") + " ");
@@ -2753,3 +2767,45 @@ index 000000000..bdcdb0ce6
 +  }, [env, path, key]);
 +  return verified === key;
 +}
+diff --git a/apps/web/src/pierre-icons.test.ts b/apps/web/src/pierre-icons.test.ts
+index 734cac86..575bf6b3 100644
+--- a/apps/web/src/pierre-icons.test.ts
++++ b/apps/web/src/pierre-icons.test.ts
+@@ -1,6 +1,7 @@
+ import { assert, describe, it } from "vite-plus/test";
+ 
+ import {
++  basenameOfPath,
+   hasSpecificPierreIconForFileName,
+   resolvePierreIconForEntry,
+   syntheticFileNameForLanguageId,
+@@ -8,6 +9,16 @@ import {
+ } from "./pierre-icons";
+ 
+ describe("Pierre file icons", () => {
++  it.each([
++    ["C:\\Users\\tester\\cloudnotes\\lessons", "lessons"],
++    ["C:\\Users\\tester\\cloudnotes\\空 note.md", "空 note.md"],
++    ["C:/Users/tester/cloudnotes\\lessons", "lessons"],
++    ["\\\\host\\share\\folder\\note.md", "note.md"],
++    ["/home/tester/cloudnotes/lessons", "lessons"],
++    ["note.md", "note.md"],
++  ])("shows only the final name for %s", (path, label) => {
++    assert.equal(basenameOfPath(path), label);
++  });
+   it.each(["photo.heic", "photo.heif", "PHOTO.HEIC", "folder/photo.HEIF"])(
+     "uses the image icon for %s",
+     (name) => {
+diff --git a/apps/web/src/pierre-icons.ts b/apps/web/src/pierre-icons.ts
+index aa45b302..3fc68e86 100644
+--- a/apps/web/src/pierre-icons.ts
++++ b/apps/web/src/pierre-icons.ts
+@@ -217,7 +217,7 @@ const LANGUAGE_EXTENSION_ALIASES: Record<string, string> = {
+ };
+ 
+ export function basenameOfPath(pathValue: string): string {
+-  const slashIndex = pathValue.lastIndexOf("/");
++  const slashIndex = Math.max(pathValue.lastIndexOf("/"), pathValue.lastIndexOf("\\"));
+   return slashIndex === -1 ? pathValue : pathValue.slice(slashIndex + 1);
+ }
+ 
