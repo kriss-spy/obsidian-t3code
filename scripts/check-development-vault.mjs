@@ -44,9 +44,9 @@ try {
     } finally {guest.remove();}
   })()`);
   const result = await evaluate(`(async () => {
-    await app.plugins.disablePlugin('t-three-code');
-    await app.plugins.enablePlugin('t-three-code');
-    const plugin = app.plugins.plugins['t-three-code'];
+    await app.plugins.disablePlugin('t-three-code-workspace');
+    await app.plugins.enablePlugin('t-three-code-workspace');
+    const plugin = app.plugins.plugins['t-three-code-workspace'];
     if (!plugin) throw new Error('Plugin not loaded');
     await Promise.all([plugin.openWorkspace(), plugin.openWorkspace()]);
     const leaves = app.workspace.getLeavesOfType('t3-code-workspace');
@@ -69,13 +69,13 @@ try {
     if ((await otherSession.cookies.get({name:'reset-fixture'})).length !== 1) throw new Error('Reset cleared another partition');
     await otherSession.clearStorageData();
     const reset = plugin.diagnostic;
-    await app.plugins.disablePlugin('t-three-code');
+    await app.plugins.disablePlugin('t-three-code-workspace');
     if (document.querySelector('.t3-code-guest')) throw new Error('Guest leaked after disable');
-    await app.plugins.enablePlugin('t-three-code');
-    await app.plugins.plugins['t-three-code'].openWorkspace();
-    if (!app.plugins.plugins['t-three-code'].diagnostic.includes('0.1.11, protocol 2')) throw new Error('Reload retained an old plugin instance');
+    await app.plugins.enablePlugin('t-three-code-workspace');
+    await app.plugins.plugins['t-three-code-workspace'].openWorkspace();
+    if (!app.plugins.plugins['t-three-code-workspace'].diagnostic.includes('0.1.11, protocol 2')) throw new Error('Reload retained an old plugin instance');
     return {singleWorkspace:true, unsupportedGuestUnmounted:true, descriptorChecked:true,
-      credentialsNotPersisted:true, partitionResetIsolated:true, reset, reload:true, diagnostic:app.plugins.plugins['t-three-code'].diagnostic};
+      credentialsNotPersisted:true, partitionResetIsolated:true, reset, reload:true, diagnostic:app.plugins.plugins['t-three-code-workspace'].diagnostic};
   })()`);
   console.log(JSON.stringify({isolation,...result}, null, 2));
 } finally { socket.close(); }

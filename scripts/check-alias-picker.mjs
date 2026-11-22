@@ -10,7 +10,7 @@ const guest=code=>c.evaluate(`app.workspace.getLeavesOfType('t3-code-workspace')
 const expected='extracurricular/ACG/games/gacha game/Blue Archive/Blue Archive.md';
 async function wait(code){for(let i=0;i<100;i++){if(await guest(code))return;await new Promise(r=>setTimeout(r,100));}throw Error('Picker condition timed out');}
 try{
- await c.evaluate(`app.plugins.plugins['t-three-code'].openWorkspace().then(()=>true)`);
+ await c.evaluate(`app.plugins.plugins['t-three-code-workspace'].openWorkspace().then(()=>true)`);
  await wait(`!!document.querySelector('[data-chat-composer-form]')`);
  await guest(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'p',code:'KeyP',ctrlKey:true,bubbles:true}))`);
  await wait(`!!document.querySelector('[data-testid="project-file-picker"] input')`);

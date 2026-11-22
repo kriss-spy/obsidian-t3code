@@ -18,20 +18,20 @@ async function restored(route,text) {
 }
 const evidence={platform:'Linux',obsidian:'1.15.1',checks:{}};
 try {
-  if(startRoute)await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code'].openWorkspace();await v.setState({target:${JSON.stringify(startRoute)}},{});return true})()`);
+  if(startRoute)await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code-workspace'].openWorkspace();await v.setState({target:${JSON.stringify(startRoute)}},{});return true})()`);
   for(let i=0;i<120;i++) {
     if((await state())?.text!==undefined)break;
     if(i===119)throw Error('Start from a paired in-vault thread with a ready composer.');
     await new Promise(resolve=>setTimeout(resolve,100));
   }
-  const first=await c.evaluate(`(async()=>{const p=app.plugins.plugins['t-three-code'];const v=await p.openWorkspace();const folder='Release lifecycle '+Date.now();await app.vault.createFolder(folder);await v.openProject(p.vaultRoot+'/'+folder);await v.appendContext('RELEASE_IMMEDIATE_RECONNECT');const before=await v.contentEl.querySelector('webview').executeJavaScript(${JSON.stringify(inspect)});await v.connect();return before})()`);
+  const first=await c.evaluate(`(async()=>{const p=app.plugins.plugins['t-three-code-workspace'];const v=await p.openWorkspace();const folder='Release lifecycle '+Date.now();await app.vault.createFolder(folder);await v.openProject(p.vaultRoot+'/'+folder);await v.appendContext('RELEASE_IMMEDIATE_RECONNECT');const before=await v.contentEl.querySelector('webview').executeJavaScript(${JSON.stringify(inspect)});await v.connect();return before})()`);
   assert(first.text.includes('RELEASE_IMMEDIATE_RECONNECT'));
   evidence.checks.immediateNewDraftReconnect=await restored(first.route,'RELEASE_IMMEDIATE_RECONNECT');
-  await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code'].openWorkspace();await v.appendContext('RELEASE_IMMEDIATE_TAB_CLOSE');await v.leaf.detach();await app.plugins.plugins['t-three-code'].openWorkspace();return true})()`);
+  await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code-workspace'].openWorkspace();await v.appendContext('RELEASE_IMMEDIATE_TAB_CLOSE');await v.leaf.detach();await app.plugins.plugins['t-three-code-workspace'].openWorkspace();return true})()`);
   evidence.checks.immediateTabClose=await restored(first.route,'RELEASE_IMMEDIATE_TAB_CLOSE');
-  const disabled=await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code'].openWorkspace();await v.appendContext('RELEASE_IMMEDIATE_DISABLE');await app.plugins.disablePlugin('t-three-code');return {guests:document.querySelectorAll('.t3-code-guest').length,dropZones:document.querySelectorAll('.t3-code-reference-drop').length}})()`);
+  const disabled=await c.evaluate(`(async()=>{const v=await app.plugins.plugins['t-three-code-workspace'].openWorkspace();await v.appendContext('RELEASE_IMMEDIATE_DISABLE');await app.plugins.disablePlugin('t-three-code-workspace');return {guests:document.querySelectorAll('.t3-code-guest').length,dropZones:document.querySelectorAll('.t3-code-reference-drop').length}})()`);
   assert.deepEqual(disabled,{guests:0,dropZones:0});evidence.checks.disabledCleanup=disabled;
-  await c.evaluate(`(async()=>{await app.plugins.enablePlugin('t-three-code');await app.plugins.plugins['t-three-code'].openWorkspace();return true})()`);
+  await c.evaluate(`(async()=>{await app.plugins.enablePlugin('t-three-code-workspace');await app.plugins.plugins['t-three-code-workspace'].openWorkspace();return true})()`);
   evidence.checks.immediateDisableEnable=await restored(first.route,'RELEASE_IMMEDIATE_DISABLE');
   assert.equal(await c.evaluate(`app.workspace.getLeavesOfType('t3-code-workspace').length`),1);
   evidence.checks.singleWorkspaceAfterReload=true;

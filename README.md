@@ -34,7 +34,7 @@ This release was tested with T3 0.1.11 and Obsidian 1.15.1. Other operating syst
 ### Install the plugin manually
 
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [latest release](https://github.com/kriss-spy/obsidian-t3code/releases/latest).
-2. Create the folder `<vault>/.obsidian/plugins/t-three-code/`.
+2. Create the folder `<vault>/.obsidian/plugins/t-three-code-workspace/`.
 3. Copy the three files into that folder.
 4. Reload Obsidian.
 5. Enable **T3 Code** under **Settings → Community plugins**.

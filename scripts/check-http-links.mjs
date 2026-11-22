@@ -16,7 +16,7 @@ async function rightClick(){
 }
 const checks={};
 try {
- await c.evaluate(`app.plugins.plugins['t-three-code'].openWorkspace().then(()=>true)`);
+ await c.evaluate(`app.plugins.plugins['t-three-code-workspace'].openWorkspace().then(()=>true)`);
  await wait(`!!document.querySelector('[data-chat-composer-form]')`);
  await guest(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
  await wait(`!document.querySelector('[data-testid="project-file-picker"] input')`);
