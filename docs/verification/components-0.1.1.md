@@ -23,3 +23,9 @@ The broader upstream `check:changed` command was attempted. Formatting and lint 
 Windows and macOS are unverified. No paid agent turn was run for this packaging change. Protocol-2 servers from 0.1.11 onward are accepted, but runtime verification used 0.1.11. A future incompatible server API can require a plugin update.
 
 Download hashes and component URLs are pinned in `src/component-release.ts`. Publication checks must also exercise the settings downloads against those published URLs.
+
+## Published-download checks
+
+Both settings buttons were exercised against the published `components-0.1.1` GitHub release. The required-component check started with no version folder and created a verified installation. The extra-font check installed its separate archive, retained a valid required installation, and loaded the font CSS and terminal font through the actual guest session. Reconnection preserved the existing pairing and draft.
+
+A deleted required manifest produced the expected warning in both settings and the workspace. Downloading required files repaired it. GitHub CI passed for the implementation commit. The local Obsidian plugin review reported zero source errors and 20 warnings, primarily T3 naming and direct filesystem access.
