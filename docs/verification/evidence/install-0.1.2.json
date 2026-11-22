@@ -1,0 +1,9 @@
+{
+  "version": "0.1.2",
+  "core": "Required files are installed.",
+  "fonts": "Extra fonts are installed.",
+  "directory": "/home/krisspy/.cache/obsidian-t3-gate-components-20261122/vault/.obsidian/plugins/threecode/components/0.1.2",
+  "hasGuest": true,
+  "connectedClass": true,
+  "diagnostic": "Connected to standard T3. Pair to verify local vault access."
+}

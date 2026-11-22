@@ -1,0 +1,36 @@
+{
+  "backgroundGuestHidden": true,
+  "results": [
+    {
+      "kind": "file",
+      "end": "escape",
+      "noteTabPreserved": true
+    },
+    {
+      "kind": "file",
+      "end": "outside",
+      "noteTabPreserved": true
+    },
+    {
+      "kind": "file",
+      "end": "dragend",
+      "noteTabPreserved": true
+    },
+    {
+      "kind": "folder",
+      "end": "escape",
+      "noteTabPreserved": true
+    },
+    {
+      "kind": "folder",
+      "end": "outside",
+      "noteTabPreserved": true
+    },
+    {
+      "kind": "folder",
+      "end": "dragend",
+      "noteTabPreserved": true
+    }
+  ],
+  "disconnectClearsConnectedClass": true
+}
