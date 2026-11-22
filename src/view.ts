@@ -214,7 +214,7 @@ export class T3View extends ItemView {
     this.contentEl.empty();
     this.contentEl.createEl('p', { text: message });
     this.contentEl.createEl('a', { text: 'Open the normal T3 app', href: serverOrigin(origin), attr: { target: '_blank', rel: 'noopener noreferrer' } });
-    this.contentEl.createEl('p', { text: 'Download necessary files in T3 Code settings, then connect to T3 on the same computer and operating system as Obsidian. Supports Windows and Linux hosts with protocol 2. Tested with T3 0.1.11.' });
+    this.contentEl.createEl('p', { text: 'Download necessary files in T3 Code settings, then connect to T3 on the same computer and operating system as Obsidian. Supports Windows, macOS, and Linux hosts with protocol 2. Tested with T3 0.1.11.' });
     const retry = this.contentEl.createEl('button', { text: 'Check again' });
     retry.onclick = () => { void this.connect(); };
   }

@@ -24,10 +24,10 @@ Vault filtering only changes which sessions appear in this view. It does not res
 ## Requirements
 
 - Desktop Obsidian 1.14.5 or later.
-- An existing local Windows or Linux T3 server using orchestration protocol 2, running on the same computer and operating system as Obsidian.
+- An existing local Windows, macOS, or Linux T3 server using orchestration protocol 2, running on the same computer and operating system as Obsidian.
 - Internet access to download the plugin's required components during setup.
 
-The embedded client targets T3 0.1.11. Local vault verification was tested on Windows with Obsidian 1.14.5 and on Linux with Obsidian 1.15.1. Windows Obsidian with a T3 server in WSL is not supported; run T3 natively on Windows so both applications use the same paths. macOS hosts are not supported yet. Future incompatible T3 API changes may require a plugin update.
+The embedded client targets T3 0.1.11. Local vault verification was tested on Windows with Obsidian 1.14.5, on Linux with Obsidian 1.15.1, and in a macOS 26.5.2 Intel VM with Obsidian 1.15.1. Windows Obsidian with a T3 server in WSL is not supported; run T3 natively on Windows so both applications use the same paths. See the [macOS verification](docs/verification/macos-0.1.1.md) for tested behavior and limits. Future incompatible T3 API changes may require a plugin update.
 
 ## Installation
 

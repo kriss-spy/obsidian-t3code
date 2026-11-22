@@ -260,3 +260,27 @@ test('Windows proof reads both challenges through T3 and rejects stale or escapi
   ]) await assert.rejects(api.readLocalProof(input), /Invalid local proof/);
   assert.equal(reads.length, 2);
 });
+
+test('macOS proof reads both challenges through T3 and rejects stale or escaping requests', async () => {
+  const reads: string[] = [];
+  const vaultRoot = '/Users/tester/空 vault';
+  const file = vaultRoot + '/.obsidian/t3-code-host-12345678-1234-1234-1234-123456789abc';
+  const machinePath = '/var/folders/test/T/t3-code-machine-12345678-1234-1234-1234-123456789abc';
+  const {api} = load(true, async input => {
+    assert.equal(input.cwd, vaultRoot);
+    reads.push(input.relativePath);
+    return input.relativePath === file ? 'vault-token' : 'host-token';
+  });
+  api.initialize({generation:'g',environmentId:'local',vaultRoot,requiresLocalProof:true});
+  const proof = await api.readLocalProof({generation:'g',path:file,machinePath});
+  assert.equal(proof.token, 'vault-token');
+  assert.equal(proof.machine, 'host-token');
+  assert.deepEqual(reads, [file,machinePath]);
+  for (const input of [
+    {generation:'stale',path:file,machinePath},
+    {generation:'g',path:file.replace('空 vault','空 vault-backup'),machinePath},
+    {generation:'g',path:file.replace('.obsidian', '..'),machinePath},
+    {generation:'g',path:file,machinePath:machinePath.replace('t3-code-machine-', 'other-')},
+  ]) await assert.rejects(api.readLocalProof(input), /Invalid local proof/);
+  assert.equal(reads.length, 2);
+});

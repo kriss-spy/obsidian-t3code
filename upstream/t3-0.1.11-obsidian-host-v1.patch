@@ -1622,7 +1622,7 @@ index 000000000..c9602d7e3
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.5",
++      build: "obsidian-host-v1.6",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
 +      initialize(input: {
@@ -1653,7 +1653,7 @@ index 000000000..c9602d7e3
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.5",
++          build: "obsidian-host-v1.6",
 +          coverage: SCOPE_COVERAGE,
 +        };
 +      },
@@ -1678,7 +1678,7 @@ index 000000000..c9602d7e3
 +          input.path.split(/[\\/]/).some(part => part === "." || part === "..") ||
 +          !/[\\/]t3-code-host-[a-f0-9-]{36}$/.test(input.path) ||
 +          (input.machinePath !== undefined &&
-+            (!/^[a-z]:[\\/]/i.test(vaultRoot) || !absoluteHostPath(input.machinePath) ||
++            (!absoluteHostPath(input.machinePath) ||
 +              input.machinePath.split(/[\\/]/).some(part => part === "." || part === "..") ||
 +              !/[\\/]t3-code-machine-[a-f0-9-]{36}$/.test(input.machinePath)))
 +        )

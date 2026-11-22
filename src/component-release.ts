@@ -4,15 +4,15 @@ export const COMPONENT_ASSETS: Record<'core' | 'fonts', ComponentAsset> = {
   "core": {
     "version": "0.1.1",
     "kind": "core",
-    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.1-windows/t3-core-0.1.1.json.gz",
-    "sha256": "7ad0bfb67308b87cfbafcfc81b0ada2d95de2376fda820bbaf98dc52fdcf162d",
-    "bytes": 24911422
+    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.1-macos/t3-core-0.1.1.json.gz",
+    "sha256": "6f3beb9e740b686f8036aa8d50167135a2c489a8e891ebf07134f82c256d3723",
+    "bytes": 24955927
   },
   "fonts": {
     "version": "0.1.1",
     "kind": "fonts",
-    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.1-windows/t3-fonts-0.1.1.json.gz",
-    "sha256": "9906456ac9e45e6dbd98cec86554fe8f10dda0685f44516448365b210d8cbe43",
+    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.1-macos/t3-fonts-0.1.1.json.gz",
+    "sha256": "c18444799d40bc75709965f1e8008bd4910085b500f0540f9dcb065d5050f9bc",
     "bytes": 1403037
   }
 };

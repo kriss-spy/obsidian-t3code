@@ -10,7 +10,7 @@ test('standard T3 file reads prove vault and host access, and always remove both
     let hostChallenge: string | undefined;
     const read = async (file: string, machineFile?: string) => {
       hostChallenge = machineFile;
-      if (process.platform === 'win32') {
+      if (process.platform !== 'linux') {
         assert.ok(machineFile);
         assert.notEqual(path.dirname(machineFile), directory);
         assert.match(await readFile(machineFile, 'utf8'), /^[a-f0-9]{64}$/);

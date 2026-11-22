@@ -1,0 +1,54 @@
+{
+  "platform": "darwin",
+  "arch": "x64",
+  "diagnostic": "Connected to standard T3 0.1.11. Local vault access verified.",
+  "checks": {
+    "nativeMarkdownUnicodePath": true,
+    "line5": true,
+    "unsavedNoteCommandContext": true,
+    "guestIsolation": {
+      "sandbox": true,
+      "contextIsolation": true,
+      "webSecurity": true,
+      "nodeIntegration": false,
+      "require": "undefined",
+      "process": "undefined"
+    },
+    "singleView": true,
+    "reconnect": true,
+    "draftPreserved": true,
+    "proofCleanup": true,
+    "outsideProjectHidden": true,
+    "vaultProjectIncluded": true,
+    "disableCleanup": true,
+    "reload": true
+  },
+  "checkedAt": "2026-11-22T10:05:56.127Z",
+  "environment": {
+    "macOS": "26.5.2",
+    "build": "25F84",
+    "obsidian": "1.15.1",
+    "server": "0.1.11",
+    "client": "obsidian-host-v1.6",
+    "vault": "/Users/krisspy/obsidian-t3-gate-macos/vault"
+  },
+  "tests": {
+    "linux": {
+      "passed": 49,
+      "failed": 0,
+      "build": "passed"
+    },
+    "macOS": {
+      "passed": 49,
+      "failed": 0,
+      "build": "passed"
+    }
+  },
+  "limits": [
+    "No paid agent turn.",
+    "No physical drag or keyboard Cmd-click test.",
+    "No Apple Silicon runtime test.",
+    "Hosted CI was not run.",
+    "New component release URLs are staged and unpublished."
+  ]
+}

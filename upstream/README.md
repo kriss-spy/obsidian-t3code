@@ -6,7 +6,7 @@ This adapter requires the client-only patch in `t3-0.1.11-obsidian-host-v1.patch
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The adapter is `obsidian-host-v1.5`, protocol 1. Its client manifest SHA-256 is `9990e37b5b76868d3eda952169037294a56283f4f5202bc9eff2d9d564801cb3`. The plugin verifies its installed component files and performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The adapter is `obsidian-host-v1.6`, protocol 1. Its client manifest SHA-256 is `49f803c90a42f186b297a99db4e9e3cb38e389f4ffef272434a71048cb32c54b`. The plugin verifies its installed component files and performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 
@@ -21,7 +21,7 @@ Build and package the client using the [development guide](../docs/development-i
 
 `?obsidian-host=1` selects embedded mode before services start. Ordinary clients retain their original path. Embedded startup waits for `window.t3ObsidianHostV1.initialize` with an independently verified environment identity and a document generation.
 
-A fresh nonce in the vault proves shared filesystem access through T3's authenticated file-reading API. Linux also compares `/etc/machine-id`. Windows reads a second fresh nonce in the host user's temporary directory, so mounting only the vault on a remote server is insufficient. Both Windows challenges are removed after success or failure. The guest receives paths, never the expected nonce values. Detection never invokes a CLI or opens a T3 database.
+A fresh nonce in the vault proves shared filesystem access through T3's authenticated file-reading API. Linux also compares `/etc/machine-id`. Windows and macOS read a second fresh nonce in the host user's temporary directory, so mounting only the vault on a remote server is insufficient. Both temporary challenges are removed after success or failure. The guest receives paths, never the expected nonce values. Detection never invokes a CLI or opens a T3 database.
 
 The public bounded queue allows eight outstanding operations with ten-second timeouts. Scope reads wait for a slot instead of caching saturation as exclusion. Every request/reply carries the document generation. The plugin checks origin before and after asynchronous evaluation. Navigation, reconnect, and teardown invalidate stale work. Pairing document redirects remove the old guest before mounting a new marked document.
 
