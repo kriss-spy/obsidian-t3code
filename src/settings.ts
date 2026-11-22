@@ -1,5 +1,6 @@
 import { PluginSettingTab, Notice, type SettingDefinitionItem } from 'obsidian';
 import type T3Plugin from './main';
+import { COMPONENT_ASSETS } from './component-release';
 import { serverOrigin } from './connection';
 export interface Settings { origin: string; followAppearance: boolean; target: string; notePlacement: 'tab' | 'split' }
 export const defaults: Settings = { origin: 'http://127.0.0.1:3773', followAppearance: true, target: '/', notePlacement: 'tab' };
@@ -8,6 +9,15 @@ export class SettingsTab extends PluginSettingTab {
   getSettingDefinitions(): SettingDefinitionItem[] {
     let address = this.plugin.settings.origin;
     return [
+      {name:'Necessary files', desc:this.plugin.componentMessage,render:setting => {
+        setting.addButton(b => b.setButtonText(this.plugin.downloading ? 'Downloading…' : 'Download necessary files').setDisabled(this.plugin.downloading).onClick(() => this.plugin.downloadComponents('core')));
+        setting.setDesc(this.plugin.componentMessage + ' Download: ' + (COMPONENT_ASSETS.core.bytes/1000000).toFixed(1) + ' MB. Office previews and bundled device models are excluded.');
+      }},
+      {name:'Extra fonts',desc:this.plugin.fontMessage,render:setting => {
+        setting.addButton(b => b.setButtonText('Download extra fonts').setDisabled(this.plugin.downloading).onClick(() => this.plugin.downloadComponents('fonts')));
+        setting.setDesc(this.plugin.fontMessage + ' Optional Inter and terminal symbols: ' + (COMPONENT_ASSETS.fonts.bytes/1000000).toFixed(1) + ' MB.');
+      }},
+
       {name:'T3 server',desc:'Existing server origin. Pairing stays in T3.',render:setting => {
         setting.addText(t => t.setValue(address).onChange(value => { address = value; }));
         setting.addButton(b => b.setButtonText('Connect').onClick(async () => {

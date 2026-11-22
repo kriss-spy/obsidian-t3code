@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1
+
+- Publish the normal Obsidian plugin files separately from downloadable components.
+- Add settings buttons for required components and optional Inter and terminal symbol fonts.
+- Warn about missing or damaged required files and support downloading repairs.
+- Load the embedded client from the plugin's own folder.
+- Connect to a standard T3 server without patching its installation or changing its normal interface.
+- Verify local filesystem access through T3's authenticated file-reading API.
+- Remove Office previews and bundled 3D device models from the embedded client.
+
+Tested with Linux, Obsidian 1.15.1, and T3 0.1.11 with orchestration protocol 2.
+
 ## 0.1.0 (unreleased)
 
 - Host the pinned T3 workspace inside desktop Obsidian on Linux.

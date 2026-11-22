@@ -25,10 +25,13 @@ test('workspace state drops pairing data, external targets, and unknown routes',
   }
   assert.equal(savedTarget('/thread/abc-123', origin), '/thread/abc-123');
 });
-test('descriptor uses server version; unverified adapters stay disabled even with claimed capability', () => {
+test('server admission uses a compatible protocol and minimum version without requiring a custom capability', () => {
   const d = parseDescriptor({ environmentId: 'env', serverVersion: '0.1.11', orchestrationProtocolVersion: 2,
     capabilities: { obsidianHost: true } });
-  assert.equal(compatibility(d).supported, false);
+  assert.equal(compatibility(d).supported, true);
+  assert.equal(compatibility({...d,serverVersion:'0.1.12'}).supported,true);
+  assert.equal(compatibility({...d,serverVersion:'0.1.10'}).supported,false);
+  assert.equal(compatibility({...d,orchestrationProtocolVersion:3}).supported,false);
   assert.match(compatibility(d).message, /0.1.11, protocol 2/);
   for (const value of [null, {}, { ...d, capabilities: [] }, { ...d, environmentId: '' }, { ...d, serverVersion: 'secret' }]) {
     assert.throws(() => parseDescriptor(value));

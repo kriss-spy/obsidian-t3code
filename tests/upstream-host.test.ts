@@ -193,3 +193,20 @@ test('native explorer drop target exposes only the registered composer and rejec
   assert.equal(api.appendReferences({generation:'g',target:target.target,paths:['/vault/b.md']}),false);
   assert.deepEqual(inserted,[['/vault/a.md']]);
 });
+
+test('an unpatched server stays scoped empty until authenticated filesystem proof is confirmed', async () => {
+  const {api,exports:e}=load();
+  api.initialize({generation:'g',environmentId:'local',vaultRoot:'/vault',requiresLocalProof:true});
+  assert.equal(e.scopeObsidianSnapshot('local',snapshot).threads.length,0);
+  assert.equal(e.obsidianScopePending(),true);
+  assert.equal(api.drain().length,0);
+  assert.equal(e.obsidianVaultSetup(),null);
+  assert.equal(api.confirmLocal({generation:'stale'}),false);
+  assert.equal(api.confirmLocal({generation:'g'}),true);
+  assert.equal(e.scopeObsidianSnapshot('local',snapshot).threads.length,0);
+  const [request]=api.drain();
+  assert.equal(request.type,'scope');
+  api.reply({id:request.id,generation:'g',allowed:['project:p','thread:t']});
+  await flush();
+  assert.equal(e.scopeObsidianSnapshot('local',snapshot).threads.length,1);
+});

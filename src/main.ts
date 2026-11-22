@@ -1,4 +1,8 @@
 import path from 'node:path';
+import { mkdir } from 'node:fs/promises';
+import { requestUrl } from 'obsidian';
+import { componentStatus, installComponents, type ComponentKind } from './components';
+import { COMPONENT_ASSETS } from './component-release';
 import { registerExplorerDrops } from './explorer-drops';
 import { ReferenceDrags } from './references';
 import { AliasIndex, metadataAliases } from './aliases';
@@ -18,6 +22,45 @@ export default class T3Plugin extends Plugin {
   vaultRoot = '';
   readonly aliases = new AliasIndex();
   readonly referenceDrags = new ReferenceDrags();
+  componentMessage = 'Checking required files…';
+  fontMessage = 'Extra fonts are optional.';
+  downloading = false;
+  private stopped = new AbortController();
+  private settingsTab?: SettingsTab;
+  get componentDirectory() {
+    if (!this.manifest.dir) throw new Error('Plugin folder is unavailable.');
+    return path.join(this.vaultRoot, this.manifest.dir, 'components', this.manifest.version);
+  }
+  async checkComponents() {
+    const missing = await componentStatus(this.componentDirectory, COMPONENT_ASSETS.core);
+    this.componentMessage = missing ?? 'Required files are installed.';
+    this.fontMessage = (await componentStatus(this.componentDirectory, COMPONENT_ASSETS.fonts)) ?? 'Extra fonts are installed.';
+    return missing;
+  }
+  async downloadComponents(kind: ComponentKind) {
+    if (this.downloading) return;
+    this.downloading = true;
+    this.settingsTab?.update();
+    try {
+      if (kind === 'fonts' && await this.checkComponents()) throw new Error('Download necessary files before extra fonts.');
+      const asset = COMPONENT_ASSETS[kind];
+      const response = await requestUrl({url:asset.url,throw:false});
+      this.stopped.signal.throwIfAborted();
+      if (response.status !== 200) throw new Error('Download failed. Check your connection and try again.');
+      await mkdir(this.componentDirectory,{recursive:true});
+      for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) (leaf.view as T3View).disconnect();
+      await installComponents(this.componentDirectory,new Uint8Array(response.arrayBuffer),asset,this.stopped.signal);
+      await this.checkComponents();
+      new Notice(kind === 'core' ? 'Required T3 files installed.' : 'Extra fonts installed.');
+      await this.reconnect();
+    } catch (error) {
+      if (!this.stopped.signal.aborted) {
+        const message = error instanceof Error ? error.message : 'Component download failed.';
+        if (kind === 'core') this.componentMessage = message; else this.fontMessage = message;
+        new Notice(message);
+      }
+    } finally { this.downloading = false; if (!this.stopped.signal.aborted) this.settingsTab?.update(); }
+  }
   private opening = new WeakMap<Document, Promise<T3View>>();
   async onload() {
     const adapter = this.app.vault.adapter;
@@ -30,7 +73,14 @@ export default class T3Plugin extends Plugin {
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
     this.settings.target = savedTarget(raw.target, this.settings.origin);
     this.registerView(VIEW_TYPE, leaf => new T3View(leaf, this));
-    this.addSettingTab(new SettingsTab(this));
+    this.settingsTab = new SettingsTab(this);
+    this.addSettingTab(this.settingsTab);
+    this.app.workspace.onLayoutReady(() => {
+      void this.checkComponents().then(missing => {
+        if (!this.stopped.signal.aborted && missing) new Notice(missing, 10000);
+        if (!this.stopped.signal.aborted) this.settingsTab?.update();
+      });
+    });
     const open = () => { void this.openWorkspace().catch(() => new Notice('Could not open T3 Code.')); };
     this.addCommand({ id: 'open', name: 'Open T3 Code', callback: open });
     this.addRibbonIcon('terminal', 'Open T3 Code', open);
@@ -104,6 +154,7 @@ export default class T3Plugin extends Plugin {
     const leaf = existing ?? this.app.workspace.getLeaf('tab');
     if (!existing) await leaf.setViewState({ type: VIEW_TYPE, active: true });
     await this.app.workspace.revealLeaf(leaf);
+    await leaf.loadIfDeferred?.();
     this.app.workspace.setActiveLeaf(leaf, {focus:true});
     return leaf.view as T3View;
   }
@@ -132,6 +183,7 @@ export default class T3Plugin extends Plugin {
     new Notice(this.diagnostic);
   }
   onunload() {
+    this.stopped.abort();
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       (leaf.view as T3View).disconnect();
     }

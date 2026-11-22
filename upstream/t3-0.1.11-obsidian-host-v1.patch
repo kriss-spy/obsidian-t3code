@@ -1,78 +1,22 @@
-diff --git a/apps/server/src/http.ts b/apps/server/src/http.ts
-index 44bca4bf2..8ceaacbf6 100644
---- a/apps/server/src/http.ts
-+++ b/apps/server/src/http.ts
-@@ -1,3 +1,4 @@
-+import { obsidianHostProof } from "./obsidianHostProof.ts";
- import * as Mime from "effect/http/Mime";
- import {
-   AuthOrchestrationOperateScope,
-@@ -635,6 +636,19 @@ const handleStaticAndDevRequest = Effect.fn("handleStaticAndDevRequest")(
-       return HttpServerResponse.text("Bad Request", { status: 400 });
-     }
- 
-+    if (url.value.pathname === "/.well-known/t3/obsidian-host") {
-+      const environment = yield* Effect.serviceOption(ServerEnvironment.ServerEnvironment);
-+      if (Option.isNone(environment)) return HttpServerResponse.empty({ status: 404 });
-+      const descriptor = yield* environment.value.getDescriptor;
-+      const proof = obsidianHostProof(
-+        url.value.searchParams.get("challenge") ?? "",
-+        descriptor.environmentId,
-+      );
-+      return HttpServerResponse.jsonUnsafe(
-+        proof ?? { error: "Local filesystem proof unavailable" },
-+        { status: proof ? 200 : 404, headers: { "Cache-Control": "no-store" } },
-+      );
-+    }
-     const config = yield* ServerConfig.ServerConfig;
-     if (config.devUrl && isDevProxiedPath(url.value.pathname)) {
-       return HttpServerResponse.text("Not Found", { status: 404 });
-diff --git a/apps/server/src/obsidianHostProof.ts b/apps/server/src/obsidianHostProof.ts
+diff --git a/apps/web/index.html b/apps/web/index.html
+index 051e3090a..2909e08eb 100644
+--- a/apps/web/index.html
++++ b/apps/web/index.html
+@@ -1,6 +1,7 @@
+ <!doctype html>
+ <html lang="en">
+   <head>
++    <link rel="stylesheet" href="/obsidian-extra-fonts.css" />
+     <meta charset="UTF-8" />
+     <meta
+       name="viewport"
+diff --git a/apps/web/public/obsidian-extra-fonts.css b/apps/web/public/obsidian-extra-fonts.css
 new file mode 100644
-index 000000000..22f4f3c13
+index 000000000..7a22542ec
 --- /dev/null
-+++ b/apps/server/src/obsidianHostProof.ts
-@@ -0,0 +1,40 @@
-+// @effect-diagnostics-next-line nodeBuiltinImport:off -- The proof uses the same SHA-256 format as the Electron host.
-+import * as NodeCrypto from "node:crypto";
-+// @effect-diagnostics-next-line nodeBuiltinImport:off -- The proof needs O_NOFOLLOW and fstat on the same descriptor.
-+import * as NodeFS from "node:fs";
-+// @effect-diagnostics-next-line nodeBuiltinImport:off -- Validate the challenge filename synchronously before opening it.
-+import * as NodePath from "node:path";
-+
-+export function obsidianHostProof(file: string, environmentId: string) {
-+  if (!NodePath.isAbsolute(file) || !/^t3-code-host-[0-9a-f-]{36}$/.test(NodePath.basename(file)))
-+    return null;
-+  let fd: number | undefined;
-+  try {
-+    fd = NodeFS.openSync(file, NodeFS.constants.O_RDONLY | NodeFS.constants.O_NOFOLLOW);
-+    const stat = NodeFS.fstatSync(fd);
-+    if (
-+      !stat.isFile() ||
-+      stat.size !== 64 ||
-+      (stat.mode & 0o777) !== 0o600 ||
-+      stat.uid !== process.getuid?.()
-+    )
-+      return null;
-+    const token = NodeFS.readFileSync(fd, "utf8");
-+    if (!/^[a-f0-9]{64}$/.test(token)) return null;
-+    return {
-+      adapterBuild: "obsidian-host-v1.4",
-+      revision: "59651c1761f6c63e9b6056839067066968e6a406",
-+      environmentId,
-+      machineProof: NodeCrypto.createHmac("sha256", token)
-+        .update("machine:" + NodeFS.readFileSync("/etc/machine-id", "utf8").trim())
-+        .digest("hex"),
-+      proof: NodeCrypto.createHash("sha256")
-+        .update(token + ":" + environmentId)
-+        .digest("hex"),
-+    };
-+  } catch {
-+    return null;
-+  } finally {
-+    if (fd !== undefined) NodeFS.closeSync(fd);
-+  }
-+}
++++ b/apps/web/public/obsidian-extra-fonts.css
+@@ -0,0 +1 @@
++/* Optional fonts are installed from the Obsidian plugin settings. */
 diff --git a/apps/web/src/components/ChatMarkdown.tsx b/apps/web/src/components/ChatMarkdown.tsx
 index f6062475a..9b592bf12 100644
 --- a/apps/web/src/components/ChatMarkdown.tsx
@@ -778,6 +722,107 @@ index e8a5fc1fe..a8cc5bc5d 100644
    return (
      <li className="group relative flex h-8 items-center rounded-lg">
        <Tooltip>
+diff --git a/apps/web/src/components/device/deviceModels.ts b/apps/web/src/components/device/deviceModels.ts
+index c1616d9f6..93c9f2b84 100644
+--- a/apps/web/src/components/device/deviceModels.ts
++++ b/apps/web/src/components/device/deviceModels.ts
+@@ -1,36 +1,16 @@
+-import {
+-  resolveDeviceModelId,
+-  type DeviceAccessorySource,
+-  type DeviceModelSource,
++import type {
++  DeviceAccessorySource,
++  DeviceModelSource,
+ } from "@t3tools/client-runtime/device/model";
+ import type { DevicePlatform } from "@t3tools/contracts";
+-import iphoneDuo from "./models/iphone-duo.glb?url";
+-import iphone18Pro from "./models/iphone-18-pro.glb?url";
+-import iphone18ProMax from "./models/iphone-18-pro-max.glb?url";
+-import magicKeyboard from "./models/ipad-pro-13-m5-magic-keyboard.glb?url";
+-import ipadPro13M5 from "./models/ipad-pro-13-m5.glb?url";
+ 
+-const models: Record<DeviceModelSource["id"], DeviceModelSource> = {
+-  "iphone-duo": { id: "iphone-duo", url: iphoneDuo },
+-  "iphone-18-pro": { id: "iphone-18-pro", url: iphone18Pro },
+-  "iphone-18-pro-max": { id: "iphone-18-pro-max", url: iphone18ProMax },
+-  "ipad-pro-13-m5": { id: "ipad-pro-13-m5", url: ipadPro13M5 },
+-};
+-
+-export function deviceModel(platform: DevicePlatform, name: string): DeviceModelSource | null {
+-  const id = resolveDeviceModelId(platform, name);
+-  return id ? models[id] : null;
++export function deviceModel(_platform: DevicePlatform, _name: string): DeviceModelSource | null {
++  return null;
+ }
+ 
+-const keyboard: DeviceAccessorySource = {
+-  id: "ipad-pro-13-m5-magic-keyboard",
+-  modelId: "ipad-pro-13-m5",
+-  url: magicKeyboard,
+-};
+-
+ export function deviceKeyboard(
+-  platform: DevicePlatform,
+-  name: string,
++  _platform: DevicePlatform,
++  _name: string,
+ ): DeviceAccessorySource | null {
+-  return resolveDeviceModelId(platform, name) === keyboard.modelId ? keyboard : null;
++  return null;
+ }
+diff --git a/apps/web/src/components/files/AttachmentFilePreview.tsx b/apps/web/src/components/files/AttachmentFilePreview.tsx
+index bbc476f2b..f7eed6b59 100644
+--- a/apps/web/src/components/files/AttachmentFilePreview.tsx
++++ b/apps/web/src/components/files/AttachmentFilePreview.tsx
+@@ -6,11 +6,7 @@ import { readFilePreviewResponse } from "@t3tools/client-runtime/file-preview";
+ import { settlePromise } from "@t3tools/client-runtime/state/runtime";
+ import * as AsyncResult from "effect/reactivity/AsyncResult";
+ import * as Cause from "effect/Cause";
+-import {
+-  filePreviewKind,
+-  officePreviewKind,
+-  FILE_TEXT_PREVIEW_MAX_BYTES,
+-} from "@t3tools/shared/filePreview";
++import { filePreviewKind, FILE_TEXT_PREVIEW_MAX_BYTES } from "@t3tools/shared/filePreview";
+ import {
+   ChevronRightIcon,
+   DownloadIcon,
+@@ -51,10 +47,6 @@ import {
+ 
+ const LargeTextViewer = lazy(() => import("./LargeTextViewer"));
+ 
+-const OfficeFilePreview = lazy(() =>
+-  import("./OfficeFilePreview").then((module) => ({ default: module.OfficeFilePreview })),
+-);
+-
+ const FontFilePreview = lazy(() =>
+   import("./FontFilePreview").then((module) => ({ default: module.FontFilePreview })),
+ );
+@@ -115,7 +107,6 @@ export function AttachmentFilePreview(props: {
+   onClose?: () => void;
+ }) {
+   const kind = filePreviewKind(props);
+-  const officeKind = officePreviewKind(props);
+   const delimiter = filePreviewDelimiter(props);
+   const renderedMode =
+     kind === "mermaid"
+@@ -337,15 +328,6 @@ export function AttachmentFilePreview(props: {
+     <Suspense fallback={<FileSurfaceLoading />}>
+       <FontFilePreview src={url} name={props.name} />
+     </Suspense>
+-  ) : officeKind ? (
+-    <Suspense fallback={<FileSurfaceLoading />}>
+-      <OfficeFilePreview
+-        src={url}
+-        name={props.name}
+-        kind={officeKind}
+-        sizeBytes={props.sizeBytes}
+-      />
+-    </Suspense>
+   ) : kind === "pdf" || kind === "html" ? (
+     <BrowserDocumentFrame
+       src={url}
 diff --git a/apps/web/src/components/files/FileBrowserPanel.tsx b/apps/web/src/components/files/FileBrowserPanel.tsx
 index 1fee7db23..b40b89f1d 100644
 --- a/apps/web/src/components/files/FileBrowserPanel.tsx
@@ -897,102 +942,6 @@ index 04ca07bd5..239cde6dc 100644
                compact
                revealFileManager={revealsInFileManager}
              />
-diff --git a/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx b/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx
-new file mode 100644
-index 000000000..d5db2bc1e
---- /dev/null
-+++ b/apps/web/src/components/files/ProjectFilePicker.browser.test.tsx
-@@ -0,0 +1,90 @@
-+import { expect, it, vi } from "vite-plus/test";
-+import { page, userEvent } from "vite-plus/test/browser";
-+import { render } from "../../../test/render";
-+
-+const state = vi.hoisted(() => ({
-+  entries: [{ name: "filename.md", path: "filename.md", kind: "file" }],
-+  openFile: vi.fn(),
-+}));
-+vi.mock("@effect/atom-react", async (importOriginal) => ({
-+  ...(await importOriginal<typeof import("@effect/atom-react")>()),
-+  useAtomValue: () => [],
-+}));
-+vi.mock("~/state/server", () => ({ primaryServerKeybindingsAtom: {} }));
-+vi.mock("~/hooks/useActiveProjectTarget", () => ({
-+  useActiveProjectTarget: () => ({
-+    environmentId: "local",
-+    cwd: "/vault",
-+    projectName: "vault",
-+    threadRef: {},
-+  }),
-+}));
-+vi.mock("~/hooks/useTheme", () => ({ useTheme: () => ({ resolvedTheme: "dark" }) }));
-+vi.mock("~/rightPanelStore", () => ({
-+  useRightPanelStore: { getState: () => ({ openFile: state.openFile }) },
-+}));
-+vi.mock("../chat/PierreEntryIcon", () => ({ PierreEntryIcon: () => null }));
-+vi.mock("./projectFilesQueryState", () => ({
-+  useProjectFilePickerQuery: () => ({
-+    entries: state.entries,
-+    matchedQuery: "蔚蓝档案",
-+    error: null,
-+    isPending: false,
-+  }),
-+}));
-+import { ProjectFilePicker } from "./ProjectFilePicker";
-+
-+it("selects the first alias result after filename results arrive", async () => {
-+  state.entries = Array.from({ length: 200 }, (_, i) => ({
-+    name: `filename${i}.md`,
-+    path: `filename${i}.md`,
-+    kind: "file",
-+  }));
-+  state.openFile.mockClear();
-+  await using screen = await render(<ProjectFilePicker setOpen={() => {}} />);
-+  await page.getByRole("option", { name: /filename3.md/ }).hover();
-+  await page.getByRole("combobox").fill("蔚蓝档案");
-+  await expect
-+    .element(page.getByRole("option", { name: /filename0.md/ }))
-+    .toHaveAttribute("data-highlighted");
-+  state.entries = [
-+    { name: "Blue Archive.md", path: "Blue Archive.md", kind: "file" },
-+    ...state.entries.slice(0, 199),
-+  ];
-+  await screen.rerender(<ProjectFilePicker setOpen={() => {}} />);
-+  await expect
-+    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
-+    .toHaveAttribute("data-highlighted");
-+  await expect
-+    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
-+    .toHaveAttribute("data-active");
-+  await userEvent.keyboard("{Enter}");
-+  expect(state.openFile).toHaveBeenCalledWith({}, "Blue Archive.md");
-+});
-+
-+it("opens a keyboard choice after alias results arrive and resets on a new query", async () => {
-+  state.entries = [
-+    { name: "Blue Archive.md", path: "Blue Archive.md", kind: "file" },
-+    ...Array.from({ length: 3 }, (_, i) => ({
-+      name: `filename${i}.md`,
-+      path: `filename${i}.md`,
-+      kind: "file",
-+    })),
-+  ];
-+  state.openFile.mockClear();
-+  await using _screen = await render(<ProjectFilePicker setOpen={() => {}} />);
-+  await page.getByRole("combobox").fill("蔚蓝档案");
-+  await expect
-+    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
-+    .toHaveAttribute("data-active");
-+  await userEvent.keyboard("{ArrowDown}");
-+  await expect
-+    .element(page.getByRole("option", { name: /filename0.md/ }))
-+    .toHaveAttribute("data-active");
-+  await userEvent.keyboard("{Enter}");
-+  expect(state.openFile).toHaveBeenCalledWith({}, "filename0.md");
-+  await page.getByRole("combobox").fill("another query");
-+  await expect
-+    .element(page.getByRole("option", { name: /Blue Archive.md/ }))
-+    .toHaveAttribute("data-active");
-+});
 diff --git a/apps/web/src/components/files/ProjectFilePicker.tsx b/apps/web/src/components/files/ProjectFilePicker.tsx
 index 8e3f67ff0..7d25a278b 100644
 --- a/apps/web/src/components/files/ProjectFilePicker.tsx
@@ -1554,16 +1503,19 @@ index 0baba982d..ea48fcd67 100644
            const opened = await window.desktopBridge.openExternal(url);
            if (!opened) {
 diff --git a/apps/web/src/main.tsx b/apps/web/src/main.tsx
-index 112de4848..b6c87f41b 100644
+index 112de4848..91a1abe26 100644
 --- a/apps/web/src/main.tsx
 +++ b/apps/web/src/main.tsx
-@@ -1,4 +1,5 @@
+@@ -1,7 +1,7 @@
  import React from "react";
 +import { waitForObsidianHost } from "./obsidianHost";
  import ReactDOM from "react-dom/client";
  
- import "@fontsource-variable/inter";
-@@ -11,6 +12,8 @@ import { AppRoot } from "./AppRoot";
+-import "@fontsource-variable/inter";
+ import "./index.css";
+ 
+ import { hasCloudPublicConfig } from "./cloud/publicConfig";
+@@ -11,6 +11,8 @@ import { AppRoot } from "./AppRoot";
  import { whenLocaleReady } from "./i18n/runtime";
  import { reloadOnceForChunkLoadError } from "./lib/chunkReloadGuard";
  
@@ -1574,10 +1526,10 @@ index 112de4848..b6c87f41b 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..805608d08
+index 000000000..c9602d7e3
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,568 @@
+@@ -0,0 +1,637 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1620,6 +1572,7 @@ index 000000000..805608d08
 +let environmentId = "";
 +let vaultRoot: string | null = null;
 +let initialized = false;
++let localReady = false;
 +let sequence = 0;
 +let composerSequence = 0;
 +let newComposer: (() => Promise<boolean>) | null = null;
@@ -1664,7 +1617,12 @@ index 000000000..805608d08
 +      build: "obsidian-host-v1.4",
 +      protocol: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
-+      initialize(input: { generation: string; environmentId: string; vaultRoot?: string }) {
++      initialize(input: {
++        generation: string;
++        environmentId: string;
++        vaultRoot?: string;
++        requiresLocalProof?: boolean;
++      }) {
 +        if (
 +          initialized ||
 +          !input ||
@@ -1680,6 +1638,7 @@ index 000000000..805608d08
 +          typeof input.vaultRoot === "string" && input.vaultRoot.startsWith("/")
 +            ? input.vaultRoot
 +            : null;
++        localReady = input.requiresLocalProof !== true;
 +        initialized = true;
 +        readyResolve();
 +        return {
@@ -1689,6 +1648,65 @@ index 000000000..805608d08
 +          build: "obsidian-host-v1.4",
 +          coverage: SCOPE_COVERAGE,
 +        };
++      },
++      async localConnectionReady() {
++        const [{ appAtomRegistry }, { environmentShell }, { EnvironmentId }] = await Promise.all([
++          import("./rpc/atomRegistry"),
++          import("./state/shell"),
++          import("@t3tools/contracts"),
++        ]);
++        return (
++          appAtomRegistry.get(environmentShell.statusAtom(EnvironmentId.make(environmentId))) ===
++          "live"
++        );
++      },
++      async readLocalProof(input: { generation: string; path: string }) {
++        if (
++          !initialized ||
++          input.generation !== generation ||
++          !vaultRoot ||
++          !input.path.startsWith(vaultRoot + "/") ||
++          !/t3-code-host-[a-f0-9-]{36}$/.test(input.path)
++        )
++          throw new Error("Invalid local proof request");
++        const [
++          { projectEnvironment },
++          { appAtomRegistry },
++          AtomRegistry,
++          Effect,
++          { EnvironmentId },
++        ] = await Promise.all([
++          import("./state/projects"),
++          import("./rpc/atomRegistry"),
++          import("effect/reactivity/AtomRegistry"),
++          import("effect/Effect"),
++          import("@t3tools/contracts"),
++        ]);
++        const read = async (relativePath: string) => {
++          const atom = projectEnvironment.readFile({
++            environmentId: EnvironmentId.make(environmentId),
++            input: { cwd: vaultRoot!, relativePath },
++          });
++          const result = await Effect.runPromise(
++            AtomRegistry.getResult(appAtomRegistry, atom, { suspendOnWaiting: true }).pipe(
++              Effect.timeout("10 seconds"),
++            ),
++          );
++          if (result.truncated || result.exists === false)
++            throw new Error("Incomplete local proof");
++          return result.contents;
++        };
++        return { token: await read(input.path), machine: (await read("/etc/machine-id")).trim() };
++      },
++      confirmLocal(input: { generation: string }) {
++        if (!initialized || input.generation !== generation) return false;
++        localReady = true;
++        scopeEpoch++;
++        decisions.clear();
++        roots.clear();
++        inFlight.clear();
++        for (const listener of listeners) listener();
++        return true;
 +      },
 +      async prepareComposer(expectedPath: string) {
 +        if (expectedPath !== location.pathname || composer || !newComposer) return null;
@@ -1820,10 +1838,12 @@ index 000000000..805608d08
 +let scopeEpoch = 0;
 +const epochs = new Map<string, string>();
 +export function obsidianVaultSetup() {
-+  return embedded && initialized && vaultRoot ? { environmentId, path: vaultRoot } : null;
++  return embedded && initialized && localReady && vaultRoot
++    ? { environmentId, path: vaultRoot }
++    : null;
 +}
 +export function obsidianScopePending(_revision?: number) {
-+  return embedded && (!initialized || inFlight.size > 0);
++  return embedded && (!initialized || !localReady || inFlight.size > 0);
 +}
 +export function isObsidianEmbedded() {
 +  return embedded;
@@ -1848,7 +1868,7 @@ index 000000000..805608d08
 +}
 +function allowedRows(env: string, rows: Row[]): ReadonlySet<string> {
 +  const result = new Set<string>();
-+  if (!initialized || env !== environmentId) return result;
++  if (!initialized || !localReady || env !== environmentId) return result;
 +  const missing = rows.filter((row) => {
 +    const key = rowKey(env, row);
 +    const answer = decisions.get(key);
@@ -1982,6 +2002,7 @@ index 000000000..805608d08
 +  )
 +    return "excluded";
 +  if (!initialized || env !== environmentId) return "excluded";
++  if (!localReady) return "pending";
 +  const project = projects.find((p) => p.id === thread.projectId);
 +  const row: Row = {
 +    kind: "thread",
@@ -2682,6 +2703,31 @@ index 6d2ce2a07..a633779de 100644
  const isRunning = (status: string) =>
    status === "preparing" || status === "queued" || status === "starting" || status === "running";
  
+diff --git a/apps/web/src/terminal/ghostty/surface.ts b/apps/web/src/terminal/ghostty/surface.ts
+index 2e450cff9..36fa9c0f9 100644
+--- a/apps/web/src/terminal/ghostty/surface.ts
++++ b/apps/web/src/terminal/ghostty/surface.ts
+@@ -18,7 +18,7 @@ import {
+   type GhosttyCellRange,
+   type GhosttyCellMetrics,
+ } from "./renderer";
+-import symbolsFontUrl from "./fonts/SymbolsNerdFontMono-Regular.woff2?url";
++const symbolsFontUrl = "/fonts/SymbolsNerdFontMono-Regular.woff2";
+ import { isMonospaceFamily } from "../../appearanceFonts";
+ import { observeResize } from "../../lib/observeResize";
+ import { msg } from "gt-react";
+@@ -58,6 +58,11 @@ export interface GhosttyTerminalFont {
+ let symbolsFontLoad: Promise<void> | null = null;
+ 
+ function ensureTerminalSymbolsFont(): Promise<void> {
++  if (
++    getComputedStyle(document.documentElement).getPropertyValue("--obsidian-extra-fonts").trim() !==
++    "1"
++  )
++    return Promise.resolve();
+   if (symbolsFontLoad !== null) return symbolsFontLoad;
+   symbolsFontLoad = (async () => {
+     try {
 diff --git a/apps/web/src/useObsidianMarkdown.ts b/apps/web/src/useObsidianMarkdown.ts
 new file mode 100644
 index 000000000..bdcdb0ce6

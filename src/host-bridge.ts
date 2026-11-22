@@ -38,7 +38,7 @@ export class HostBridge {
     return result;
   }
   async initialize() {
-    const identity = {generation:this.session.generation, environmentId:this.session.localEnvironmentId, vaultRoot:this.session.vaultRoot};
+    const identity = {generation:this.session.generation, environmentId:this.session.localEnvironmentId, vaultRoot:this.session.vaultRoot,requiresLocalProof:true};
     let result: Record<string, unknown> | null | string = null;
     for (let attempt = 0; attempt < 200; attempt++) {
       result = await this.evaluate(`(() => {
@@ -54,6 +54,11 @@ export class HostBridge {
       this.close();
       throw new Error('Host handshake failed.');
     }
+  }
+  async localConnectionReady() { return await this.evaluate('window.t3ObsidianHostV1.localConnectionReady()') === true; }
+  async readLocalProof(file: string) { return this.evaluate(`window.t3ObsidianHostV1.readLocalProof(${JSON.stringify({generation:this.session.generation,path:file})})`); }
+  async confirmLocal() {
+    if (await this.evaluate(`window.t3ObsidianHostV1.confirmLocal(${JSON.stringify({generation:this.session.generation})})`) !== true) throw new Error('Local T3 handshake failed.');
   }
   async poll() {
     if (this.polling || this.closed) return;

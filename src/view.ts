@@ -3,7 +3,8 @@ import { electronHost } from './electron-host';
 import { ItemView, Notice, requestUrl, type WorkspaceLeaf, type ViewStateResult } from 'obsidian';
 import type T3Plugin from './main';
 import { compatibility, parseDescriptor, partitionFor, savedTarget, serverOrigin } from './connection';
-import { verifyLocalServer, verifiedCompatibility } from './local-server';
+import { attachLocalClient } from './client-session';
+import { verifySharedFilesystem } from './local-proof';
 import { HostSession } from './host-contract';
 import { HostBridge } from './host-bridge';
 import { createGuest, type Guest } from './guest';
@@ -56,20 +57,19 @@ export class T3View extends ItemView {
     let origin = this.plugin.settings.origin;
     try {
       origin = serverOrigin(origin);
+      const initialMissing = await this.plugin.checkComponents();
+      if (!current()) return;
+      if (initialMissing) throw new Error(initialMissing);
       const response = await requestUrl({ url: origin + '/.well-known/t3/environment', throw: false });
       if (!current()) return;
       if (response.status !== 200) throw new Error('T3 descriptor unavailable.');
       const descriptor = parseDescriptor(response.json);
-      if (descriptor.serverVersion !== '0.1.11' || descriptor.orchestrationProtocolVersion !== 2) throw new Error(compatibility(descriptor).message);
-      const proof = await verifyLocalServer(origin, descriptor, path.join(this.plugin.vaultRoot, this.app.vault.configDir), async url => {
-        const proof = await requestUrl({url, throw:false});
-        if (proof.status !== 200 || !proof.headers['content-type']?.includes('application/json')) throw new Error(compatibility(descriptor).message + ' Install the matching T3 host patch and client bundle.');
-        return proof.json as unknown;
-      }, async url => {const asset=await requestUrl({url,throw:false});if(asset.status!==200)throw new Error('Verified T3 client asset unavailable.');return asset.arrayBuffer;});
-      if (!current()) return;
-      const status = verifiedCompatibility(descriptor, origin, proof);
+      if (!compatibility(descriptor).supported) throw new Error(compatibility(descriptor).message);
+      const releaseClient = await attachLocalClient(partitionFor(this.plugin.vaultRoot, origin), origin, this.plugin.componentDirectory);
+      if (!current()) { await releaseClient(); return; }
+      this.cleanup.push(() => { void releaseClient(); });
+      const status = {message:'Connected to standard T3. Pair to verify local vault access.'};
       this.plugin.diagnostic = status.message;
-      if (!status.supported) { this.showUnavailable(status.message, origin); return; }
       const target = new URL(transientURL ?? this.route, origin);
       if (target.origin !== origin) throw new Error('T3 navigation left the verified server.');
       target.searchParams.set('obsidian-host', '1');
@@ -113,10 +113,32 @@ export class T3View extends ItemView {
       if (!current()) return;
       await bridge.initialize();
       if (!current()) return;
-      const timer = hostWindow.setInterval(() => { void bridge.poll().catch(() => {
-        if(current()) {this.disconnect();this.showUnavailable('T3 host integration disconnected. Reconnect to resume.', origin);}
-      }); }, 100);
+      guest.classList.remove('t3-code-pending');
+      let localVerified = false;
+      let verifying = false;
+      const verify = async () => {
+        if (localVerified || verifying || !current()) return;
+        verifying = true;
+        try {
+          if (!await bridge.localConnectionReady()) return;
+          await verifySharedFilesystem(path.join(this.plugin.vaultRoot,this.app.vault.configDir), file => bridge.readLocalProof(file));
+          if (!current()) return;
+          await bridge.confirmLocal();
+          localVerified = true;
+          status.message = 'Connected to standard T3 ' + descriptor.serverVersion + '. Local vault access verified.';
+          this.plugin.diagnostic = status.message;
+        } catch (error) {
+          if (current()) { this.disconnect(); this.showUnavailable(error instanceof Error ? error.message : 'Local T3 verification failed.',origin); }
+        } finally { verifying = false; }
+      };
+      const timer = hostWindow.setInterval(() => {
+        if (!localVerified) { void verify(); return; }
+        void bridge.poll().catch(() => {
+          if(current()) {this.disconnect();this.showUnavailable('T3 host integration disconnected. Reconnect to resume.', origin);}
+        });
+      },100);
       this.cleanup.push(() => hostWindow.clearInterval(timer));
+      void verify();
       await this.syncAppearance();
       if (current()) guest.classList.remove('t3-code-pending');
     } catch (error) {
@@ -192,7 +214,7 @@ export class T3View extends ItemView {
     this.contentEl.empty();
     this.contentEl.createEl('p', { text: message });
     this.contentEl.createEl('a', { text: 'Open the normal T3 app', href: serverOrigin(origin), attr: { target: '_blank', rel: 'noopener noreferrer' } });
-    this.contentEl.createEl('p', { text: 'Development build. See the installation guide for the required T3 host patch.' });
+    this.contentEl.createEl('p', { text: 'Download necessary files in T3 Code settings, then connect to your existing T3 server. Requires a local Linux T3 server with protocol 2. Tested with T3 0.1.11.' });
     const retry = this.contentEl.createEl('button', { text: 'Check again' });
     retry.onclick = () => { void this.connect(); };
   }

@@ -44,12 +44,12 @@ export function partitionFor(vaultRoot: string, origin: string): string {
 
 export interface Compatibility { supported: boolean; message: string }
 export function compatibility(d: Descriptor): Compatibility {
-  // No build is approved yet. A server's self-declared flag alone cannot pass the
-  // real-chip and strict pre-render acceptance gate. Add exact builds only after it passes.
-  return {
-    supported: false,
-    message: `T3 ${d.serverVersion}, protocol ${d.orchestrationProtocolVersion}: no verified strict-scope host adapter. Guest not mounted.`,
-  };
+  const [major,minor,patch] = d.serverVersion.split(/[.+-]/).map(Number);
+  const recent = major > 0 || minor > 1 || (minor === 1 && patch >= 11);
+  const supported = recent && d.orchestrationProtocolVersion === 2;
+  return { supported, message: supported
+    ? `T3 ${d.serverVersion}, protocol 2: pair to verify local vault access.`
+    : `T3 ${d.serverVersion}, protocol ${d.orchestrationProtocolVersion}: requires T3 0.1.11 or newer with protocol 2.` };
 }
 
 export function savedTarget(value: unknown, origin: string): string {
