@@ -23,6 +23,8 @@ Enable **Follow Obsidian theme** in the plugin settings to use your resolved Obs
 
 The embedded workspace shows sessions whose working directories belong to the current vault. Use **Use vault folder** to create a T3 project for your vault, or right-click a folder and select **Open folder in T3 Code**.
 
+Press Escape when no T3 interaction needs it to return keyboard focus to Obsidian. Ctrl/Cmd+P then opens Obsidian's command palette. Click the composer to return to T3. Menus, dialogs, suggestions, and terminals keep their Escape behavior.
+
 Vault filtering only changes which sessions appear in this view. It does not restrict an agent's filesystem access or change other T3 clients.
 
 ## Requirements

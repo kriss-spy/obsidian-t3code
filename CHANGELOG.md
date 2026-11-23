@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Return keyboard focus to Obsidian on unused Escape. Preserve T3 menus, dialogs, suggestions, and terminal Escape handling.
+
 ## 0.1.2
 
 - Keep the active note unchanged when dragging files or folders outside the T3 composer.

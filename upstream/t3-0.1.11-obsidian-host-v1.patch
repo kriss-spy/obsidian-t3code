@@ -3250,3 +3250,85 @@ index 000000000..bdcdb0ce6
 +  }, [env, path, key]);
 +  return verified === key;
 +}
+diff --git a/apps/web/src/components/ComposerPromptEditorTiptap.tsx b/apps/web/src/components/ComposerPromptEditorTiptap.tsx
+index 21074670e..b30fd7aed 100644
+--- a/apps/web/src/components/ComposerPromptEditorTiptap.tsx
++++ b/apps/web/src/components/ComposerPromptEditorTiptap.tsx
+@@ -4,6 +4,7 @@ import { useAtomValue } from "@effect/atom-react";
+ import { documentChipKindForFileName } from "~/pierre-icons";
+ import { isProviderSkillUserInvocable } from "@t3tools/client-runtime/providerSkills";
+ import { formatProviderSkillDisplayName } from "@t3tools/shared/inlineSkills";
++import { isObsidianEmbedded } from "../obsidianHost";
+ import {
+   Extension,
+   findChildren,
+@@ -1136,13 +1137,20 @@ function ComposerPromptEditorTiptapInner(
+           // Composer commands keep precedence; otherwise true skips the editor's keymaps without
+           // preventDefault, so a bound app command still runs.
+           keydown: (_view, event) => {
+-            if (!isRichTextFormattingShortcut(event)) return false;
++            // ProseMirror consumes every native Escape, even without a command. In the
++            // Obsidian guest, let an unused Escape reach the host focus fallback instead.
++            const hostEscape =
++              isObsidianEmbedded() &&
++              event.key === "Escape" &&
++              !event.isComposing &&
++              event.keyCode !== 229;
++            if (!hostEscape && !isRichTextFormattingShortcut(event)) return false;
+             if (readCallbacks().onCommandKeyDown?.(event.key, event)) {
+               event.preventDefault();
+               event.stopPropagation();
+               return true;
+             }
+-            return hasCommandForKeyDown(event);
++            return hostEscape || hasCommandForKeyDown(event);
+           },
+         },
+         handleKeyDown: (view, event) => {
+diff --git a/apps/web/src/components/ComposerPromptEditorTiptap.input.browser.test.tsx b/apps/web/src/components/ComposerPromptEditorTiptap.input.browser.test.tsx
+index 15547f5e4..046a80a7e 100644
+--- a/apps/web/src/components/ComposerPromptEditorTiptap.input.browser.test.tsx
++++ b/apps/web/src/components/ComposerPromptEditorTiptap.input.browser.test.tsx
+@@ -36,6 +36,12 @@ import {
+   type ComposerPromptEditorProps,
+ } from "./ComposerPromptEditorTiptap";
+ 
++const embeddedHost = vi.hoisted(() => ({ enabled: false }));
++vi.mock(import("../obsidianHost"), async (original) => ({
++  ...(await original()),
++  isObsidianEmbedded: () => embeddedHost.enabled,
++}));
++
+ vi.mock(import("../state/server"), async (original) => {
+   const { Atom } = await import("effect/reactivity");
+   const { compileResolvedKeybindingsConfig, DEFAULT_KEYBINDINGS } =
+@@ -124,6 +130,29 @@ function editorIn(container: HTMLElement) {
+   return element.editor;
+ }
+ 
++it.each([false, true])("preserves used Escape and releases unused Escape only in Obsidian (%s)", async (embedded) => {
++  embeddedHost.enabled = embedded;
++  try {
++    let handled = false;
++    const onCommandKeyDown = vi.fn(() => handled);
++    await using screen = await render(composer("Draft", true, [], undefined, onCommandKeyDown));
++    const editor = editorIn(screen.container);
++    await act(() => editor.view.focus());
++    for (const consumed of [false, true]) {
++      handled = consumed;
++      onCommandKeyDown.mockClear();
++      const event = new KeyboardEvent("keydown", {
++        key: "Escape", code: "Escape", keyCode: 27, bubbles: true, cancelable: true,
++      });
++      await act(() => editor.view.dom.dispatchEvent(event));
++      expect(onCommandKeyDown).toHaveBeenCalledTimes(1);
++      expect(event.defaultPrevented).toBe(consumed || !embedded);
++    }
++  } finally {
++    embeddedHost.enabled = false;
++  }
++});
++
+ async function mountEditor(...props: Parameters<typeof composer>) {
+   await using stack = new AsyncDisposableStack();
+   const screen = stack.use(await render(composer(...props)));

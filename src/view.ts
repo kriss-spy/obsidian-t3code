@@ -8,6 +8,7 @@ import { verifySharedFilesystem } from './local-proof';
 import { HostSession } from './host-contract';
 import { HostBridge } from './host-bridge';
 import { createGuest, type Guest } from './guest';
+import { attachEscapeFocus } from './escape-focus';
 import { readObsidianTheme } from './theme';
 import { readObsidianFontCSS } from './fonts';
 export const VIEW_TYPE = 't3-code-workspace';
@@ -128,6 +129,7 @@ export class T3View extends ItemView {
       if (!current()) return;
       await bridge.initialize();
       if (!current()) return;
+      this.cleanup.push(attachEscapeFocus(guest, this.contentEl, current));
       this.themeReady = true;
       const observer = new MutationObserver(() => { void this.syncAppearance(); });
       observer.observe(this.contentEl.ownerDocument.body,{attributes:true,attributeFilter:['class','style']});
