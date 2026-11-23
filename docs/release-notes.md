@@ -30,7 +30,7 @@ Temporary `.t3draft` files remain in the vault after interrupted editing. Keep t
 
 ## Compatibility and verification limits
 
-Requires desktop Obsidian 1.14.5 or later and a local T3 server using orchestration protocol 2. Obsidian and T3 must run on the same computer and operating system. Windows Obsidian with a WSL T3 server is unsupported.
+Requires desktop Obsidian 1.13.4 or later and a local T3 server using orchestration protocol 2. Obsidian and T3 must run on the same computer and operating system. Windows Obsidian with a WSL T3 server is unsupported.
 
 The embedded client uses T3 0.1.11 with adapter `obsidian-host-v1.10`. The plugin connects to a standard server without patching or managing it. New feature runtime evidence covers Linux with Obsidian 1.15.1. Earlier Windows and macOS checks cover previous client versions. They do not establish runtime coverage for these new features.
 

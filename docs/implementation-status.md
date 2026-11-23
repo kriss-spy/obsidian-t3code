@@ -8,7 +8,7 @@ Implemented workflows include persistent guest pairing, canonical vault filterin
 
 T3 owns agent configuration and permissions. Vault filtering changes session visibility, not agent filesystem access. Theme following is optional. The plugin does not change agent instructions.
 
-Desktop Windows, macOS, and Linux require Obsidian 1.14.5 or later. The server must run on the same computer and operating system. Earlier Windows and macOS runtime checks concern previous client versions. Runtime evidence for the new features covers Linux with Obsidian 1.15.1. It does not establish Windows or macOS behavior for those features.
+Desktop Windows, macOS, and Linux require Obsidian 1.13.4 or later. The server must run on the same computer and operating system. Earlier Windows and macOS runtime checks concern previous client versions. Runtime evidence for the new features covers Linux with Obsidian 1.15.1. It does not establish Windows or macOS behavior for those features.
 
 The [0.1.2 report](verification/0.1.2.md) records the preceding release checks. New feature reports cover [theme and font following](verification/issue-17/README.md), [Escape focus](verification/escape-focus.md), [tab activation](verification/issue-29.md), and [draft editing](verification/issue-28.md). Reports retain their original artifact hashes and limitations. Older patched-server candidate reports are historical evidence.
 

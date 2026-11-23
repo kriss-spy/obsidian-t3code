@@ -54,7 +54,7 @@ Draft editing requires an active local composer inside the vault. Pending answer
 
 ## Requirements
 
-- Desktop Obsidian 1.14.5 or later.
+- Desktop Obsidian 1.13.4 or later.
 - An existing local Windows, macOS, or Linux T3 server using orchestration protocol 2, running on the same computer and operating system as Obsidian.
 - Internet access to download the plugin's required components during setup.
 
@@ -121,3 +121,14 @@ The embedded client uses a pinned upstream revision and the client-only patch un
 ## License
 
 [MIT](LICENSE). T3 Code and bundled components retain their respective licenses and notices.
+
+### Obsidian compatibility checks
+
+`npm run test:obsidian` launches a downloaded Obsidian build in a disposable vault and isolated application profile.
+Set `OBSIDIAN_VERSION=1.13.4` to test the minimum version, or `OBSIDIAN_VERSION=latest` for the current stable version.
+`OBSIDIAN_INSTALLER` selects the Electron installer independently and defaults to `earliest`.
+On headless Linux, run through `xvfb-run -a`.
+
+CI runs these checks on Linux, Windows, and macOS for the minimum version with its earliest compatible installer, and latest stable with its latest installer.
+The checks cover plugin loading, settings persistence, theme and fonts, draft parsing, native draft Return/Cancel, trash preference, and sandboxed webview loading.
+Draft delivery uses a fixture bridge. These checks do not verify T3 pairing or a full server session.

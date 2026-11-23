@@ -16,3 +16,37 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+  obsidian:
+    name: Obsidian ${{ matrix.app }} / ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        app: [earliest, latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      OBSIDIAN_VERSION: ${{ matrix.app }}
+      OBSIDIAN_INSTALLER: ${{ matrix.app == 'latest' && 'latest' || 'earliest' }}
+      OBSIDIAN_CACHE: ${{ github.workspace }}/.obsidian-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/cache@v4
+        with:
+          path: .obsidian-cache
+          key: obsidian-${{ runner.os }}-${{ runner.arch }}-${{ matrix.app }}-${{ hashFiles('package-lock.json') }}
+      - run: npm ci
+      - run: npm run build
+      - name: Install Linux display dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y xvfb libnss3 libasound2t64 libgbm1 libgtk-3-0
+      - name: Test real Obsidian on Linux
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:obsidian
+      - name: Test real Obsidian on Windows and macOS
+        if: runner.os != 'Linux'
+        run: npm run test:obsidian
