@@ -24,6 +24,12 @@ export class T3View extends ItemView {
   private themeRevision = 0;
   private themeTimer?: ReturnType<typeof setTimeout>;
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
+  onload() {
+    super.onload();
+    this.registerEvent(this.app.workspace.on('active-leaf-change', leaf => {
+      if (leaf === this.leaf) this.guest?.focus();
+    }));
+  }
   getViewType() { return VIEW_TYPE; }
   getDisplayText() { return 'T3 Code'; }
   getIcon() { return 'terminal'; }

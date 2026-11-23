@@ -9,17 +9,44 @@ const nativeRequire = createRequire(import.meta.url);
 function fixture(readFonts:()=>Promise<string>=async()=>':root{--font-sans:test-font}') {
   const module = {exports:{} as {T3View:new (...args:any[])=>T3View}};
   const body = {};
-  class ItemView {contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};}
+  const listeners = new Set<(leaf:unknown)=>void>();
+  const workspace = {on:(_event:string,callback:(leaf:unknown)=>void)=>{listeners.add(callback);return callback;}};
+  class ItemView {
+    app={workspace};
+    contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};
+    cleanups:Array<()=>void>=[];
+    constructor(public leaf:unknown) {}
+    onload() {}
+    registerEvent(callback:(leaf:unknown)=>void) {this.cleanups.push(()=>listeners.delete(callback));}
+    unload() {for(const fn of this.cleanups)fn();}
+  }
   new Function('require','module','exports',bundle)((name:string)=>name==='obsidian'?{ItemView}:name==='./fonts'?{readObsidianFontCSS:readFonts}:nativeRequire(name),module,module.exports);
   const plugin = {settings:{origin:'http://127.0.0.1:39176',followAppearance:true}};
-  const view = new module.exports.T3View({},plugin);
+  const leaf = {};
+  const view = new module.exports.T3View(leaf,plugin);
   // The real boundary is Electron's asynchronous stylesheet API.
   const pending:Array<(key:string)=>void>=[];
   const removed:string[]=[];
-  const guest={classList:{add:()=>{}},insertCSS:()=>new Promise<string>(resolve=>pending.push(resolve)),removeInsertedCSS:async(key:string)=>{removed.push(key);},remove:()=>{}};
+  let focusCount=0;
+  const guest={focus:()=>{focusCount++;},classList:{add:()=>{}},insertCSS:()=>new Promise<string>(resolve=>pending.push(resolve)),removeInsertedCSS:async(key:string)=>{removed.push(key);},remove:()=>{}};
   Object.assign(view,{guest});
-  return {view,plugin,pending,removed};
+  return {view,plugin,pending,removed,leaf,listeners,focusCount:()=>focusCount};
 }
+
+test('activating the T3 leaf restores guest focus and releases the listener on unload',()=>{
+  const f=fixture();
+  f.view.onload();
+  const activate=(leaf:unknown)=>{for(const callback of f.listeners)callback(leaf);};
+  activate({});
+  assert.equal(f.focusCount(),0,'another note must keep its focus');
+  activate(f.leaf);
+  assert.equal(f.focusCount(),1);
+  f.view.disconnect();
+  activate(f.leaf);
+  assert.equal(f.focusCount(),1,'a disconnected view has no guest to focus');
+  f.view.unload();
+  assert.equal(f.listeners.size,0);
+});
 
 test('overlapping appearance updates remove superseded styles, including after disconnect', async () => {
   const f=fixture();
