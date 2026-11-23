@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       OBSIDIAN_VERSION: ${{ matrix.app }}
-      OBSIDIAN_INSTALLER: ${{ matrix.app == 'latest' && 'latest' || 'earliest' }}
+      OBSIDIAN_INSTALLER: latest
       OBSIDIAN_CACHE: ${{ github.workspace }}/.obsidian-cache
     steps:
       - uses: actions/checkout@v4

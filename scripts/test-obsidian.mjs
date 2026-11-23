@@ -8,7 +8,7 @@ import path from 'node:path';
 import { once } from 'node:events';
 
 const requested = process.env.OBSIDIAN_VERSION ?? 'earliest';
-const installer = process.env.OBSIDIAN_INSTALLER ?? 'earliest';
+const installer = process.env.OBSIDIAN_INSTALLER ?? 'latest';
 const launcher = new ObsidianLauncher();
 const [appVersion, installerVersion] = await launcher.resolveVersion(requested, installer);
 console.log(`Testing Obsidian ${appVersion}, installer ${installerVersion}`);
@@ -35,14 +35,17 @@ try {
   browser=await chromium.connectOverCDP(endpoint,{noDefaults:true});
   const context=browser.contexts()[0];
   const page=context.pages().find(p=>p.url().startsWith('app://obsidian.md')) ?? await context.waitForEvent('page');
-  await page.waitForFunction(()=>window.app?.workspace?.layoutReady && window.app.plugins?.plugins?.threecode,{},{timeout:60000});
+  await page.waitForFunction(()=>window.app?.workspace?.layoutReady && window.app.plugins?.plugins?.threecode?.settingsTab,{},{timeout:60000});
+  await page.bringToFront();
+  page.on('console',message=>{if(message.text().startsWith('threecode-compat:'))console.log(message.text());});
   const bundle=await build({entryPoints:['tests/obsidian/compatibility.ts'],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian'],target:'es2022'});
-  const report=await page.evaluate(async ({code,expectedVault})=>{
+  let runtimeTimer;
+  const report=await Promise.race([page.evaluate(async ({code,expectedVault})=>{
     if(window.app.vault.adapter.getBasePath()!==expectedVault)throw Error('Refuse a non-fixture vault');
     const module={exports:{}};
     new Function('module','exports','require',code)(module,module.exports,window.require);
     return module.exports.checkCompatibility(window.app);
-  },{code:bundle.outputFiles[0].text,expectedVault:vault});
+  },{code:bundle.outputFiles[0].text,expectedVault:vault}),new Promise((_,reject)=>{runtimeTimer=setTimeout(()=>reject(Error('Obsidian runtime checks timed out')),120000);})]).finally(()=>clearTimeout(runtimeTimer));
   console.log(JSON.stringify({appVersion,installerVersion,...report},null,2));
 } finally {
   await browser?.close();

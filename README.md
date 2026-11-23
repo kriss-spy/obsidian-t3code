@@ -126,9 +126,9 @@ The embedded client uses a pinned upstream revision and the client-only patch un
 
 `npm run test:obsidian` launches a downloaded Obsidian build in a disposable vault and isolated application profile.
 Set `OBSIDIAN_VERSION=1.13.4` to test the minimum version, or `OBSIDIAN_VERSION=latest` for the current stable version.
-`OBSIDIAN_INSTALLER` selects the Electron installer independently and defaults to `earliest`.
+`OBSIDIAN_INSTALLER` selects the Electron installer independently and defaults to the latest compatible installer.
 On headless Linux, run through `xvfb-run -a`.
 
-CI runs these checks on Linux, Windows, and macOS for the minimum version with its earliest compatible installer, and latest stable with its latest installer.
+CI runs these checks on Linux, Windows, and macOS for the minimum and latest stable app versions, each with its latest compatible installer.
 The checks cover plugin loading, settings persistence, theme and fonts, draft parsing, native draft Return/Cancel, trash preference, and sandboxed webview loading.
 Draft delivery uses a fixture bridge. These checks do not verify T3 pairing or a full server session.

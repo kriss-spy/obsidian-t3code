@@ -4,12 +4,21 @@ import { createGuest } from '../../src/guest';
 
 function check(value: unknown, message: string): asserts value {
   if (!value) throw new Error(message);
+  console.log('threecode-compat: '+message);
+}
+async function until(condition:()=>boolean) {
+  const deadline=Date.now()+15000;
+  while(!condition()){
+    if(Date.now()>deadline)throw Error('Obsidian UI did not settle: '+document.body.textContent?.slice(-1800));
+    await new Promise(resolve=>window.setTimeout(resolve,50));
+  }
 }
 export async function checkCompatibility(app: any) {
   const host = app as {plugins:{plugins:Record<string,any>;disablePlugin(id:string):Promise<void>;enablePlugin(id:string):Promise<void>};setting:any};
   let plugin=host.plugins.plugins.threecode;
   check(plugin,'Plugin must load');
   host.setting.open();host.setting.openTabById('threecode');
+  await until(()=>!!document.body.textContent?.includes('Download necessary files'));
   check(document.body.textContent?.includes('Download necessary files'),'Settings must render');
   await plugin.setDraftFormatting(true);
   await host.plugins.disablePlugin('threecode');await host.plugins.enablePlugin('threecode');
@@ -23,6 +32,7 @@ export async function checkCompatibility(app: any) {
   check(parsed.links?.[0]?.link==='Example','Draft parser must parse wikilinks');
   host.setting.close();
   // Missing components must produce the setup state without attempting a server connection.
+  console.log('threecode-compat: Opening workspace');
   const view=await plugin.openWorkspace();
   check(view.contentEl.textContent?.includes('Download'),'Missing components must show setup guidance');
   const returned:string[]=[];

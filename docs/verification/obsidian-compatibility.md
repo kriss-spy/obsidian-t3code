@@ -14,3 +14,5 @@ Each run checks plugin load/reload, settings rendering and persistence, all 61 t
 Draft delivery uses a fixture bridge. These checks do not pair with a T3 server or establish full session behavior. Existing T3 runtime evidence remains separate.
 
 The GitHub Actions `obsidian` job runs the same tests on Linux, Windows, and macOS. Its `earliest` app resolves from `manifest.json`, so a changed minimum automatically changes the tested version. The other job tests latest stable with the latest compatible installer. The existing unit tests and production build continue to run on all three operating systems.
+
+The CI minimum-version job uses the 1.13.4 installer. The older 1.5.8 installer passed an initial local Linux run but showed inconsistent UI startup in later Linux runs. It is not part of the required CI matrix. Windows and macOS runtime checks passed with the 1.5.8 installer.
