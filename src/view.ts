@@ -27,6 +27,9 @@ export class T3View extends ItemView {
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
   onload() {
     super.onload();
+    this.addAction('square-pen','Edit composer draft in Obsidian',() => {
+      void this.editDraft().catch(error => new Notice(String(error),10000));
+    });
     this.registerEvent(this.app.workspace.on('active-leaf-change', leaf => {
       if (leaf === this.leaf) this.guest?.focus();
     }));
@@ -214,6 +217,21 @@ export class T3View extends ItemView {
     if (!this.bridge || !this.guest) throw new Error('Connect and pair with a supported T3 server before adding context.');
     await this.bridge.appendContext(text);
     this.guest.focus();
+  }
+  async editDraft() {
+    await this.connecting;
+    const bridge = this.bridge, guest = this.guest, generation = this.generation;
+    if (!bridge || !guest || !this.plugin.draftNotes) throw new Error('Connect and pair with T3 Code before editing a draft.');
+    await this.plugin.draftNotes.open({
+      leaf:this.leaf,bridge,
+      current:() => generation === this.generation && bridge === this.bridge && guest === this.guest,
+      focus:async () => {
+        if (generation !== this.generation || bridge !== this.bridge) throw new Error('The originating T3 connection ended.');
+        await this.app.workspace.revealLeaf(this.leaf);
+        this.app.workspace.setActiveLeaf(this.leaf,{focus:true});
+        guest.focus();
+      },
+    });
   }
   async syncAppearance() {
     this.scheduleTheme();

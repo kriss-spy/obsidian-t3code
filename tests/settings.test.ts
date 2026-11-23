@@ -184,3 +184,17 @@ test('T3 choices update the plugin toggle in both directions without changing it
   await f.plugin.setFollowTheme(false);assert.notEqual(f.plugin.settings.themeFollowToken,token);
   await f.plugin.themeFollowingChanged(token,true);assert.equal(f.plugin.settings.followTheme,false);
 });
+
+test('draft formatting toggle defaults off, saves both states and rolls back on save failure',async()=>{
+  const f=fixture();assert.equal(f.plugin.settings.formatDraftLinks,false);
+  let change=async(_value:boolean)=>{};
+  const toggle={value:false,setValue(value:boolean){this.value=value;return this;},onChange(callback:typeof change){change=callback;return this;}};
+  const definition=f.tab.getSettingDefinitions().find(item=>'name' in item&&item.name==='Format draft links on return');
+  assert.ok(definition&&'render' in definition&&definition.render);
+  definition.render({addToggle:(callback:(value:typeof toggle)=>void)=>callback(toggle)} as any,{} as any);
+  assert.equal(toggle.value,false);await change(true);
+  assert.equal(f.plugin.settings.formatDraftLinks,true);assert.equal((f.saved.at(-1) as any).formatDraftLinks,true);
+  await change(false);assert.equal(f.plugin.settings.formatDraftLinks,false);assert.equal((f.saved.at(-1) as any).formatDraftLinks,false);
+  f.plugin.saveData=async()=>{throw Error('Disk unavailable');};await change(true);
+  assert.equal(f.plugin.settings.formatDraftLinks,false);assert.match(f.notices.at(-1)!,/Could not save the draft formatting setting/);
+});

@@ -10,11 +10,12 @@ import { electronHost } from './electron-host';
 import { captureContext, encodeContext } from './context';
 import { openLocalMarkdown } from './navigation';
 import type { FileRequest } from './host-contract';
-import { FileSystemAdapter, Notice, Plugin, TFile, TFolder } from 'obsidian';
+import { FileSystemAdapter, MarkdownView, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { canonicalDirectory } from './scope';
 import { defaults, SettingsTab, type Settings } from './settings';
 import { partitionFor, savedTarget, serverOrigin } from './connection';
 import { T3View, VIEW_TYPE } from './view';
+import { DraftNotes } from './draft-notes';
 
 export default class T3Plugin extends Plugin {
   settings: Settings = { ...defaults };
@@ -30,6 +31,7 @@ export default class T3Plugin extends Plugin {
   fontsInstalled = false;
   private stopped = new AbortController();
   private settingsTab?: SettingsTab;
+  draftNotes?: DraftNotes;
   get componentDirectory() {
     if (!this.manifest.dir) throw new Error('Plugin folder is unavailable.');
     return path.join(this.vaultRoot, this.manifest.dir, 'components', this.manifest.version);
@@ -93,12 +95,33 @@ export default class T3Plugin extends Plugin {
     const raw = data && typeof data === 'object' ? data as Partial<Settings> : {};
     try { this.settings.origin = serverOrigin(raw.origin ?? defaults.origin); } catch { /* Retain safe default. */ }
     this.settings.notePlacement = raw.notePlacement === 'split' ? 'split' : 'tab';
+    this.settings.formatDraftLinks = raw.formatDraftLinks === true;
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
     this.settings.followTheme = raw.followTheme === true;
     this.settings.themeFollowToken = typeof raw.themeFollowToken === 'string' && /^[a-f0-9-]{36}$/.test(raw.themeFollowToken) ? raw.themeFollowToken : '';
     if(!this.settings.themeFollowToken){this.settings.followTheme=false;this.settings.themeFollowToken=globalThis.crypto.randomUUID();}
     this.settings.target = savedTarget(raw.target, this.settings.origin);
     this.registerView(VIEW_TYPE, leaf => new T3View(leaf, this));
+    this.registerExtensions(['t3draft'],'markdown');
+    this.draftNotes = new DraftNotes(this.app,this.vaultRoot,() => this.settings.formatDraftLinks);
+    this.registerEvent(this.app.workspace.on('layout-change',() => this.draftNotes?.syncActions()));
+    this.registerEvent(this.app.workspace.on('file-open',() => this.draftNotes?.syncActions()));
+    this.addCommand({id:'edit-composer-draft',name:'Edit composer draft in Obsidian',checkCallback:checking => {
+      const view = this.app.workspace.getActiveViewOfType(T3View);
+      if (!view) return false;
+      if (!checking) void view.editDraft().catch(error => new Notice(String(error),10000));
+      return true;
+    }});
+    for (const cancel of [false,true]) this.addCommand({
+      id:cancel ? 'cancel-composer-draft' : 'return-composer-draft',
+      name:cancel ? 'Cancel composer draft editing' : 'Return draft to T3 Code',
+      checkCallback:checking => {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view || !this.draftNotes?.has(view.file)) return false;
+        if (!checking) this.draftNotes.run(view,cancel);
+        return true;
+      },
+    });
     this.settingsTab = new SettingsTab(this);
     this.addSettingTab(this.settingsTab);
     this.app.workspace.onLayoutReady(() => {
@@ -126,6 +149,7 @@ export default class T3Plugin extends Plugin {
     this.addCommand({id:'add-note',name:'Add current note to T3',editorCallback:(editor,view) => add(editor, view as import('obsidian').MarkdownView, false)});
     this.registerEvent(this.app.workspace.on('editor-menu', (menu, editor, view) => {
       if (!view.file) return;
+      if (view instanceof MarkdownView) this.draftNotes?.addMenuItems(menu,view);
       const note = captureContext(editor, view.file.path, false);
       const selection = editor.getSelection() ? captureContext(editor, view.file.path, true) : null;
       const append = (context: typeof note) => { void this.openWorkspace().then(target => target.appendContext(encodeContext(context))).catch(error => new Notice(String(error))); };
@@ -147,8 +171,17 @@ export default class T3Plugin extends Plugin {
       else { for (const note of this.app.vault.getMarkdownFiles()) { if (note.path.startsWith(file.path + '/')) {this.aliases.remove(oldPath + note.path.slice(file.path.length)); indexNote(note);} } }
       changed();
     }));
-    this.registerEvent(this.app.vault.on('delete', file => { this.aliases.remove(file.path); changed(); }));
-    this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
+    this.registerEvent(this.app.vault.on('delete', file => {
+      this.aliases.remove(file.path);
+      if (file instanceof TFile) this.draftNotes?.discard(file);
+      changed();
+    }));
+    this.registerEvent(this.app.workspace.on('file-menu', (menu, file, _source, leaf) => {
+      if (file instanceof TFile && this.draftNotes?.has(file)) {
+        const view = leaf?.view instanceof MarkdownView && leaf.view.file === file ? leaf.view
+          : this.app.workspace.getLeavesOfType('markdown').map(leaf => leaf.view).find((view): view is MarkdownView => view instanceof MarkdownView && view.file === file);
+        if (view) this.draftNotes.addMenuItems(menu,view);
+      }
       if (!(file instanceof TFolder)) return;
       const folder = path.join(this.vaultRoot, file.path);
       menu.addItem(item => item.setTitle('Open folder in T3 Code').setIcon('folder-open').onClick(() => {
@@ -171,6 +204,12 @@ export default class T3Plugin extends Plugin {
     this.syncAppearance();
     this.settingsTab?.update();
   }
+  async setDraftFormatting(enabled: boolean) {
+    const previous = this.settings.formatDraftLinks;
+    this.settings.formatDraftLinks = enabled;
+    try { await this.saveSettings(); }
+    catch (error) { this.settings.formatDraftLinks = previous; throw error; }
+  }
   async themeFollowingChanged(token: string, following: boolean, requested=false) {
     if(token!==this.settings.themeFollowToken)return;
     if(following===this.settings.followTheme){if(requested)this.syncAppearance();return;}
@@ -186,7 +225,8 @@ export default class T3Plugin extends Plugin {
     // Whitelist persisted fields. Never spread descriptor, guest state, or pairing data.
     await this.saveData({ origin: serverOrigin(this.settings.origin), followAppearance: this.settings.followAppearance,
       followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken,
-      target: savedTarget(this.settings.target, this.settings.origin), notePlacement:this.settings.notePlacement });
+      target: savedTarget(this.settings.target, this.settings.origin), notePlacement:this.settings.notePlacement,
+      formatDraftLinks:this.settings.formatDraftLinks });
   }
   openWorkspace(): Promise<T3View> {
     const owner = this.app.workspace.getMostRecentLeaf()?.view.containerEl.ownerDocument ?? activeDocument;
@@ -231,6 +271,7 @@ export default class T3Plugin extends Plugin {
   }
   onunload() {
     this.stopped.abort();
+    this.draftNotes?.close();
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
       const view=leaf.view as T3View;
       if(typeof view.disconnect==='function')view.disconnect();

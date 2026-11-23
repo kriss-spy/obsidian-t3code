@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "theme": "Cyber Glow",
+      "nativeReturn": true,
+      "nativeCancel": true,
+      "noteMenu": true,
+      "customToolbar": false
+    },
+    {
+      "theme": "Blue Topaz",
+      "nativeReturn": true,
+      "nativeCancel": true,
+      "noteMenu": true,
+      "customToolbar": false
+    },
+    {
+      "theme": "default",
+      "nativeReturn": true,
+      "nativeCancel": true,
+      "noteMenu": true,
+      "customToolbar": false
+    }
+  ]
+}

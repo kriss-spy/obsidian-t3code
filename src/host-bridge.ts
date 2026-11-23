@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { canonicalDirectory, containsDirectory } from './scope';
 import type { AliasRequest } from './host-contract';
 import type { SearchEntry } from './aliases';
@@ -9,6 +10,8 @@ import type { HostPalette } from './theme';
 import { serverOrigin, savedTarget } from './connection';
 import type { Guest } from './guest';
 import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest } from './host-contract';
+
+export class DraftReturnRejected extends Error {}
 
 // Admission stays in compatibility(). This transport cannot approve a build.
 export class HostBridge {
@@ -148,6 +151,25 @@ export class HostBridge {
     }
     const inserted = await this.evaluate(`window.t3ObsidianHostV1.appendContext(${JSON.stringify({generation:this.session.generation, target, text})})`);
     if (inserted !== true) throw new Error('The T3 target changed or its composer is unavailable. Context was not added.');
+  }
+  async beginDraft(): Promise<{id:string;text:string;cwd:string}> {
+    const id = randomUUID();
+    const value = await this.evaluate(`window.t3ObsidianHostV1.beginDraft(${JSON.stringify({generation:this.session.generation,id})})`);
+    if (!value || typeof value !== 'object' || !('id' in value) || value.id !== id ||
+        !('text' in value) || typeof value.text !== 'string' || value.text.length > 2000000 ||
+        !('cwd' in value) || typeof value.cwd !== 'string' || !path.isAbsolute(value.cwd) || !containsDirectory(this.session.vaultRoot,value.cwd)) {
+      await this.cancelDraft(id);
+      throw new Error('Open a local, in-vault composer draft before editing in Obsidian. Pending answers and queued-message edits are unavailable.');
+    }
+    return {id, text:value.text, cwd:value.cwd};
+  }
+  async returnDraft(id: string, text: string) {
+    if (text.length > 2000000) throw new Error('The draft exceeds the 2,000,000-character limit.');
+    const returned = await this.evaluate(`window.t3ObsidianHostV1.returnDraft(${JSON.stringify({generation:this.session.generation,id,text})})`);
+    if (returned !== true) throw new DraftReturnRejected('The originating composer changed or is unavailable. The note is preserved. Return to the original thread and try again.');
+  }
+  async cancelDraft(id: string) {
+    await this.evaluate(`window.t3ObsidianHostV1.cancelDraft(${JSON.stringify({generation:this.session.generation,id})})`);
   }
   openProject(directory: string): Promise<void> {
     const root = canonicalDirectory(directory);

@@ -284,3 +284,46 @@ test('macOS proof reads both challenges through T3 and rejects stale or escaping
   ]) await assert.rejects(api.readLocalProof(input), /Invalid local proof/);
   assert.equal(reads.length, 2);
 });
+
+test('temporary draft return binds to its composer and acknowledges retries once', () => {
+  const {api,exports:e} = load();
+  api.initialize({generation:'g',environmentId:'local',requiresLocalProof:true});
+  let text = 'original [[Note]]', version = 'v1', writes = 0;
+  const draft = {read:()=>({text,cwd:'/vault/project',version}),replace:(next:string)=>{writes++;text=next;version='v2';return true;}};
+  const unregister = e.registerObsidianComposer('thread',()=>true,()=>true,undefined,undefined,draft);
+  assert.equal(api.beginDraft({generation:'g',id:'before-proof'}),null);
+  api.confirmLocal({generation:'g'});
+  assert.equal(api.beginDraft({generation:'stale',id:'bad'}),null);
+  assert.equal(api.beginDraft({generation:'g',id:'request'}).text,text);
+  const input = {generation:'g',id:'request',text:'edited draft'};
+  assert.equal(api.returnDraft({...input,generation:'stale'}),false);
+  assert.equal(api.returnDraft(input),true);
+  assert.equal(api.returnDraft(input),true);
+  assert.equal(api.returnDraft({...input,text:'different retry'}),false);
+  assert.equal(writes,1);
+  assert.equal(text,'edited draft');
+  api.cancelDraft({generation:'g',id:'request'});
+  assert.equal(api.returnDraft(input),false);
+  unregister();
+});
+
+test('temporary drafts reject newer input, replacement registrations and route changes; cancel writes nothing', () => {
+  const {api,exports:e,location} = load();
+  api.initialize({generation:'g',environmentId:'local'});api.confirmLocal({generation:'g'});
+  let version = 'v1',writes = 0;
+  const draft = {read:()=>({text:'original',cwd:'/vault',version}),replace:()=>{writes++;return true;}};
+  e.registerObsidianComposer('thread',()=>true,()=>true,undefined,undefined,draft);
+  api.beginDraft({generation:'g',id:'changed'});
+  version = 'v2';
+  assert.equal(api.returnDraft({generation:'g',id:'changed',text:'edited'}),false);
+  api.beginDraft({generation:'g',id:'route'});
+  location.pathname='/other';
+  assert.equal(api.returnDraft({generation:'g',id:'route',text:'edited'}),false);
+  location.pathname='/local/thread';
+  e.registerObsidianComposer('thread',()=>true,()=>true,undefined,undefined,draft);
+  assert.equal(api.returnDraft({generation:'g',id:'route',text:'edited'}),false);
+  api.beginDraft({generation:'g',id:'canceled'});
+  assert.equal(api.cancelDraft({generation:'g',id:'canceled'}),true);
+  assert.equal(api.returnDraft({generation:'g',id:'canceled',text:'edited'}),false);
+  assert.equal(writes,0);
+});

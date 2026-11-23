@@ -47,7 +47,7 @@ index f6062475a..9b592bf12 100644
                  event.stopPropagation();
                  void readLocalApi()
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index 128f3b16d..21dd0d198 100644
+index 128f3b16d..68d178da7 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
 @@ -1,3 +1,5 @@
@@ -56,7 +56,7 @@ index 128f3b16d..21dd0d198 100644
  import { m } from "../i18n/messages";
  import { thrownErrorMessage } from "@t3tools/client-runtime/errors";
  import { useGT, useMessages } from "gt-react";
-@@ -1881,6 +1883,34 @@ export default function ChatView(props: ChatViewProps) {
+@@ -1881,6 +1883,38 @@ export default function ChatView(props: ChatViewProps) {
  
    const { focusComposer: focusComposerStable, scheduleComposerFocus: scheduleComposerFocusStable } =
      useComposerFocus(composerRef);
@@ -85,6 +85,10 @@ index 128f3b16d..21dd0d198 100644
 +          return false;
 +        current.focusAtEnd();
 +        return true;
++      },
++      {
++        read: () => composerRef.current?.readObsidianDraft() ?? null,
++        replace: (text) => composerRef.current?.replaceObsidianDraft(text) === true,
 +      },
 +    );
 +  }, [environmentId, threadId, draftId, composerRef, embedded, backgroundThread, canOperateThread]);
@@ -505,7 +509,7 @@ index 54ae776e1..ca9098e8e 100644
        const latestSession = readTerminalSession();
        terminal.setSharedGrid(latestSession.grid);
 diff --git a/apps/web/src/components/chat/ChatComposer.tsx b/apps/web/src/components/chat/ChatComposer.tsx
-index 603edc067..d5a60e446 100644
+index 603edc067..24549cbb8 100644
 --- a/apps/web/src/components/chat/ChatComposer.tsx
 +++ b/apps/web/src/components/chat/ChatComposer.tsx
 @@ -1,3 +1,4 @@
@@ -513,18 +517,31 @@ index 603edc067..d5a60e446 100644
  import { copySnapshot } from "./copySnapshot";
  import { VoiceInputSetup } from "./VoiceInputSetup";
  import { useComposerTypingGuard } from "./useComposerTypingGuard";
-@@ -301,6 +302,7 @@ function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
+@@ -301,6 +302,9 @@ function consumePasteAsTextShortcut(deadline: { current: number }): boolean {
  }
  
  export interface ChatComposerHandle {
++  readObsidianDraft: () => { text: string; cwd: string; version: string } | null;
++  replaceObsidianDraft: (text: string) => boolean;
 +  referenceDropBounds: () => { x: number; y: number; width: number; height: number } | null;
    focusAtEnd: () => void;
    focusAt: (cursor: number) => void;
    addDroppedFiles: (files: File[]) => void;
-@@ -3099,6 +3101,10 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+@@ -3099,6 +3103,21 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
    useImperativeHandle(
      composerRef,
      () => ({
++      readObsidianDraft: () => {
++        if (!gitCwd || !canOperateThread || environmentUnavailable || activePendingUserInput ||
++            isEditingQueuedMessage || isSendBusy || pendingDraftWork.has(attachmentTargetKey)) return null;
++        const text = readComposerSnapshotStable().value;
++        return { text, cwd: gitCwd, version: JSON.stringify([text, getComposerDraft(composerDraftTarget)]) };
++      },
++      replaceObsidianDraft: (text) => {
++        if (!gitCwd || !canOperateThread || environmentUnavailable || activePendingUserInput ||
++            isEditingQueuedMessage || isSendBusy || pendingDraftWork.has(attachmentTargetKey)) return false;
++        return applyPromptReplacementStable(0, promptRef.current.length, text);
++      },
 +      referenceDropBounds: () => {
 +        const form = composerFormRef.current;
 +        return form && form.getClientRects().length ? form.getBoundingClientRect().toJSON() : null;
@@ -532,7 +549,21 @@ index 603edc067..d5a60e446 100644
        focusAtEnd: () => {
          composerEditorRef.current?.focusAtEnd();
        },
-@@ -3461,6 +3467,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+@@ -3321,6 +3340,13 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+       },
+     }),
+     [
++      gitCwd,
++      canOperateThread,
++      environmentUnavailable,
++      activePendingUserInput,
++      isSendBusy,
++      attachmentTargetKey,
++      getComposerDraft,
+       activeThread,
+       addComposerAttachments,
+       addComposerFoldersStable,
+@@ -3461,6 +3487,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
          composerMentionDragHandlers.onDragEnter(event);
        }}
        onDragOverCapture={(event) => {
@@ -540,7 +571,7 @@ index 603edc067..d5a60e446 100644
          if (isInsideRestingComposerControlScope(event.target)) return;
          composerMentionDragHandlers.onDragOver(event);
        }}
-@@ -3469,6 +3476,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+@@ -3469,6 +3496,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
          onComposerMentionDragLeaveCapture(event);
        }}
        onDropCapture={(event) => {
@@ -1640,10 +1671,10 @@ index 112de4848..91a1abe26 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..1b02d3d4f
+index 000000000..8c2f62853
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,713 @@
+@@ -0,0 +1,742 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1690,10 +1721,13 @@ index 000000000..1b02d3d4f
 +let sequence = 0;
 +let composerSequence = 0;
 +let newComposer: (() => Promise<boolean>) | null = null;
++type DraftSnapshot = { text: string; cwd: string; version: string };
++const draftEdits = new Map<string, { owner: NonNullable<typeof composer>; snapshot: DraftSnapshot; returned?: string }>();
 +let composer: {
 +  target: string;
 +  pathname: string;
 +  append: (text: string) => boolean;
++  draft?: { read: () => DraftSnapshot | null; replace: (text: string) => boolean } | undefined;
 +  owns: (owner: unknown) => boolean;
 +  bounds?: (() => { x: number; y: number; width: number; height: number } | null) | undefined;
 +  references?: ((paths: string[]) => boolean) | undefined;
@@ -1756,7 +1790,7 @@ index 000000000..1b02d3d4f
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.9",
++      build: "obsidian-host-v1.10",
 +      protocol: 1,
 +      themeCapability: 2,
 +      fontCapability: 1,
@@ -1786,7 +1820,7 @@ index 000000000..1b02d3d4f
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.9",
++          build: "obsidian-host-v1.10",
 +          coverage: SCOPE_COVERAGE,
 +        };
 +      },
@@ -1901,6 +1935,30 @@ index 000000000..1b02d3d4f
 +        if (expectedPath !== location.pathname || composer || !newComposer) return null;
 +        return (await newComposer()) ? location.pathname : null;
 +      },
++      beginDraft(input: { generation: string; id: string }) {
++        if (!localReady || input.generation !== generation || !composer ||
++            composer.pathname !== location.pathname || typeof input.id !== "string" ||
++            input.id.length > 100 || draftEdits.has(input.id) || draftEdits.size >= 16) return null;
++        const snapshot = composer.draft?.read();
++        if (!snapshot || snapshot.text.length > 2000000 || !absoluteHostPath(snapshot.cwd)) return null;
++        draftEdits.set(input.id, { owner: composer, snapshot });
++        return { id: input.id, text: snapshot.text, cwd: snapshot.cwd };
++      },
++      returnDraft(input: { generation: string; id: string; text: string }) {
++        if (!localReady || input.generation !== generation || typeof input.text !== "string" ||
++            input.text.length > 2000000) return false;
++        const edit = draftEdits.get(input.id);
++        if (!edit) return false;
++        if (edit.returned !== undefined) return edit.returned === input.text;
++        if (composer !== edit.owner || composer.pathname !== location.pathname ||
++            composer.draft?.read()?.version !== edit.snapshot.version ||
++            !composer.draft.replace(input.text)) return false;
++        edit.returned = input.text;
++        return true;
++      },
++      cancelDraft(input: { generation: string; id: string }) {
++        return input.generation === generation && draftEdits.delete(input.id);
++      },
 +      composerTarget() {
 +        return composer?.pathname === location.pathname ? composer.target : null;
 +      },
@@ -1987,6 +2045,7 @@ index 000000000..1b02d3d4f
 +  owns: (owner: unknown) => boolean = () => false,
 +  bounds?: () => { x: number; y: number; width: number; height: number } | null,
 +  references?: (paths: string[]) => boolean,
++  draft?: { read: () => DraftSnapshot | null; replace: (text: string) => boolean },
 +) {
 +  if (!embedded || !initialized) return;
 +  const registration = {
@@ -1996,6 +2055,7 @@ index 000000000..1b02d3d4f
 +    owns,
 +    bounds,
 +    references,
++    draft,
 +  };
 +  composer = registration;
 +  return () => {

@@ -2,8 +2,8 @@ import { PluginSettingTab, Notice, type SettingDefinitionItem } from 'obsidian';
 import type T3Plugin from './main';
 import { COMPONENT_ASSETS } from './component-release';
 import { serverOrigin } from './connection';
-export interface Settings { origin: string; followAppearance: boolean; followTheme: boolean; themeFollowToken: string; target: string; notePlacement: 'tab' | 'split' }
-export const defaults: Settings = { origin: 'http://127.0.0.1:3773', followAppearance: true, followTheme: false, themeFollowToken: '', target: '/', notePlacement: 'tab' };
+export interface Settings { origin: string; followAppearance: boolean; followTheme: boolean; themeFollowToken: string; target: string; notePlacement: 'tab' | 'split'; formatDraftLinks: boolean }
+export const defaults: Settings = { origin: 'http://127.0.0.1:3773', followAppearance: true, followTheme: false, themeFollowToken: '', target: '/', notePlacement: 'tab', formatDraftLinks:false };
 export class SettingsTab extends PluginSettingTab {
   constructor(private plugin: T3Plugin) { super(plugin.app, plugin); }
   getSettingDefinitions(): SettingDefinitionItem[] {
@@ -46,6 +46,12 @@ export class SettingsTab extends PluginSettingTab {
       }},
       {name:'Follow Obsidian theme',desc:'Follow this window’s colors and light or dark appearance. Choosing another T3 theme or appearance turns this off. Choosing the generated Obsidian theme resumes following. Turning this off keeps the last palette.',render:setting => {
         setting.addToggle(t => t.setValue(this.plugin.settings.followTheme).onChange(value => this.plugin.setFollowTheme(value)));
+      }},
+      {name:'Format draft links on return',desc:'Convert wikilinks to T3 file mentions and use full filenames as link labels. Keep existing Markdown file paths. Off returns the draft text exactly as edited.',render:setting => {
+        setting.addToggle(t => t.setValue(this.plugin.settings.formatDraftLinks).onChange(async value => {
+          try { await this.plugin.setDraftFormatting(value); }
+          catch { new Notice('Could not save the draft formatting setting.'); this.update(); }
+        }));
       }},
       {name:'Follow Obsidian fonts',desc:'Use the interface font for T3 controls, text font for chat and composer, and monospace font for code and terminal. Font sizes stay in T3.',render:setting => {
         setting.addToggle(t => t.setValue(this.plugin.settings.followAppearance).onChange(async value => {

@@ -27,6 +27,28 @@ Press Escape when no T3 interaction needs it to return keyboard focus to Obsidia
 
 Vault filtering only changes which sessions appear in this view. It does not restrict an agent's filesystem access or change other T3 clients.
 
+### Edit a composer draft in Obsidian
+
+Select **Edit composer draft in Obsidian** from the T3 tab's header action or the command palette.
+The draft opens in a temporary note beside that T3 tab, including in a sidebar.
+Use Obsidian's normal editor, wikilink completion, and editor commands.
+Draft files use the `.t3draft` extension and open in Obsidian's Markdown editor.
+Keep threecode enabled to reopen these files.
+
+Use **Return draft to T3 Code** in the temporary note's header or **More options** menu to update the originating composer.
+The header action uses a return-arrow icon. The same command is available in the command palette.
+Returning a draft does not send it. Automatic saves do not return it.
+Existing attachments stay in the composer. By default, Return preserves the draft text exactly.
+
+Enable **Format draft links on return** in the plugin settings to convert wikilinks into T3 file mentions.
+Formatting uses full filenames, including extensions, as link labels so T3 can highlight them.
+Existing Markdown file paths and encoded spaces stay unchanged. Generated wikilink paths are relative to the originating T3 project.
+When formatting is enabled, missing or ambiguous wikilinks must be corrected before return. Block references cannot be formatted.
+
+Use **Cancel draft editing** from the note header or menu to keep the composer unchanged and delete the temporary note.
+Interrupted requests also keep their notes. Successful returns remove the temporary note.
+If the composer changes during editing, return reports a conflict and preserves the note.
+
 ## Requirements
 
 - Desktop Obsidian 1.14.5 or later.
@@ -65,6 +87,9 @@ The plugin connects to the T3 server you already run. It does not install, patch
 | **Focus T3 Code** | Open the workspace and collapse Obsidian's left sidebar. |
 | **Add selection to T3** | Add selected editor text to the current draft. |
 | **Add current note to T3** | Add the current note's text, including unsaved edits, to the current draft. |
+| **Edit composer draft in Obsidian** | Open the current T3 composer's text in a temporary note. |
+| **Return draft to T3 Code** | Return the temporary note's text without sending the prompt. |
+| **Cancel composer draft editing** | End editing and delete the temporary note. |
 
 You can assign hotkeys to these commands in **Settings → Hotkeys**.
 

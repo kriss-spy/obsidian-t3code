@@ -16,6 +16,7 @@ function fixture(readFonts:()=>Promise<string>=async()=>':root{--font-sans:test-
     contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};
     cleanups:Array<()=>void>=[];
     constructor(public leaf:unknown) {}
+    addAction() {}
     onload() {}
     registerEvent(callback:(leaf:unknown)=>void) {this.cleanups.push(()=>listeners.delete(callback));}
     unload() {for(const fn of this.cleanups)fn();}

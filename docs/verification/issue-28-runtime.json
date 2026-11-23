@@ -1,0 +1,14 @@
+{
+  "platform": "linux",
+  "checks": {
+    "centerReturnAndCleanup": true,
+    "explicitCompletion": true,
+    "attachmentAndReferencePreservation": true,
+    "headingRange": true,
+    "noSubmission": true,
+    "unresolvedLinkRecovery": true,
+    "cancelPreservesComposer": true,
+    "newerInputConflict": true,
+    "sidebarReturn": true
+  }
+}
