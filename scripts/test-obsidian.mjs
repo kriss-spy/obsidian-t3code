@@ -46,11 +46,19 @@ try {
   console.log(JSON.stringify({appVersion,installerVersion,...report},null,2));
 } finally {
   await browser?.close();
-  if(launched && launched.proc.exitCode===null){
-    launched.proc.kill();
-    await Promise.race([once(launched.proc,'exit'),new Promise(resolve=>setTimeout(resolve,5000))]);
-    if(launched.proc.exitCode===null){launched.proc.kill('SIGKILL');await once(launched.proc,'exit');}
+  if(launched){
+    const proc=launched.proc;
+    const running=()=>proc.exitCode===null && proc.signalCode===null;
+    if(running()){
+      const exited=once(proc,'exit');
+      proc.kill();
+      await Promise.race([exited,new Promise(resolve=>setTimeout(resolve,5000))]);
+      if(running()){
+        proc.kill('SIGKILL');
+        await Promise.race([exited,new Promise((_,reject)=>setTimeout(()=>reject(Error('Obsidian failed to stop')),5000))]);
+      }
+    }
   }
-  await rm(vault,{recursive:true,force:true});
-  if(launched)await rm(launched.configDir,{recursive:true,force:true});
+  await rm(vault,{recursive:true,force:true,maxRetries:10,retryDelay:300});
+  if(launched)await rm(launched.configDir,{recursive:true,force:true,maxRetries:10,retryDelay:300});
 }
