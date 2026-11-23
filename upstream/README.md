@@ -6,7 +6,7 @@ This adapter requires the client-only patch in `t3-0.1.11-obsidian-host-v1.patch
 
 The installed 0.1.11 AppImage identifies `t3codeCommitHash:59651c1761f6`. Upstream tag `v0.1.11` resolves to full revision `59651c1761f6c63e9b6056839067066968e6a406`. This is the patch base.
 
-The adapter is `obsidian-host-v1.6`, protocol 1. Its client manifest SHA-256 is `49f803c90a42f186b297a99db4e9e3cb38e389f4ffef272434a71048cb32c54b`. The plugin verifies its installed component files and performs the complete host handshake. Declared capability strings alone cannot enable a client.
+The adapter is `obsidian-host-v1.10`, host protocol 1. It connects to servers using orchestration protocol 2. Its client manifest SHA-256 is `8f8d4a68f382d903776f001a05817af006304a1c4e53497a975593e7ef396090`. The plugin verifies its installed component files and performs the complete host handshake. Declared capability strings alone cannot enable a client.
 
 Apply the patch only in a clean exact-revision checkout:
 
@@ -32,6 +32,10 @@ The actual MarkdownFileLink primary callback resolves its absolute semantic file
 The composer hook registers the existing public composer handle. Explicit host requests append through that handle without private React access. Embedded draft writes flush through T3's normal persistence layer before guest destruction. Ordinary clients retain debounced writes. A normal new-thread handler can prepare an in-scope composer if none exists. Scope decisions do not change server visibility, tags, or database schemas.
 
 The v1.4 contract retains a filesystem-only Markdown eligibility check for both native-open menus, canonical alias-result merging from the metadata cache, an explicit canonical-folder project action, and single-use explorer-reference drops. Composer ownership uses a stable reference so attachment processing cannot cancel a valid same-target drop. Requests retain generation and route checks. Project creation waits for scope approval before opening its draft.
+
+The v1.10 contract supports explicit draft editing through `beginDraft`, `returnDraft`, and `cancelDraft`. Requests bind to the originating composer and document generation. Return checks the composer version and preserves attachments. Repeated acknowledgements do not apply the text twice. Temporary note editing and optional link formatting run in Obsidian.
+
+Theme capability 2 installs the generated Obsidian palette and coordinates manual T3 theme choices. Font capability 1 refreshes terminal fonts after host font updates. Embedded foreground checks probe the connection without restarting session subscriptions. Actual reconnects still invalidate scope approvals.
 
 ## Evidence and remaining work
 

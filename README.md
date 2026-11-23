@@ -48,6 +48,9 @@ When formatting is enabled, missing or ambiguous wikilinks must be corrected bef
 Use **Cancel draft editing** from the note header or menu to keep the composer unchanged and delete the temporary note.
 Interrupted requests also keep their notes. Successful returns remove the temporary note.
 If the composer changes during editing, return reports a conflict and preserves the note.
+Return or copy active drafts before reloading or disabling threecode. Editing requests are held in memory.
+After an interruption, copy a preserved note's text into a new composer.
+Draft editing requires an active local composer inside the vault. Pending answers and queued-message edits are unavailable.
 
 ## Requirements
 
@@ -100,6 +103,12 @@ You can assign hotkeys to these commands in **Settings → Hotkeys**.
 **Download extra fonts** optionally installs Inter and terminal symbol fonts. System fonts are used by default. Fonts needed for mathematical notation are included in the required download.
 
 If the plugin reports missing or changed components, download the necessary files again to repair them.
+
+When a component is installed, its settings button becomes **Delete**.
+Deleting extra fonts restores system fonts. Deleting necessary files makes the workspace unavailable until you download them again.
+
+Version 0.2.0 requires a fresh component download after upgrading from 0.1.2.
+Preserve `data.json` when replacing plugin files. See the [release notes](docs/release-notes.md) for upgrade steps and verification limits.
 
 PDF, code, and Markdown previews are available. Office document previews and bundled device models are excluded. You can still save those files and open them in another application.
 

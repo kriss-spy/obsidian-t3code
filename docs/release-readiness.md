@@ -1,13 +1,26 @@
-# Release verification
+# 0.2.0 release readiness
 
-Version 0.1.1 replaces the combined development bundle with standard Obsidian plugin release files and separate component downloads. It connects to a standard T3 server. It does not patch or manage a server installation.
+Status: 0.2.0 is designated as a prerelease for testing. Version metadata and pinned download URLs target 0.2.0. Local artifacts are under `dist/`. See [verification](verification/0.2.0.md) for checks and limits.
 
-See [0.1.1 verification](verification/components-0.1.1.md) for the checks and limits of this release. Older verification reports concern earlier patched-server candidates.
+## Release contents
 
-The supported release target is Linux with Obsidian 1.15.1 or newer. Runtime verification used T3 0.1.11, protocol 2. Other protocol-2 versions from 0.1.11 onward are accepted without an exact build pin. Incompatible API changes can require a plugin update.
+- Plugin tag: `0.2.0`, matching `manifest.json` and `package.json`.
+- Plugin assets: `main.js`, `manifest.json`, and `styles.css` from `dist/0.2.0/`.
+- Component tag: `components-0.2.0`.
+- Component assets: `dist/components/t3-core-0.2.0.json.gz` and `dist/components/t3-fonts-0.2.0.json.gz`.
+- Release text: [release notes](release-notes.md).
 
-Office previews and bundled device models are excluded from the embedded client. Extra Inter and terminal symbol fonts are optional. The normal T3 app keeps the capabilities of its own installation.
+The component URLs, byte counts, and SHA-256 values are pinned in `src/component-release.ts`. Publish the component assets before publishing the plugin. Missing or changed components block the embedded workspace until repaired.
 
-Download and pairing errors must remain visible. Missing or changed components block the embedded workspace until repaired. Local session visibility and native file actions require authenticated filesystem verification. Pairing credentials remain in the dedicated browser partition.
+## Publication and stable promotion checks
 
-Before publishing plugin assets, verify both component download URLs and perform a clean plugin installation through the settings buttons. Preserve the old release until the replacement is available.
+1. Run the cross-platform CI tests and build for the release commit.
+2. Publish both archives under `components-0.2.0`.
+3. Download the published archives and compare their sizes and SHA-256 values with `src/component-release.ts`.
+4. Install the plugin in a disposable vault through both settings download buttons. Check pairing, draft Return and Cancel, theme following, tab switching, and Escape.
+5. Complete visual acceptance for theme following. Automated theme assertions do not establish visual acceptance.
+6. Publish the three plugin assets under `0.2.0` as a prerelease using the release notes. Complete the runtime and visual checks before stable promotion.
+
+Preserve earlier releases for rollback. New feature runtime checks on Windows and macOS remain absent. The full upstream test suite has not been run. State these limits in the release notes.
+
+The embedded client targets T3 0.1.11, orchestration protocol 2. Future incompatible API changes can require an update. The plugin does not install, patch, start, or stop a server.

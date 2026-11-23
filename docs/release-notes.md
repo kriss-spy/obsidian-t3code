@@ -1,15 +1,39 @@
-# T3 Code 0.1.0 release notes draft
+# threecode 0.2.0
 
-Status: release candidate for Linux testing. The user authorized a GitHub prerelease. Stable publication waits for the user's real behavior testing on Windows and the remaining [release assessment](release-readiness.md) gates.
+Status: prerelease for testing. See the [release checks](verification/0.2.0.md) and [publication checklist](release-readiness.md).
 
-Use T3's workspace inside Obsidian with vault-scoped session navigation. Open local Markdown originals in Obsidian through explicit file actions. Add selections, unsaved notes, and note/folder references to a draft for review. Search note aliases and open exact vault folders as T3 projects.
+## New features
 
-This candidate fixes immediate draft loss during guest replacement, scope rejection when more than eight drafts compete for request slots, workspace tab removal on plugin unload, overlapping font updates, and stale routes after connection changes.
+- Edit a T3 composer draft in Obsidian's Markdown editor. Use the temporary note's native Return and Cancel actions, note menu, or command palette.
+- Return draft text explicitly without sending the prompt. Existing attachments stay in the composer. Successful returns and cancellations delete the temporary note.
+- Enable **Format draft links on return** to convert wikilinks into T3 file mentions. The default preserves text exactly. Formatting uses full filenames as labels and resolves heading references to line ranges.
+- Enable **Follow Obsidian theme** to follow resolved colors and light or dark appearance. Choosing another T3 theme or appearance disables following. Select the generated **Obsidian** theme to resume.
+- Follow Obsidian's interface, text, and monospace fonts independently of theme following. Font sizes remain controlled by T3.
+- Delete required components or optional fonts from plugin settings. Download them again to reinstall.
 
-The candidate requires Linux, Obsidian 1.15.1, and the bundled patched T3 0.1.11 client/server source at revision `59651c1761f6c63e9b6056839067066968e6a406`. Building that server requires Node 26.13.1 and pnpm 12.14.0. An unmodified T3 installation is not compatible. Windows, macOS, mobile, and remote path mapping have no support claim.
+## Fixes
 
-T3 keeps its provider configuration, permissions, agent settings, and theme colors. The plugin connects to an existing server and does not automatically submit context. Session filtering changes only the embedded display; it does not restrict agent filesystem access.
+- Returning to the T3 tab restores keyboard focus and preserves the mounted chat.
+- Unused Escape returns keyboard focus to Obsidian. T3 menus, dialogs, suggestions, and terminals retain their Escape handling.
+- Packaged-client verification uses the current draft-editor client checksum.
 
-Install in a disposable vault using the [trial instructions](development-install.md). Keep a backup and preserve the matching client/plugin pair when upgrading or rolling back. Credentials stay in T3's browser partition.
+## Upgrade
 
-The plugin uses the MIT license. The bundle retains T3's MIT notice and web dependency notices. Full parity, broader lifecycle behavior, native drag release, and the final clean-machine rehearsal still require evidence before these notes can describe a stable release.
+1. Return or copy any active temporary draft before reloading threecode. Draft request bindings do not survive a reload.
+2. Replace `main.js`, `manifest.json`, and `styles.css` in `<vault>/.obsidian/plugins/threecode/`. Preserve `data.json`.
+3. Reload Obsidian and enable threecode.
+4. Open **Settings → threecode** and select **Download necessary files** to install the 0.2.0 components.
+5. Optionally select **Download extra fonts**.
+6. Connect to your existing T3 server and complete pairing if prompted.
+
+Temporary `.t3draft` files remain in the vault after interrupted editing. Keep threecode enabled to open them in the Markdown editor. Copy their text into a new composer if the original editing request ended.
+
+## Compatibility and verification limits
+
+Requires desktop Obsidian 1.14.5 or later and a local T3 server using orchestration protocol 2. Obsidian and T3 must run on the same computer and operating system. Windows Obsidian with a WSL T3 server is unsupported.
+
+The embedded client uses T3 0.1.11 with adapter `obsidian-host-v1.10`. The plugin connects to a standard server without patching or managing it. New feature runtime evidence covers Linux with Obsidian 1.15.1. Earlier Windows and macOS checks cover previous client versions. They do not establish runtime coverage for these new features.
+
+Draft editing requires an active local composer inside the vault. Pending answers and queued-message edits are unavailable. Formatting rejects unresolved or ambiguous wikilinks, block references, and links to the temporary draft itself.
+
+Vault filtering changes the embedded session list. It does not restrict agent filesystem access. Pairing credentials remain in the dedicated browser partition. Office previews and bundled device models remain excluded.

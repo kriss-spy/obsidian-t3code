@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (prerelease)
+
+- Edit composer drafts in temporary Obsidian notes with native Return and Cancel actions. Preserve attachments and detect composer conflicts.
+- Optionally format draft wikilinks as T3 file mentions on return. Preserve exact draft text by default.
+- Follow Obsidian theme colors and light or dark appearance through the generated Obsidian theme. Keep font following independent.
+- Map Obsidian interface, text, and monospace fonts to T3 controls, chat and composer, and code and terminal.
+- Add settings controls to delete required components or optional fonts.
+- Restore guest keyboard focus when activating the T3 tab.
+- Package both component downloads for 0.2.0 and refresh the packaged-client verification checksum.
 
 - Preserve the mounted T3 chat when switching back from an Obsidian note. Check the live connection without restarting session subscriptions.
 - Return keyboard focus to Obsidian on unused Escape. Preserve T3 menus, dialogs, suggestions, and terminal Escape handling.
@@ -37,4 +45,4 @@ Tested with Linux, Obsidian 1.15.1, and T3 0.1.11 with orchestration protocol 2.
 - Label the native editor action “Obsidian” and add a gem icon in both file menus.
 - Add an MIT license, compatibility mapping, candidate metadata, and package checksums.
 
-Stable publication remains blocked by `docs/release-readiness.md`.
+The 0.1.0 candidate was superseded by the releases above. See `docs/release-readiness.md` for current publication requirements.
