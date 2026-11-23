@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-11-23. Version 0.2.0 is a prerelease for testing. See [release readiness](release-readiness.md) for remaining publication checks and [verification](verification/0.2.0.md) for current evidence.
+Date: 2026-11-23. Version 0.2.0 is the stable release. See [release readiness](release-readiness.md) for remaining publication checks and [verification](verification/0.2.0.md) for current evidence.
 
 The plugin hosts a patched T3 0.1.11 client and connects to a standard server using orchestration protocol 2. It does not patch or manage the server. The client uses adapter `obsidian-host-v1.10`, host protocol 1, and upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. Its manifest SHA-256 is `8f8d4a68f382d903776f001a05817af006304a1c4e53497a975593e7ef396090`.
 

@@ -1,6 +1,6 @@
 # threecode 0.2.0
 
-Status: prerelease for testing. See the [release checks](verification/0.2.0.md) and [publication checklist](release-readiness.md).
+Status: stable release. See the [release checks](verification/0.2.0.md) and [publication checklist](release-readiness.md).
 
 ## New features
 

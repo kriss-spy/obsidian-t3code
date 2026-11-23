@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 (prerelease)
+## 0.2.0
 
 - Edit composer drafts in temporary Obsidian notes with native Return and Cancel actions. Preserve attachments and detect composer conflicts.
 - Optionally format draft wikilinks as T3 file mentions on return. Preserve exact draft text by default.
