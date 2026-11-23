@@ -3332,3 +3332,151 @@ index 15547f5e4..046a80a7e 100644
  async function mountEditor(...props: Parameters<typeof composer>) {
    await using stack = new AsyncDisposableStack();
    const screen = stack.use(await render(composer(...props)));
+diff --git a/apps/web/src/connection/platform.ts b/apps/web/src/connection/platform.ts
+index ee28ca372..c894362af 100644
+--- a/apps/web/src/connection/platform.ts
++++ b/apps/web/src/connection/platform.ts
+@@ -1,3 +1,4 @@
++import { isObsidianEmbedded } from "../obsidianHost";
+ import { msg } from "gt-react";
+ import {
+   ClientCapabilities,
+@@ -127,12 +128,15 @@ const networkPathChanges = Stream.callback<"network-changed">((queue) =>
+ const layerWakeups = Wakeups.layer({
+   changes: Stream.mergeAll(
+     [
+-      Stream.callback<"application-active">((queue) =>
++      Stream.callback<"application-active" | "application-active-check">((queue) =>
+         Effect.acquireRelease(
+           Effect.sync(() => {
+             const listener = () => {
+               if (document.visibilityState === "visible") {
+-                Queue.offerUnsafe(queue, "application-active");
++                Queue.offerUnsafe(
++                  queue,
++                  isObsidianEmbedded() ? "application-active-check" : "application-active",
++                );
+               }
+             };
+             document.addEventListener("visibilitychange", listener);
+diff --git a/packages/client-runtime/src/connection/supervisor.test.ts b/packages/client-runtime/src/connection/supervisor.test.ts
+index c8e241f8f..42cff2f8e 100644
+--- a/packages/client-runtime/src/connection/supervisor.test.ts
++++ b/packages/client-runtime/src/connection/supervisor.test.ts
+@@ -1707,7 +1707,8 @@ describe("EnvironmentSupervisor", () => {
+     }).pipe(Effect.provide(TestClock.layer())),
+   );
+ 
+-  it.effect("reconnects immediately when the foreground liveness probe fails", () =>
++  it.effect.each(["application-active", "application-active-check"] as const)(
++    "reconnects immediately when the %s liveness probe fails", (wakeup) =>
+     Effect.gen(function* () {
+       const allowReconnect = yield* Deferred.make<void>();
+       const harness = yield* makeHarness({
+@@ -1723,7 +1724,7 @@ describe("EnvironmentSupervisor", () => {
+       }).pipe(Effect.provide(harness.dependencies));
+ 
+       yield* awaitState(supervisor.state, (state) => state.phase === "connected");
+-      yield* harness.wake("application-active");
++      yield* harness.wake(wakeup);
+       const reconnecting = yield* awaitState(
+         supervisor.state,
+         (state) => state.phase === "connecting",
+diff --git a/packages/client-runtime/src/connection/supervisor.ts b/packages/client-runtime/src/connection/supervisor.ts
+index 0964db035..d345f78ab 100644
+--- a/packages/client-runtime/src/connection/supervisor.ts
++++ b/packages/client-runtime/src/connection/supervisor.ts
+@@ -720,7 +720,7 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
+       case "NetworkChanged":
+         return next.network === "offline" ? QUICK_CONNECTION_PROBE_TIMEOUT : undefined;
+       case "Wakeup":
+-        if (next.reason === "application-active") {
++        if (ConnectionWakeups.isForegroundWakeup(next.reason)) {
+           return CONNECTION_PROBE_TIMEOUT;
+         }
+         // After a long suspension the data on screen is stale, so a slow
+@@ -746,7 +746,7 @@ export const make = Effect.fn("EnvironmentSupervisor.make")(function* (
+   };
+ 
+   const isForegroundProbe = (next: SupervisorSignal) =>
+-    next._tag === "Wakeup" && next.reason === "application-active";
++    next._tag === "Wakeup" && ConnectionWakeups.isForegroundWakeup(next.reason);
+ 
+   // Ends "silent" when the host answers a fresh request while the socket
+   // delivers nothing, as when iOS kills a suspended socket without a close
+diff --git a/packages/client-runtime/src/connection/wakeups.test.ts b/packages/client-runtime/src/connection/wakeups.test.ts
+new file mode 100644
+index 000000000..91bd3dabe
+--- /dev/null
++++ b/packages/client-runtime/src/connection/wakeups.test.ts
+@@ -0,0 +1,27 @@
++import { describe, expect, it } from "vitest";
++import {
++  isForegroundWakeup,
++  reachesConnectionSupervisor,
++  resetsRetryBackoff,
++  shouldRelistAccountAfterWakeup,
++  shouldResubscribeAfterWakeup,
++} from "./wakeups.ts";
++
++describe("embedded view activation", () => {
++  it("probes the connection without replacing live shell subscriptions", () => {
++    const reason = "application-active-check";
++    expect(isForegroundWakeup(reason)).toBe(true);
++    expect(reachesConnectionSupervisor(reason)).toBe(true);
++    expect(resetsRetryBackoff(reason)).toBe(true);
++    expect(shouldRelistAccountAfterWakeup(reason)).toBe(true);
++    expect(shouldResubscribeAfterWakeup(reason)).toBe(false);
++  });
++
++  it("preserves ordinary foreground and mobile resubscription behavior", () => {
++    for (const reason of ["application-active", "application-active-probe", "application-active-long"] as const) {
++      expect(shouldResubscribeAfterWakeup(reason)).toBe(true);
++    }
++    expect(shouldResubscribeAfterWakeup("network-changed")).toBe(false);
++    expect(reachesConnectionSupervisor("application-focused")).toBe(false);
++  });
++});
+diff --git a/packages/client-runtime/src/connection/wakeups.ts b/packages/client-runtime/src/connection/wakeups.ts
+index 746160681..96b389d26 100644
+--- a/packages/client-runtime/src/connection/wakeups.ts
++++ b/packages/client-runtime/src/connection/wakeups.ts
+@@ -4,15 +4,20 @@ import type * as Stream from "effect/Stream";
+ 
+ export type ConnectionWakeup =
+   | "application-active"
++  | "application-active-check"
+   | "application-active-probe"
+   | "application-active-long"
+   | "application-focused"
+   | "credentials-changed"
+   | "network-changed";
+ 
++export function isForegroundWakeup(reason: ConnectionWakeup): boolean {
++  return reason === "application-active" || reason === "application-active-check";
++}
++
+ function isApplicationActiveWakeup(reason: ConnectionWakeup): boolean {
+   return (
+-    reason === "application-active" ||
++    isForegroundWakeup(reason) ||
+     reason === "application-active-probe" ||
+     reason === "application-active-long"
+   );
+@@ -23,13 +28,14 @@ export function resetsRetryBackoff(reason: ConnectionWakeup): boolean {
+ }
+ 
+ export function shouldResubscribeAfterWakeup(reason: ConnectionWakeup): boolean {
+-  return isApplicationActiveWakeup(reason);
++  // Embedded tab activation checks the socket without restarting live data subscriptions.
++  return reason !== "application-active-check" && isApplicationActiveWakeup(reason);
+ }
+ 
+ // A brief app switch (the mobile probe) does not justify listing the whole account again.
+ export function shouldRelistAccountAfterWakeup(reason: ConnectionWakeup): boolean {
+   return (
+-    reason === "application-active" ||
++    isForegroundWakeup(reason) ||
+     reason === "application-active-long" ||
+     reason === "application-focused"
+   );

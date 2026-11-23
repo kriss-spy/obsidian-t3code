@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Preserve the mounted T3 chat when switching back from an Obsidian note. Check the live connection without restarting session subscriptions.
 - Return keyboard focus to Obsidian on unused Escape. Preserve T3 menus, dialogs, suggestions, and terminal Escape handling.
 
 ## 0.1.2

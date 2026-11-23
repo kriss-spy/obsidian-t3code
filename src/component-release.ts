@@ -4,9 +4,9 @@ export const COMPONENT_ASSETS: Record<'core' | 'fonts', ComponentAsset> = {
   "core": {
     "version": "0.1.2",
     "kind": "core",
-    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.2-escape-focus/t3-core-0.1.2.json.gz",
-    "sha256": "d0ec7e0d259be2fd4cef34904925717c7085cc72c68e395a63fe901b3116f01b",
-    "bytes": 24946123
+    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.1.2-tab-activation/t3-core-0.1.2.json.gz",
+    "sha256": "3714d9ae88299db516f648fc0249cb8fe4add0b8fb4b809af0c083cc47cb5ffc",
+    "bytes": 25122118
   },
   "fonts": {
     "version": "0.1.2",
