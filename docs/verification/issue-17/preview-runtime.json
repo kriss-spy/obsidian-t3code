@@ -1,0 +1,95 @@
+{
+  "checkedAt": "2026-11-23T02:18:59.024Z",
+  "matrix": [
+    {
+      "theme": "Default",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Default",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Things",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Things",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    }
+  ]
+}

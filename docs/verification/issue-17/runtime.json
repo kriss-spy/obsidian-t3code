@@ -1,0 +1,248 @@
+{
+  "checkedAt": "2026-11-23T02:20:32.584Z",
+  "sources": [
+    {
+      "theme": "Minimal",
+      "version": "9.1.4",
+      "repository": "https://github.com/kepano/obsidian-minimal",
+      "revision": "6d260b4e0ce60e9563b2d9a268310b88934d0384",
+      "appearances": [
+        "light",
+        "dark"
+      ],
+      "variantCoverage": "Package defaults only; Style Settings variants were not tested."
+    },
+    {
+      "theme": "Things",
+      "version": "2.2.6",
+      "repository": "https://github.com/colineckert/obsidian-things",
+      "revision": "98dd0d1de1cb02ad49390e3558ae82dd2c871200",
+      "appearances": [
+        "light",
+        "dark"
+      ],
+      "variantCoverage": "Package defaults only; Style Settings variants were not tested."
+    },
+    {
+      "theme": "AnuPpuccin",
+      "version": "1.5.0",
+      "repository": "https://github.com/anubisnekhet/AnuPpuccin",
+      "revision": "82d207c646904e7af371ced499f682fbdfad1012",
+      "appearances": [
+        "light",
+        "dark"
+      ],
+      "variantCoverage": "Package defaults only; Style Settings variants were not tested."
+    },
+    {
+      "theme": "Catppuccin",
+      "version": "0.4.52",
+      "repository": "https://github.com/catppuccin/obsidian",
+      "revision": "5f36251340fb442b94492f4ec7d8e5093e0b50ad",
+      "appearances": [
+        "light",
+        "dark"
+      ],
+      "variantCoverage": "Package defaults only; Style Settings variants were not tested."
+    }
+  ],
+  "matrix": [
+    {
+      "theme": "Default",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#ffffff",
+      "accent": "#9873f7",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#ffffff",
+        "accent": "#9873f7"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Default",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#1c1c1c",
+      "accent": "#8a5cf5",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#1c1c1c",
+        "accent": "#8a5cf5"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#ffffff",
+      "accent": "#7c95a2",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#ffffff",
+        "accent": "#7c95a2"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#262626",
+      "accent": "#7992a0",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#262626",
+        "accent": "#7992a0"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Things",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#ffffff",
+      "accent": "#5893e7",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#ffffff",
+        "accent": "#5893e7"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Things",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#1c2127",
+      "accent": "#4d8ce6",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#1c2127",
+        "accent": "#4d8ce6"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#eff1f5",
+      "accent": "#9873f7",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#eff1f5",
+        "accent": "#9873f7"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#1e1e2e",
+      "accent": "#8a5cf5",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#1e1e2e",
+        "accent": "#8a5cf5"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#eff1f5",
+      "accent": "#7287fd",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#eff1f5",
+        "accent": "#7287fd"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#1e1e2e",
+      "accent": "#b4befe",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#1e1e2e",
+        "accent": "#b4befe"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark.png",
+      "menuItems": 12
+    }
+  ],
+  "checks": {
+    "accentCustomization": true,
+    "accentScreenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark-custom-accent.png",
+    "disableRetainsPalette": true,
+    "reenableAppliesCurrentAppearance": true,
+    "reconnect": true
+  }
+}

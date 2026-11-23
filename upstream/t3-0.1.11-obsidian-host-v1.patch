@@ -450,6 +450,60 @@ index 5217b068f..b51808d75 100644
 +    <UnscopedThreadRouteView {...props} />
 +  );
 +}
+diff --git a/apps/web/src/components/ThreadTerminalDrawer.tsx b/apps/web/src/components/ThreadTerminalDrawer.tsx
+index 54ae776e1..ca9098e8e 100644
+--- a/apps/web/src/components/ThreadTerminalDrawer.tsx
++++ b/apps/web/src/components/ThreadTerminalDrawer.tsx
+@@ -323,8 +323,16 @@ function readThemeColor(styles: CSSStyleDeclaration, variable: string, fallback:
+   return normalizeComputedColor(styles.getPropertyValue(variable), fallback);
+ }
+ 
++// Host fonts are transient and leave ordinary clients and stored T3 preferences untouched.
++function obsidianTerminalFont(family: string): string {
++  const styles = getComputedStyle(document.documentElement);
++  return styles.getPropertyValue("--obsidian-font-following").trim() === "1"
++    ? styles.getPropertyValue("--font-mono").trim() || family
++    : family;
++}
++
+ function terminalFontOptions(family: string, size: number): { family?: string; size: number } {
+-  const trimmed = family.trim();
++  const trimmed = obsidianTerminalFont(family).trim();
+   return trimmed.length > 0 ? { family: trimmed, size } : { size };
+ }
+ 
+@@ -714,6 +722,16 @@ function TerminalSessionViewport({
+     void terminalRef.current?.setFont(terminalFontOptions(terminalFontFamily, terminalFontSize));
+   }, [terminalFontFamily, terminalFontSize]);
+ 
++  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- applies the host font after its web fonts finish loading, including when following is disabled
++  useEffect(() => {
++    const syncFont = () => {
++      const current = terminalFontRef.current;
++      void terminalRef.current?.setFont(terminalFontOptions(current.family, current.size));
++    };
++    window.addEventListener("obsidian-fonts-change", syncFont);
++    return () => window.removeEventListener("obsidian-fonts-change", syncFont);
++  }, []);
++
+   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- creates the Ghostty terminal in the mount node and subscribes it to the terminal session
+   useEffect(() => {
+     const mount = containerRef.current;
+@@ -759,8 +777,12 @@ function TerminalSessionViewport({
+       terminal.input.readOnly = !hasTerminalWriteAccess();
+       // Reapply font settings hydrated during loading, when terminalRef was null.
+       const currentFont = terminalFontRef.current;
+-      if (currentFont.family !== setupFont.family || currentFont.size !== setupFont.size) {
+-        void terminal.setFont(terminalFontOptions(currentFont.family, currentFont.size));
++      const currentFontOptions = terminalFontOptions(currentFont.family, currentFont.size);
++      if (
++        currentFontOptions.family !== terminalOptions.font?.family ||
++        currentFontOptions.size !== terminalOptions.font?.size
++      ) {
++        void terminal.setFont(currentFontOptions);
+       }
+       const latestSession = readTerminalSession();
+       terminal.setSharedGrid(latestSession.grid);
 diff --git a/apps/web/src/components/chat/ChatComposer.tsx b/apps/web/src/components/chat/ChatComposer.tsx
 index 603edc067..d5a60e446 100644
 --- a/apps/web/src/components/chat/ChatComposer.tsx
@@ -1274,6 +1328,23 @@ index 452a6bbd5..553eeb01c 100644
      capabilities,
      activate,
      show,
+diff --git a/apps/web/src/hooks/useDefaultTheme.ts b/apps/web/src/hooks/useDefaultTheme.ts
+index 0f13d7572..3dda83a32 100644
+--- a/apps/web/src/hooks/useDefaultTheme.ts
++++ b/apps/web/src/hooks/useDefaultTheme.ts
+@@ -1,3 +1,4 @@
++import { isObsidianThemeFollowing } from "../obsidianThemeOwnership";
+ import { appAtomRegistry } from "../rpc/atomRegistry";
+ import { localEnvironmentIdAtom } from "../state/primaryEnvironment";
+ import { themeServerSettingsAtom } from "../state/server";
+@@ -105,6 +106,7 @@ function adoptDefaultAppearance(): void {
+ }
+ 
+ function adoptDefaults(): void {
++  if (isObsidianThemeFollowing()) return;
+   adoptDefaultTheme();
+   adoptDefaultAppearance();
+ }
 diff --git a/apps/web/src/hooks/useHandleNewThread.ts b/apps/web/src/hooks/useHandleNewThread.ts
 index 49e881262..298f5ba3b 100644
 --- a/apps/web/src/hooks/useHandleNewThread.ts
@@ -1364,6 +1435,49 @@ index 8cf6db23c..89124cda8 100644
      environments: () => environments,
      primaryEnvironmentId: () => primaryEnvironmentId,
      registry,
+diff --git a/apps/web/src/hooks/useTheme.ts b/apps/web/src/hooks/useTheme.ts
+index 2467d8909..a92ac575b 100644
+--- a/apps/web/src/hooks/useTheme.ts
++++ b/apps/web/src/hooks/useTheme.ts
+@@ -1,3 +1,4 @@
++import { notifyObsidianThemeChoice } from "../obsidianThemeOwnership";
+ import { pipe } from "effect/Function";
+ import type { DesktopBridge } from "@t3tools/contracts";
+ import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
+@@ -552,6 +553,7 @@ export function setTheme(next: Theme): boolean {
+   }
+   applyTheme(next, { suppressTransitions: true });
+   emitChange();
++  notifyObsidianThemeChoice(next);
+   return true;
+ }
+ 
+@@ -577,10 +579,11 @@ export function setAppearanceMode(nextAppearanceMode: ThemePreferenceMode): bool
+   themeStorageReadFailure = null;
+   applyTheme(getStored(), { suppressTransitions: true });
+   emitChange();
++  notifyObsidianThemeChoice();
+   return true;
+ }
+ 
+-function setThemeHalf(appearance: ThemeAppearance, themeId: string | null): boolean {
++export function setThemeHalf(appearance: ThemeAppearance, themeId: string | null): boolean {
+   if (typeof window === "undefined") return false;
+   try {
+     const current = readStoredThemeHalvesRaw();
+@@ -607,10 +610,12 @@ function setThemeHalf(appearance: ThemeAppearance, themeId: string | null): bool
+   }
+   applyTheme(getStored(), { suppressTransitions: true });
+   emitChange();
++  notifyObsidianThemeChoice(themeId ?? undefined);
+   return true;
+ }
+ 
+ function clearThemeHalves(): boolean {
++  notifyObsidianThemeChoice();
+   if (typeof window === "undefined") return false;
+   try {
+     window.localStorage.removeItem(THEME_HALVES_STORAGE_KEY);
 diff --git a/apps/web/src/lib/archivedThreadsState.ts b/apps/web/src/lib/archivedThreadsState.ts
 index fbd17226c..093a1e7d1 100644
 --- a/apps/web/src/lib/archivedThreadsState.ts
@@ -1526,10 +1640,10 @@ index 112de4848..91a1abe26 100644
  const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 diff --git a/apps/web/src/obsidianHost.ts b/apps/web/src/obsidianHost.ts
 new file mode 100644
-index 000000000..c9602d7e3
+index 000000000..1b02d3d4f
 --- /dev/null
 +++ b/apps/web/src/obsidianHost.ts
-@@ -0,0 +1,651 @@
+@@ -0,0 +1,713 @@
 +// Opt-in host protocol; ordinary browser and desktop clients retain their existing behavior.
 +const SCOPE_COVERAGE = [
 +  "active",
@@ -1586,12 +1700,19 @@ index 000000000..c9602d7e3
 +} | null = null;
 +const roots = new Set<string>();
 +function absoluteHostPath(value: unknown): value is string {
-+  return typeof value === "string" && !value.includes("\0") &&
-+    (value.startsWith("/") || /^[a-z]:[\\/]/i.test(value) || /^\\\\[^\\/]+[\\/][^\\/]+[\\/]/.test(value));
++  return (
++    typeof value === "string" &&
++    !value.includes("\0") &&
++    (value.startsWith("/") ||
++      /^[a-z]:[\\/]/i.test(value) ||
++      /^\\\\[^\\/]+[\\/][^\\/]+[\\/]/.test(value))
++  );
 +}
 +function hostPathKey(value: string): string {
 +  const normalized = value.replace(/\\/g, "/").replace(/\/$/, "");
-+  return /^[a-z]:\//i.test(normalized) || normalized.startsWith("//") ? normalized.toLowerCase() : normalized;
++  return /^[a-z]:\//i.test(normalized) || normalized.startsWith("//")
++    ? normalized.toLowerCase()
++    : normalized;
 +}
 +const queue: Request[] = [];
 +const pending = new Map<
@@ -1619,11 +1740,26 @@ index 000000000..c9602d7e3
 +    queue.push({ ...value, id, generation });
 +  });
 +}
++let themeHost: ReturnType<typeof import("./obsidianTheme").createObsidianThemeHost> | undefined;
++let themeHostLoading: Promise<void> | undefined;
++let themeHostClosed = false;
++async function loadThemeHost() {
++  if (!themeHostLoading)
++    themeHostLoading = import("./obsidianTheme").then((module) => {
++      if (!themeHostClosed)
++        themeHost = module.createObsidianThemeHost(() => initialized && !themeHostClosed);
++    });
++  await themeHostLoading;
++  if (!themeHost) throw Error("Theme host is closed");
++  return themeHost;
++}
 +if (embedded)
 +  Object.defineProperty(window, "t3ObsidianHostV1", {
 +    value: Object.freeze({
-+      build: "obsidian-host-v1.6",
++      build: "obsidian-host-v1.9",
 +      protocol: 1,
++      themeCapability: 2,
++      fontCapability: 1,
 +      revision: OBSIDIAN_HOST_REVISION,
 +      initialize(input: {
 +        generation: string;
@@ -1642,10 +1778,7 @@ index 000000000..c9602d7e3
 +          throw new Error("Invalid host initialization");
 +        generation = input.generation;
 +        environmentId = input.environmentId;
-+        vaultRoot =
-+          absoluteHostPath(input.vaultRoot)
-+            ? input.vaultRoot
-+            : null;
++        vaultRoot = absoluteHostPath(input.vaultRoot) ? input.vaultRoot : null;
 +        localReady = input.requiresLocalProof !== true;
 +        initialized = true;
 +        readyResolve();
@@ -1653,9 +1786,48 @@ index 000000000..c9602d7e3
 +          protocol: 1,
 +          revision: OBSIDIAN_HOST_REVISION,
 +          generation,
-+          build: "obsidian-host-v1.6",
++          build: "obsidian-host-v1.9",
 +          coverage: SCOPE_COVERAGE,
 +        };
++      },
++      async configureTheme(input: {
++        generation: string;
++        token: string;
++        revision: number;
++        enabled: boolean;
++        palette?: unknown;
++      }) {
++        if (!initialized || input.generation !== generation || themeHostClosed)
++          throw Error("Invalid theme generation");
++        const theme = await loadThemeHost();
++        if (input.generation !== generation || themeHostClosed)
++          throw Error("Stale theme generation");
++        return theme.configure(input);
++      },
++      async fontsChanged(input: { generation: string }) {
++        if (!initialized || input.generation !== generation || themeHostClosed)
++          throw Error("Invalid font generation");
++        const styles = getComputedStyle(document.documentElement);
++        await Promise.all(
++          ["--font-sans", "--obsidian-font-text", "--font-mono"].map(async (variable) => {
++            const family = styles.getPropertyValue(variable).trim();
++            if (family) await document.fonts.load("16px " + family).catch(() => undefined);
++          }),
++        );
++        if (!initialized || input.generation !== generation || themeHostClosed) return false;
++        window.dispatchEvent(new Event("obsidian-fonts-change"));
++        return true;
++      },
++      themeStatus(input: { generation: string }) {
++        if (!initialized || input.generation !== generation || themeHostClosed)
++          throw Error("Invalid theme generation");
++        return themeHost?.status() ?? null;
++      },
++      closeTheme(input: { generation: string }) {
++        if (input.generation !== generation) return false;
++        themeHostClosed = true;
++        themeHost?.dispose();
++        return true;
 +      },
 +      async localConnectionReady() {
 +        const [{ appAtomRegistry }, { environmentShell }, { EnvironmentId }] = await Promise.all([
@@ -1675,11 +1847,11 @@ index 000000000..c9602d7e3
 +          !vaultRoot ||
 +          !absoluteHostPath(input.path) ||
 +          !hostPathKey(input.path).startsWith(hostPathKey(vaultRoot) + "/") ||
-+          input.path.split(/[\\/]/).some(part => part === "." || part === "..") ||
++          input.path.split(/[\\/]/).some((part) => part === "." || part === "..") ||
 +          !/[\\/]t3-code-host-[a-f0-9-]{36}$/.test(input.path) ||
 +          (input.machinePath !== undefined &&
 +            (!absoluteHostPath(input.machinePath) ||
-+              input.machinePath.split(/[\\/]/).some(part => part === "." || part === "..") ||
++              input.machinePath.split(/[\\/]/).some((part) => part === "." || part === "..") ||
 +              !/[\\/]t3-code-machine-[a-f0-9-]{36}$/.test(input.machinePath)))
 +        )
 +          throw new Error("Invalid local proof request");
@@ -1710,7 +1882,10 @@ index 000000000..c9602d7e3
 +            throw new Error("Incomplete local proof");
 +          return result.contents;
 +        };
-+        return { token: await read(input.path), machine: (await read(input.machinePath ?? "/etc/machine-id")).trim() };
++        return {
++          token: await read(input.path),
++          machine: (await read(input.machinePath ?? "/etc/machine-id")).trim(),
++        };
 +      },
 +      confirmLocal(input: { generation: string }) {
 +        if (!initialized || input.generation !== generation) return false;
@@ -2081,7 +2256,8 @@ index 000000000..c9602d7e3
 +}
 +
 +export async function verifyObsidianMarkdown(env: string | null, path: string): Promise<boolean> {
-+  if (!canOpenObsidianMarkdown(env) || !absoluteHostPath(path) || !/\.md$/i.test(path)) return false;
++  if (!canOpenObsidianMarkdown(env) || !absoluteHostPath(path) || !/\.md$/i.test(path))
++    return false;
 +  const route = location.pathname;
 +  try {
 +    return (
@@ -2181,6 +2357,288 @@ index 000000000..c9602d7e3
 +    .catch(() => {});
 +  return true;
 +}
+diff --git a/apps/web/src/obsidianTheme.ts b/apps/web/src/obsidianTheme.ts
+new file mode 100644
+index 000000000..9fb993b26
+--- /dev/null
++++ b/apps/web/src/obsidianTheme.ts
+@@ -0,0 +1,201 @@
++import { getThemeColorVariable } from "./themePalette";
++import { randomUUID } from "./lib/utils";
++import { THEME_COLOR_ROLES } from "@t3tools/shared/themePalettes";
++import {
++  getThemeSnapshot,
++  setTheme,
++  setAppearanceMode,
++  setThemeHalf,
++  refreshTheme,
++} from "./hooks/useTheme";
++import {
++  getThemeDefinition,
++  parseThemeFile,
++  installCustomTheme,
++  updateCustomTheme,
++  removeCustomTheme,
++  serializeThemeFile,
++} from "./themePalette";
++import {
++  onObsidianThemeChoice,
++  setObsidianThemeFollowing,
++  writeObsidianTheme,
++} from "./obsidianThemeOwnership";
++
++const STORAGE = "t3code:obsidian-host-theme:v1";
++type RecordState = {
++  id?: string;
++  definition?: string;
++  blocked?: string | undefined;
++  requested?: { token: string; following: boolean };
++};
++export function createObsidianThemeHost(current: () => boolean) {
++  let token = "",
++    enabled = false,
++    revision = -1,
++    fingerprint = "",
++    disposed = false;
++  function read(): RecordState {
++    const raw = window.localStorage.getItem(STORAGE);
++    return raw ? JSON.parse(raw) : {};
++  }
++  function save(value: RecordState) {
++    window.localStorage.setItem(STORAGE, JSON.stringify(value));
++  }
++  const unsubscribe = onObsidianThemeChoice((themeId) => {
++    if (disposed || !current() || !token) return;
++    const record = read();
++    const owned = record.id ? getThemeDefinition(record.id) : null;
++    // Only the unchanged host-owned palette resumes following, never a matching display name.
++    enabled =
++      themeId === record.id && owned !== null && serializeThemeFile(owned) === record.definition;
++    setObsidianThemeFollowing(enabled);
++    try {
++      save({
++        ...record,
++        blocked: enabled ? undefined : token,
++        requested: { token, following: enabled },
++      });
++    } catch {
++      /* The host also receives the in-memory selection. */
++    }
++  });
++  function status() {
++    const record = read();
++    const following = record.requested?.token === token ? record.requested.following : enabled;
++    return {
++      version: 2,
++      token,
++      following,
++      requested: record.requested?.token === token,
++      suspended: !!token && !following,
++    };
++  }
++
++  return {
++    status,
++    configure(input: { token: string; revision: number; enabled: boolean; palette?: unknown }) {
++      if (
++        disposed ||
++        !current() ||
++        !input ||
++        !Number.isSafeInteger(input.revision) ||
++        input.revision <= revision ||
++        typeof input.token !== "string" ||
++        !/^[a-f0-9-]{36}$/.test(input.token)
++      )
++        throw Error("Stale or invalid theme request");
++      revision = input.revision;
++      const record = read();
++      token = input.token;
++      // A queued host update cannot undo a newer manual choice. The plugin acknowledges
++      // that choice by sending its matching state. A new token means an explicit toggle.
++      if (record.requested?.token === token && record.requested.following !== input.enabled) {
++        enabled = record.requested.following;
++        setObsidianThemeFollowing(enabled);
++        return status();
++      }
++      if (record.requested) {
++        delete record.requested;
++        save(record);
++      }
++      enabled = input.enabled && record.blocked !== token;
++      setObsidianThemeFollowing(enabled);
++      if (!enabled) return status();
++      const raw = input.palette as
++        | { version?: unknown; appearance?: unknown; colors?: unknown }
++        | undefined;
++      if (
++        !raw ||
++        raw.version !== 1 ||
++        !raw.colors ||
++        typeof raw.colors !== "object" ||
++        Object.keys(raw.colors).length !== THEME_COLOR_ROLES.length ||
++        THEME_COLOR_ROLES.some(
++          (role) => !/^#[a-f0-9]{6}$/i.test((raw.colors as Record<string, string>)[role] ?? ""),
++        )
++      )
++        throw Error("A complete opaque Obsidian palette is required");
++      const previous = getThemeSnapshot();
++      const owned = record.id ? getThemeDefinition(record.id) : null;
++      const mayUpdate = owned !== null && serializeThemeFile(owned) === record.definition;
++      // Never overwrite an installed or published theme based on its name or id alone.
++      const id = mayUpdate ? owned.id : "obsidian-" + randomUUID();
++      const theme = parseThemeFile({ ...raw, id, name: "Obsidian" });
++      const nextFingerprint = serializeThemeFile(theme);
++      if (
++        fingerprint === nextFingerprint &&
++        previous.theme === id &&
++        previous.resolvedTheme === theme.appearance &&
++        previous.appearanceMode === theme.appearance &&
++        previous.themeHalves === null
++      )
++        return status();
++      return writeObsidianTheme(() => {
++        let installed = false;
++        try {
++          if (mayUpdate) updateCustomTheme(theme);
++          else installCustomTheme(theme);
++          installed = true;
++          if (!setTheme(id) || !setAppearanceMode(theme.appearance))
++            throw Error("T3 rejected a theme preference write");
++          refreshTheme();
++          const after = getThemeSnapshot();
++          if (
++            after.theme !== id ||
++            after.resolvedTheme !== theme.appearance ||
++            after.appearanceMode !== theme.appearance ||
++            after.themeHalves !== null ||
++            THEME_COLOR_ROLES.some(
++              (role) =>
++                document.documentElement.style.getPropertyValue(getThemeColorVariable(role)) !==
++                theme.colors[role],
++            )
++          )
++            throw Error("T3 theme verification failed");
++          save({ ...record, id, definition: nextFingerprint });
++          fingerprint = nextFingerprint;
++          return status();
++        } catch (error) {
++          let restored = true;
++          if (installed) {
++            try {
++              if (mayUpdate) updateCustomTheme(owned);
++            } catch {
++              restored = false;
++            }
++          }
++          restored = setTheme(previous.theme) && restored;
++          for (const appearance of ["light", "dark"] as const)
++            if (previous.themeHalves?.[appearance])
++              restored = setThemeHalf(appearance, previous.themeHalves[appearance]) && restored;
++          restored = setAppearanceMode(previous.appearanceMode) && restored;
++          refreshTheme();
++          if (installed && !mayUpdate && getThemeSnapshot().theme !== id) {
++            try {
++              removeCustomTheme(id);
++            } catch {
++              restored = false;
++            }
++          }
++          fingerprint = "";
++          if (!restored) {
++            enabled = false;
++            setObsidianThemeFollowing(false);
++            throw Error(
++              "Theme update failed and rollback was incomplete. Theme following stopped.",
++              { cause: error },
++            );
++          }
++          throw error;
++        }
++      });
++    },
++    dispose() {
++      disposed = true;
++      enabled = false;
++      setObsidianThemeFollowing(false);
++      unsubscribe();
++    },
++  };
++}
+diff --git a/apps/web/src/obsidianThemeOwnership.ts b/apps/web/src/obsidianThemeOwnership.ts
+new file mode 100644
+index 000000000..fbad3deae
+--- /dev/null
++++ b/apps/web/src/obsidianThemeOwnership.ts
+@@ -0,0 +1,27 @@
++// Only the opt-in host subscribes. Ordinary clients keep their normal setters.
++let hostWrite = 0;
++let following = false;
++const listeners = new Set<(themeId?: string) => void>();
++export function isObsidianThemeFollowing() {
++  return following;
++}
++export function setObsidianThemeFollowing(value: boolean) {
++  following = value;
++}
++export function onObsidianThemeChoice(listener: (themeId?: string) => void) {
++  listeners.add(listener);
++  return () => {
++    listeners.delete(listener);
++  };
++}
++export function notifyObsidianThemeChoice(themeId?: string) {
++  if (!hostWrite) for (const listener of listeners) listener(themeId);
++}
++export function writeObsidianTheme<T>(write: () => T): T {
++  hostWrite++;
++  try {
++    return write();
++  } finally {
++    hostWrite--;
++  }
++}
+diff --git a/apps/web/src/pierre-icons.test.ts b/apps/web/src/pierre-icons.test.ts
+index 734cac865..575bf6b3d 100644
+--- a/apps/web/src/pierre-icons.test.ts
++++ b/apps/web/src/pierre-icons.test.ts
+@@ -1,6 +1,7 @@
+ import { assert, describe, it } from "vite-plus/test";
+ 
+ import {
++  basenameOfPath,
+   hasSpecificPierreIconForFileName,
+   resolvePierreIconForEntry,
+   syntheticFileNameForLanguageId,
+@@ -8,6 +9,16 @@ import {
+ } from "./pierre-icons";
+ 
+ describe("Pierre file icons", () => {
++  it.each([
++    ["C:\\Users\\tester\\cloudnotes\\lessons", "lessons"],
++    ["C:\\Users\\tester\\cloudnotes\\空 note.md", "空 note.md"],
++    ["C:/Users/tester/cloudnotes\\lessons", "lessons"],
++    ["\\\\host\\share\\folder\\note.md", "note.md"],
++    ["/home/tester/cloudnotes/lessons", "lessons"],
++    ["note.md", "note.md"],
++  ])("shows only the final name for %s", (path, label) => {
++    assert.equal(basenameOfPath(path), label);
++  });
+   it.each(["photo.heic", "photo.heif", "PHOTO.HEIC", "folder/photo.HEIF"])(
+     "uses the image icon for %s",
+     (name) => {
+diff --git a/apps/web/src/pierre-icons.ts b/apps/web/src/pierre-icons.ts
+index aa45b3025..3fc68e86b 100644
+--- a/apps/web/src/pierre-icons.ts
++++ b/apps/web/src/pierre-icons.ts
+@@ -217,7 +217,7 @@ const LANGUAGE_EXTENSION_ALIASES: Record<string, string> = {
+ };
+ 
+ export function basenameOfPath(pathValue: string): string {
+-  const slashIndex = pathValue.lastIndexOf("/");
++  const slashIndex = Math.max(pathValue.lastIndexOf("/"), pathValue.lastIndexOf("\\"));
+   return slashIndex === -1 ? pathValue : pathValue.slice(slashIndex + 1);
+ }
+ 
 diff --git a/apps/web/src/routes/_chat.index.tsx b/apps/web/src/routes/_chat.index.tsx
 index 2e6ee5380..d7a8a5a8f 100644
 --- a/apps/web/src/routes/_chat.index.tsx
@@ -2742,6 +3200,31 @@ index 2e450cff9..36fa9c0f9 100644
    if (symbolsFontLoad !== null) return symbolsFontLoad;
    symbolsFontLoad = (async () => {
      try {
+diff --git a/apps/web/src/themePalette.ts b/apps/web/src/themePalette.ts
+index d04e7e167..a2ee3a3af 100644
+--- a/apps/web/src/themePalette.ts
++++ b/apps/web/src/themePalette.ts
+@@ -1,3 +1,4 @@
++import { notifyObsidianThemeChoice } from "./obsidianThemeOwnership";
+ import { pipe } from "effect/Function";
+ import { THEME_CSS_MAX_LENGTH, type EnvironmentTheme } from "@t3tools/contracts";
+ import * as Equal from "effect/Equal";
+@@ -1389,6 +1390,7 @@ export function installCustomTheme(theme: ThemeDefinition): ThemeDefinition {
+ }
+ 
+ export function updateCustomTheme(theme: ThemeDefinition): ThemeDefinition {
++  notifyObsidianThemeChoice();
+   if (RESERVED_THEME_IDS.has(theme.id)) {
+     throw new Error(m(msg('The theme id "{id}" is reserved.', { id: theme.id })));
+   }
+@@ -1726,6 +1728,7 @@ export function applyThemeColorPreview(
+   appearance: ThemeAppearance,
+   css?: string,
+ ): void {
++  notifyObsidianThemeChoice();
+   if (typeof document === "undefined") return;
+   const root = document.documentElement;
+   if (!root?.style) return;
 diff --git a/apps/web/src/useObsidianMarkdown.ts b/apps/web/src/useObsidianMarkdown.ts
 new file mode 100644
 index 000000000..bdcdb0ce6
@@ -2767,45 +3250,3 @@ index 000000000..bdcdb0ce6
 +  }, [env, path, key]);
 +  return verified === key;
 +}
-diff --git a/apps/web/src/pierre-icons.test.ts b/apps/web/src/pierre-icons.test.ts
-index 734cac86..575bf6b3 100644
---- a/apps/web/src/pierre-icons.test.ts
-+++ b/apps/web/src/pierre-icons.test.ts
-@@ -1,6 +1,7 @@
- import { assert, describe, it } from "vite-plus/test";
- 
- import {
-+  basenameOfPath,
-   hasSpecificPierreIconForFileName,
-   resolvePierreIconForEntry,
-   syntheticFileNameForLanguageId,
-@@ -8,6 +9,16 @@ import {
- } from "./pierre-icons";
- 
- describe("Pierre file icons", () => {
-+  it.each([
-+    ["C:\\Users\\tester\\cloudnotes\\lessons", "lessons"],
-+    ["C:\\Users\\tester\\cloudnotes\\空 note.md", "空 note.md"],
-+    ["C:/Users/tester/cloudnotes\\lessons", "lessons"],
-+    ["\\\\host\\share\\folder\\note.md", "note.md"],
-+    ["/home/tester/cloudnotes/lessons", "lessons"],
-+    ["note.md", "note.md"],
-+  ])("shows only the final name for %s", (path, label) => {
-+    assert.equal(basenameOfPath(path), label);
-+  });
-   it.each(["photo.heic", "photo.heif", "PHOTO.HEIC", "folder/photo.HEIF"])(
-     "uses the image icon for %s",
-     (name) => {
-diff --git a/apps/web/src/pierre-icons.ts b/apps/web/src/pierre-icons.ts
-index aa45b302..3fc68e86 100644
---- a/apps/web/src/pierre-icons.ts
-+++ b/apps/web/src/pierre-icons.ts
-@@ -217,7 +217,7 @@ const LANGUAGE_EXTENSION_ALIASES: Record<string, string> = {
- };
- 
- export function basenameOfPath(pathValue: string): string {
--  const slashIndex = pathValue.lastIndexOf("/");
-+  const slashIndex = Math.max(pathValue.lastIndexOf("/"), pathValue.lastIndexOf("\\"));
-   return slashIndex === -1 ? pathValue : pathValue.slice(slashIndex + 1);
- }
- 

@@ -8,6 +8,8 @@ import { verifySharedFilesystem } from './local-proof';
 import { HostSession } from './host-contract';
 import { HostBridge } from './host-bridge';
 import { createGuest, type Guest } from './guest';
+import { readObsidianTheme } from './theme';
+import { readObsidianFontCSS } from './fonts';
 export const VIEW_TYPE = 't3-code-workspace';
 export class T3View extends ItemView {
   private guest?: Guest;
@@ -18,6 +20,9 @@ export class T3View extends ItemView {
   private connecting?: Promise<void>;
   private cssKey?: string;
   private appearanceGeneration = 0;
+  private themeReady = false;
+  private themeRevision = 0;
+  private themeTimer?: ReturnType<typeof setTimeout>;
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
   getViewType() { return VIEW_TYPE; }
   getDisplayText() { return 'T3 Code'; }
@@ -34,6 +39,8 @@ export class T3View extends ItemView {
   disconnect() {
     ++this.generation;
     ++this.appearanceGeneration;
+    this.themeReady = false;
+    clearTimeout(this.themeTimer);
     for (const fn of this.cleanup.splice(0)) fn();
     this.bridge?.close();
     this.bridge = undefined;
@@ -115,6 +122,10 @@ export class T3View extends ItemView {
       if (!current()) return;
       await bridge.initialize();
       if (!current()) return;
+      this.themeReady = true;
+      const observer = new MutationObserver(() => { void this.syncAppearance(); });
+      observer.observe(this.contentEl.ownerDocument.body,{attributes:true,attributeFilter:['class','style']});
+      this.cleanup.push(()=>observer.disconnect());
       guest.classList.remove('t3-code-pending');
       let localVerified = false;
       let verifying = false;
@@ -134,6 +145,9 @@ export class T3View extends ItemView {
         } finally { verifying = false; }
       };
       const timer = hostWindow.setInterval(() => {
+        void bridge.themeStatus().then(state=>{
+          if(current() && state)void this.plugin.themeFollowingChanged(state.token,state.following,state.requested);
+        }).catch(error=>{if(current())this.plugin.diagnostic=String(error);});
         if (!localVerified) { void verify(); return; }
         void bridge.poll().catch(() => {
           if(current()) {this.disconnect();this.showUnavailable('T3 host integration disconnected. Reconnect to resume.', origin);}
@@ -194,6 +208,7 @@ export class T3View extends ItemView {
     this.guest.focus();
   }
   async syncAppearance() {
+    this.scheduleTheme();
     const generation = ++this.appearanceGeneration;
     const guest = this.guest;
     if (!guest) return;
@@ -202,15 +217,37 @@ export class T3View extends ItemView {
     try {
       if (oldKey) await guest.removeInsertedCSS(oldKey);
       if (guest !== this.guest || generation !== this.appearanceGeneration) return;
-      const hostWindow = this.contentEl.ownerDocument.defaultView ?? window;
-      const font = hostWindow.getComputedStyle(this.contentEl.ownerDocument.body).fontFamily.replace(/[;{}]/g, '');
-      // T3 owns all palette colors. Host color overrides break T3's theme editor.
-      const fontCSS = this.plugin.settings.followAppearance ? `:root{--font-sans:${font}!important}html,body{font-family:var(--font-sans)!important}` : '';
+      // Fonts stay independent. Complete palettes use the versioned client theme API.
+      const fontCSS = this.plugin.settings.followAppearance ? await readObsidianFontCSS(this.contentEl.ownerDocument.body) : '';
+      if (guest !== this.guest || generation !== this.appearanceGeneration) return;
       const css = fontCSS + '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}';
       const key = await guest.insertCSS(css);
-      if (guest === this.guest && generation === this.appearanceGeneration) this.cssKey = key;
+      if (guest === this.guest && generation === this.appearanceGeneration) {
+        this.cssKey = key;
+        await this.bridge?.fontsChanged();
+      }
       else await guest.removeInsertedCSS(key);
     } catch { /* A closing document has no remaining stylesheet to update. */ }
+  }
+  private scheduleTheme() {
+    clearTimeout(this.themeTimer);
+    if(!this.themeReady || !this.bridge)return;
+    const bridge=this.bridge, generation=this.generation, revision=++this.themeRevision;
+    this.themeTimer=setTimeout(()=>{
+      if(generation!==this.generation || bridge!==this.bridge)return;
+      const {followTheme,themeFollowToken}=this.plugin.settings;
+      if(!themeFollowToken)return;
+      void (async()=>{
+        try {
+          const palette=followTheme?readObsidianTheme(this.contentEl.ownerDocument.body):undefined;
+          await bridge.configureTheme(themeFollowToken,revision,followTheme,palette);
+          const state=await bridge.themeStatus();
+          if(generation===this.generation && state)await this.plugin.themeFollowingChanged(state.token,state.following,state.requested);
+        } catch(error) {
+          if(generation===this.generation && revision===this.themeRevision)this.plugin.diagnostic='Obsidian theme update failed. '+String(error);
+        }
+      })();
+    },80);
   }
   private showUnavailable(message: string, origin: string) {
     this.contentEl.empty();

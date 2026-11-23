@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-11-23T06:22:52.654Z",
+  "checks": {
+    "threeRoles": true,
+    "platformFonts": true,
+    "terminalFont": true,
+    "themeEmbeddedFonts": true,
+    "disableRestoresT3": true,
+    "reenable": true,
+    "reconnect": true
+  },
+  "baseline": {
+    "following": false,
+    "ui": "-apple-system, BlinkMacSystemFont, \"Inter Variable\", \"Segoe UI\", system-ui, sans-serif",
+    "chat": "-apple-system, BlinkMacSystemFont, \"Inter Variable\", \"Segoe UI\", system-ui, sans-serif",
+    "composer": "-apple-system, BlinkMacSystemFont, \"Inter Variable\", \"Segoe UI\", system-ui, sans-serif",
+    "code": "ui-monospace, \"SF Mono\", SFMono-Regular, Menlo, Consolas, \"Liberation Mono\", monospace",
+    "theme": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a"
+  },
+  "system": {
+    "following": true,
+    "ui": "\"Liberation Sans\", sans-serif",
+    "chat": "\"Liberation Serif\", serif",
+    "composer": "\"Liberation Serif\", serif",
+    "code": "\"Noto Sans Mono\", monospace",
+    "theme": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a"
+  },
+  "systemScreenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/fonts/system-font-mapping.png",
+  "platformSystem": {
+    "ui": [
+      {
+        "familyName": "Liberation Sans",
+        "glyphCount": 28,
+        "isCustomFont": false,
+        "postScriptName": "LiberationSans"
+      }
+    ],
+    "chat": [
+      {
+        "familyName": "Liberation Serif",
+        "glyphCount": 134,
+        "isCustomFont": false,
+        "postScriptName": "LiberationSerif"
+      }
+    ],
+    "composer": [
+      {
+        "familyName": "Liberation Serif",
+        "glyphCount": 60,
+        "isCustomFont": false,
+        "postScriptName": "LiberationSerif"
+      }
+    ],
+    "code": [
+      {
+        "familyName": "Noto Sans Mono",
+        "glyphCount": 6,
+        "isCustomFont": false,
+        "postScriptName": "NotoSansMono-Regular"
+      }
+    ]
+  },
+  "terminalScreenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/fonts/terminal-font-mapping.png",
+  "embeddedScreenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/fonts/theme-embedded-fonts.png",
+  "embedded": {
+    "following": true,
+    "ui": "\"Liberation Sans\", sans-serif",
+    "chat": "Vollkorn, serif",
+    "composer": "Vollkorn, serif",
+    "code": "\"Source Code Pro\", monospace",
+    "terminal": "13px \"Source Code Pro\", monospace, \"Symbols Nerd Font Mono\", \"Symbols Nerd Font\", \"JetBrainsMono Nerd Font\", \"JetBrainsMono NF\", \"FiraCode Nerd Font\", \"Hack Nerd Font\", \"MesloLGS NF\", \"CaskaydiaCove Nerd Font\", PowerlineSymbols, monospace",
+    "theme": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a"
+  },
+  "platformEmbedded": {
+    "chat": [
+      {
+        "familyName": "Vollkorn",
+        "glyphCount": 134,
+        "isCustomFont": true,
+        "postScriptName": "Vollkorn-Regular"
+      }
+    ],
+    "code": [
+      {
+        "familyName": "Source Code Pro",
+        "glyphCount": 6,
+        "isCustomFont": true,
+        "postScriptName": "SourceCodePro-Regular"
+      }
+    ]
+  }
+}

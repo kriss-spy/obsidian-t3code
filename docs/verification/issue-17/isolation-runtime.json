@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-11-23T02:22:00.326Z",
+  "ordinaryClientAndOtherVaultPartitionUnchanged": true,
+  "before": [
+    {
+      "dark": true,
+      "background": "#000",
+      "foreground": "oklch(97% 0 none)",
+      "metadata": null,
+      "marker": "unchanged",
+      "host": false
+    },
+    {
+      "dark": true,
+      "background": "#000",
+      "foreground": "oklch(97% 0 none)",
+      "metadata": null,
+      "marker": "unchanged",
+      "host": false
+    }
+  ],
+  "after": [
+    {
+      "dark": true,
+      "background": "#000",
+      "foreground": "oklch(97% 0 none)",
+      "metadata": null,
+      "marker": "unchanged",
+      "host": false
+    },
+    {
+      "dark": true,
+      "background": "#000",
+      "foreground": "oklch(97% 0 none)",
+      "metadata": null,
+      "marker": "unchanged",
+      "host": false
+    }
+  ]
+}

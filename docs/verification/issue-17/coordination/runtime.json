@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-11-23T06:38:07.126Z",
+  "checks": {
+    "otherThemeDisablesToggle": true,
+    "otherThemeRetainsOwnPalette": true,
+    "obsidianSelectionResumesAndChecksToggle": true,
+    "laterObsidianThemeChangesFollow": true,
+    "appearanceOverrideDisables": true,
+    "reselectingActivePaletteResumes": true,
+    "pluginToggleOffRetainsPalette": true,
+    "selectingFrozenPaletteResumes": true,
+    "rapidReselectionKeepsLatestIntent": true,
+    "fontFollowingIndependent": true,
+    "reconnectContinuesFollowing": true
+  }
+}

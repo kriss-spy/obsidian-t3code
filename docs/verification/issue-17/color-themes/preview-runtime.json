@@ -1,0 +1,59 @@
+{
+  "checkedAt": "2026-11-23T02:29:18.286Z",
+  "matrix": [
+    {
+      "theme": "Tokyo Night",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Tokyo Night",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Obsidian gruvbox",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Obsidian gruvbox",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Everforest Enchanted",
+      "appearance": "light",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-light-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-light-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-light-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    },
+    {
+      "theme": "Everforest Enchanted",
+      "appearance": "dark",
+      "diff": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-dark-diff.png",
+      "markdown": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-dark-markdown.png",
+      "code": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-dark-code.png",
+      "diffTextPresent": true,
+      "codeTextPresent": true
+    }
+  ]
+}

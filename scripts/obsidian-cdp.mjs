@@ -10,18 +10,19 @@ export async function connectDevelopmentVault(endpoint, expectedVault) {
   let sequence = 0;
   const pending = new Map();
   socket.onmessage = event => {const reply=JSON.parse(event.data);pending.get(reply.id)?.(reply);};
-  async function evaluate(expression) {
+  async function call(method, params) {
     const id = ++sequence;
     const response = new Promise((resolve,reject) => {
       const timer=setTimeout(() => {pending.delete(id);reject(new Error('CDP evaluation timed out.'));},30000);
       pending.set(id, reply => {clearTimeout(timer);pending.delete(id);resolve(reply);});
     });
-    socket.send(JSON.stringify({id,method:'Runtime.evaluate',params:{expression,awaitPromise:true,returnByValue:true}}));
+    socket.send(JSON.stringify({id,method,params}));
     const reply = await response;
     if (reply.error || reply.result.exceptionDetails) throw new Error(JSON.stringify(reply.error ?? reply.result.exceptionDetails));
-    return reply.result.result.value;
+    return reply.result;
   }
+  async function evaluate(expression) { return (await call('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true})).result.value; }
   try { if (await evaluate('app.vault.adapter.getBasePath()') !== expectedVault) throw new Error('Refuse to operate on another vault.'); }
   catch (error) {socket.close();throw error;}
-  return {evaluate,close:() => socket.close()};
+  return {evaluate,call,close:() => socket.close()};
 }

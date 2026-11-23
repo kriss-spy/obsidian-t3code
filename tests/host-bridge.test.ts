@@ -85,3 +85,11 @@ test('folder actions deduplicate canonical projects and cancel navigation after 
     bridge.close();second.close();
   } finally {rmSync(root,{recursive:true,force:true});}
 });
+
+test('closing a detached Electron guest tolerates a synchronous evaluation failure',()=>{
+  const session=new HostSession('/vault','local');
+  const guest={getURL:()=> 'http://127.0.0.1:3773/',executeJavaScript:():Promise<unknown>=>{throw Error('Guest is detached');}};
+  const bridge=new HostBridge(guest,'http://127.0.0.1:3773',session,async()=>false);
+  assert.doesNotThrow(()=>bridge.close());
+  assert.doesNotThrow(()=>bridge.close());
+});

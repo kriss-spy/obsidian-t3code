@@ -1,0 +1,158 @@
+{
+  "checkedAt": "2026-11-23T02:27:27.738Z",
+  "sources": [
+    {
+      "theme": "Tokyo Night",
+      "repository": "https://github.com/tcmmichaelb139/obsidian-tokyonight",
+      "revision": "ea61250cc7560bd1adac5b552068209ecbacedc7",
+      "version": "1.1.8",
+      "appearances": [
+        "light",
+        "dark"
+      ]
+    },
+    {
+      "theme": "Obsidian gruvbox",
+      "repository": "https://github.com/insanum/obsidian_gruvbox",
+      "revision": "bec6c083415980155aefc1a0d26c7cfe68fd85eb",
+      "version": "0.2.1",
+      "appearances": [
+        "light",
+        "dark"
+      ]
+    },
+    {
+      "theme": "Everforest Enchanted",
+      "repository": "https://github.com/fireisgood/obsidian-everforest-enchanted",
+      "revision": "bdd7ac76127acd3b1efadfc0d8d83c3a849b04da",
+      "version": "3.12.2",
+      "appearances": [
+        "light",
+        "dark"
+      ]
+    }
+  ],
+  "matrix": [
+    {
+      "theme": "Tokyo Night",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#d5d6db",
+      "accent": "#0f87cc",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#d5d6db",
+        "accent": "#0f87cc"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Tokyo Night",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#1a1b26",
+      "accent": "#80d0ff",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#1a1b26",
+        "accent": "#80d0ff"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/tokyo-night-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Obsidian gruvbox",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#f9f5d7",
+      "accent": "#af2000",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#f9f5d7",
+        "accent": "#af2000"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Obsidian gruvbox",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#282828",
+      "accent": "#a32100",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#282828",
+        "accent": "#a32100"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/obsidian-gruvbox-dark.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Everforest Enchanted",
+      "appearance": "light",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": false,
+      "canvas": "#fffbef",
+      "accent": "#569d79",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": false,
+        "canvas": "#fffbef",
+        "accent": "#569d79"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-light.png",
+      "menuItems": 12
+    },
+    {
+      "theme": "Everforest Enchanted",
+      "appearance": "dark",
+      "id": "obsidian-18613885-d8a8-4155-8b72-7170fa901b0a",
+      "dark": true,
+      "canvas": "#333c43",
+      "accent": "#569d79",
+      "colors": 61,
+      "chat": true,
+      "composer": true,
+      "url": "/944d11e0-4313-4217-a964-115e808a01a3/mcp%3Aad793ea6-8e4e-44bf-8dd6-f2d46d054971",
+      "expected": {
+        "dark": true,
+        "canvas": "#333c43",
+        "accent": "#569d79"
+      },
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-dark.png",
+      "menuItems": 12
+    }
+  ],
+  "checks": {
+    "accentCustomization": true,
+    "accentScreenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/color-themes/everforest-enchanted-dark-custom-accent.png",
+    "disableRetainsPalette": true,
+    "reenableAppliesCurrentAppearance": true,
+    "reconnect": true
+  }
+}

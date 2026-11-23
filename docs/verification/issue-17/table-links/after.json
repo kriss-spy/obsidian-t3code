@@ -1,0 +1,390 @@
+{
+  "checkedAt": "2026-11-23T08:53:55.796Z",
+  "matrix": [
+    {
+      "theme": "Default",
+      "appearance": "light",
+      "outside": {
+        "color": "oklch(0.488 0.243 264.376)",
+        "decoration": "none"
+      },
+      "following": true,
+      "links": [
+        {
+          "text": "External reference",
+          "href": "https://example.com",
+          "class": "",
+          "color": [
+            20,
+            71,
+            230
+          ],
+          "cellColor": [
+            34,
+            34,
+            34
+          ],
+          "decoration": "underline",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "400",
+          "distinctionContrast": 2.3286716917906607,
+          "recognizable": true
+        },
+        {
+          "text": "Theme review.md",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/Theme review.md",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            0,
+            119,
+            140
+          ],
+          "cellColor": [
+            34,
+            34,
+            34
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 3.0436711411634643,
+          "recognizable": true
+        },
+        {
+          "text": "theme-review.ts",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/theme-review.ts",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            0,
+            119,
+            140
+          ],
+          "cellColor": [
+            34,
+            34,
+            34
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 3.0436711411634643,
+          "recognizable": true
+        }
+      ]
+    },
+    {
+      "theme": "Default",
+      "appearance": "dark",
+      "outside": {
+        "color": "oklch(0.707 0.165 254.624)",
+        "decoration": "none"
+      },
+      "following": true,
+      "links": [
+        {
+          "text": "External reference",
+          "href": "https://example.com",
+          "class": "",
+          "color": [
+            80,
+            162,
+            255
+          ],
+          "cellColor": [
+            217,
+            217,
+            217
+          ],
+          "decoration": "underline",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "400",
+          "distinctionContrast": 1.8706162289783692,
+          "recognizable": true
+        },
+        {
+          "text": "Theme review.md",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/Theme review.md",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            55,
+            177,
+            203
+          ],
+          "cellColor": [
+            218,
+            218,
+            218
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.8069101673080918,
+          "recognizable": true
+        },
+        {
+          "text": "theme-review.ts",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/theme-review.ts",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            55,
+            177,
+            203
+          ],
+          "cellColor": [
+            218,
+            218,
+            218
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.8069101673080918,
+          "recognizable": true
+        }
+      ]
+    },
+    {
+      "theme": "Tokyo Night",
+      "appearance": "light",
+      "outside": {
+        "color": "oklch(0.488 0.243 264.376)",
+        "decoration": "none"
+      },
+      "following": true,
+      "links": [
+        {
+          "text": "External reference",
+          "href": "https://example.com",
+          "class": "",
+          "color": [
+            20,
+            71,
+            230
+          ],
+          "cellColor": [
+            52,
+            59,
+            88
+          ],
+          "decoration": "underline",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "400",
+          "distinctionContrast": 1.6071373293596116,
+          "recognizable": true
+        },
+        {
+          "text": "Theme review.md",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/Theme review.md",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            0,
+            88,
+            104
+          ],
+          "cellColor": [
+            52,
+            59,
+            88
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.3572624916483225,
+          "recognizable": true
+        },
+        {
+          "text": "theme-review.ts",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/theme-review.ts",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            0,
+            88,
+            104
+          ],
+          "cellColor": [
+            52,
+            59,
+            88
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.3572624916483225,
+          "recognizable": true
+        }
+      ]
+    },
+    {
+      "theme": "Tokyo Night",
+      "appearance": "dark",
+      "outside": {
+        "color": "oklch(0.707 0.165 254.624)",
+        "decoration": "none"
+      },
+      "following": true,
+      "links": [
+        {
+          "text": "External reference",
+          "href": "https://example.com",
+          "class": "",
+          "color": [
+            80,
+            162,
+            255
+          ],
+          "cellColor": [
+            192,
+            202,
+            245
+          ],
+          "decoration": "underline",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "400",
+          "distinctionContrast": 1.635565048877995,
+          "recognizable": true
+        },
+        {
+          "text": "Theme review.md",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/Theme review.md",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            6,
+            153,
+            178
+          ],
+          "cellColor": [
+            192,
+            202,
+            245
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 2.0956654054811743,
+          "recognizable": true
+        },
+        {
+          "text": "theme-review.ts",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/theme-review.ts",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            6,
+            153,
+            178
+          ],
+          "cellColor": [
+            192,
+            202,
+            245
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 2.0956654054811743,
+          "recognizable": true
+        }
+      ]
+    },
+    {
+      "theme": "Dracula",
+      "appearance": "dark",
+      "outside": {
+        "color": "oklch(0.707 0.165 254.624)",
+        "decoration": "none"
+      },
+      "following": false,
+      "links": [
+        {
+          "text": "External reference",
+          "href": "https://example.com",
+          "class": "",
+          "color": [
+            80,
+            162,
+            255
+          ],
+          "cellColor": [
+            247,
+            247,
+            242
+          ],
+          "decoration": "underline",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "400",
+          "distinctionContrast": 2.457027622744941,
+          "recognizable": true
+        },
+        {
+          "text": "Theme review.md",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/Theme review.md",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            111,
+            226,
+            253
+          ],
+          "cellColor": [
+            248,
+            248,
+            242
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.4099102492407527,
+          "recognizable": true
+        },
+        {
+          "text": "theme-review.ts",
+          "href": "/home/krisspy/.cache/obsidian-t3-gate-issue17/vault/theme-review.ts",
+          "class": "inline-flex max-w-full items-center gap-[0.2em] font-medium leading-[normal] text-(--context-chip-ink) [--context-chip-ink:var(--context-chip-message-ink,var(--context-chip-accent))] [--document-icon-stroke:var(--context-chip-ink)] [&_svg]:block [&_svg]:size-[1em] [&_svg]:shrink-0 [&_svg]:self-center [button&,a&,[data-popup-open]&]:cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm disabled:cursor-default [--context-chip-accent:var(--context-chip-mention)] chat-markdown-file-link",
+          "color": [
+            111,
+            226,
+            253
+          ],
+          "cellColor": [
+            248,
+            248,
+            242
+          ],
+          "decoration": "none",
+          "labelDecoration": "underline",
+          "decorationAlpha": 1,
+          "labelDecorationAlpha": 1,
+          "weight": "500",
+          "distinctionContrast": 1.4099102492407527,
+          "recognizable": true
+        }
+      ]
+    }
+  ]
+}

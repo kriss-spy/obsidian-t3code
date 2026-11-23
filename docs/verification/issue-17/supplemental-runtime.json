@@ -1,0 +1,60 @@
+{
+  "checkedAt": "2026-11-23T02:21:08.821Z",
+  "checks": {
+    "manualAppearanceDisablesAndPersists": true,
+    "manualOverrideSurvivesReconnect": true,
+    "manualThemeDisables": true
+  },
+  "terminal": [
+    {
+      "theme": "Default",
+      "appearance": "light",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-light-terminal.png"
+    },
+    {
+      "theme": "Default",
+      "appearance": "dark",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/default-dark-terminal.png"
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "light",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-light-terminal.png"
+    },
+    {
+      "theme": "Minimal",
+      "appearance": "dark",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/minimal-dark-terminal.png"
+    },
+    {
+      "theme": "Things",
+      "appearance": "light",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-light-terminal.png"
+    },
+    {
+      "theme": "Things",
+      "appearance": "dark",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/things-dark-terminal.png"
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "light",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-light-terminal.png"
+    },
+    {
+      "theme": "AnuPpuccin",
+      "appearance": "dark",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/anuppuccin-dark-terminal.png"
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "light",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-light-terminal.png"
+    },
+    {
+      "theme": "Catppuccin",
+      "appearance": "dark",
+      "screenshot": "/home/krisspy/Projects/obsidian/obsidian-t3code/docs/verification/issue-17/catppuccin-dark-terminal.png"
+    }
+  ]
+}

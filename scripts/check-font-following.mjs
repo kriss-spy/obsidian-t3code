@@ -1,0 +1,50 @@
+// Only the disposable review vault. Changes font overrides temporarily and restores them.
+import assert from 'node:assert/strict';
+import {mkdir,writeFile,unlink} from 'node:fs/promises';
+import path from 'node:path';
+import {connectDevelopmentVault} from './obsidian-cdp.mjs';
+const [endpoint,vault,output]=process.argv.slice(2);
+if(!vault || !path.basename(path.dirname(vault)).startsWith('obsidian-t3-gate-') || !output)throw Error('Supply endpoint, disposable review vault, and screenshot directory.');
+const c=await connectDevelopmentVault(endpoint,vault);
+const parent=code=>c.evaluate(code),guest=code=>parent(`document.querySelector('webview').executeJavaScript(${JSON.stringify(code)})`);
+const pause=()=>new Promise(r=>setTimeout(r,100));
+async function wait(check){for(let i=0;i<150;i++){try{if(await check())return;}catch{}await pause();}throw Error('Font runtime condition timed out.');}
+const snapshot=`(()=>{const family=s=>{const e=document.querySelector(s);return e?getComputedStyle(e).fontFamily:null};return {following:getComputedStyle(document.documentElement).getPropertyValue('--obsidian-font-following').trim()==='1',ui:family('body'),chat:family('.chat-markdown p'),composer:family('[data-testid="composer-editor"]'),code:family('.chat-markdown pre code'),terminal:window.__fontProof?.font,theme:document.documentElement.dataset.themeId}})()`;
+const report={checkedAt:new Date().toISOString(),checks:{}};
+async function follow(enabled){await parent(`(()=>{const p=app.plugins.plugins.threecode;p.settings.followAppearance=${enabled};p.syncAppearance();return true})()`);}
+async function setFonts(ui,text,mono){await parent(`(()=>{for(const [name,value] of ${JSON.stringify([['--font-interface',ui],['--font-text',text],['--font-monospace',mono]])})document.body.style.setProperty(name,value);app.workspace.trigger('css-change');return true})()`);}
+async function platform(selector){return parent(`(async()=>{const g=document.querySelector('webview'),wc=require('electron').remote.webContents.fromId(g.getWebContentsId());if(!wc.debugger.isAttached())wc.debugger.attach('1.3');await wc.debugger.sendCommand('DOM.enable');await wc.debugger.sendCommand('CSS.enable');const {root}=await wc.debugger.sendCommand('DOM.getDocument',{depth:-1,pierce:true});const {nodeId}=await wc.debugger.sendCommand('DOM.querySelector',{nodeId:root.nodeId,selector:${JSON.stringify(selector)}});const {node}=await wc.debugger.sendCommand('DOM.describeNode',{nodeId,depth:-1,pierce:true});function textParent(n){for(const child of n.children??[]){if(child.nodeType===3&&child.nodeValue.trim())return n.nodeId;const found=textParent(child);if(found)return found;}return null;}const target=textParent(node);if(!target)throw Error('No rendered text for font proof');return (await wc.debugger.sendCommand('CSS.getPlatformFontsForNode',{nodeId:target})).fonts})()`);}
+async function shot(name){await pause();await pause();const result=await c.call('Page.captureScreenshot',{format:'png',captureBeyondViewport:true});const file=path.resolve(output,name+'.png');await writeFile(file,Buffer.from(result.data,'base64'));const capture=await parent(`(async()=>{const g=document.querySelector('webview'),r=g.getBoundingClientRect(),wc=require('electron').remote.webContents.fromId(g.getWebContentsId());if(!wc.debugger.isAttached())wc.debugger.attach('1.3');wc.disableDeviceEmulation();wc.enableDeviceEmulation({screenPosition:'desktop',screenSize:{width:Math.round(r.width),height:Math.round(r.height)},deviceScaleFactor:1,viewPosition:{x:0,y:0},viewSize:{width:Math.round(r.width),height:Math.round(r.height)},scale:1});await new Promise(resolve=>setTimeout(resolve,400));const viewport=await g.executeJavaScript('innerWidth');if(viewport!==Math.round(r.width))throw Error('Guest screenshot viewport mismatch: '+viewport+' vs '+r.width);const image=await wc.capturePage();return {image:image.toPNG().toString('base64'),x:r.x,y:r.y,width:r.width,height:r.height}})()`);await writeFile(file+'.guest.png',Buffer.from(capture.image,'base64'));const {execFileSync}=await import('node:child_process');execFileSync('python3',['-c','from PIL import Image;import sys; p=Image.open(sys.argv[1]);g=Image.open(sys.argv[1]+".guest.png");g=g.resize((int(float(sys.argv[4])),int(float(sys.argv[5]))));p.paste(g,(int(float(sys.argv[2])),int(float(sys.argv[3]))));p.save(sys.argv[1])',file,String(capture.x),String(capture.y),String(capture.width),String(capture.height)]);await unlink(file+'.guest.png');return file;}
+let original;
+try{
+ await mkdir(output,{recursive:true});
+ original=await parent(`(()=>{const p=app.plugins.plugins.threecode;return {follow:p.settings.followAppearance,theme:app.customCss.theme,appearance:document.body.classList.contains('theme-dark')?'obsidian':'moonstone',style:document.body.getAttribute('style')}})()`);
+ await parent(`(async()=>{const p=app.plugins.plugins.threecode;const l=app.workspace.getLeavesOfType('t3-code-workspace')[0];if(!app.workspace.getLeavesOfType('markdown').length){app.workspace.setActiveLeaf(l);await app.workspace.getLeaf('split','vertical').openFile(app.vault.getFileByPath('Theme review.md'),{state:{mode:'preview'}});}app.customCss.setTheme('');await app.customCss.loadTheme();return true})()`);
+ await c.call('Emulation.setDeviceMetricsOverride',{width:2100,height:1200,deviceScaleFactor:1,mobile:false});
+ await guest(`(()=>{for(const label of ['Toggle right panel','Toggle terminal drawer']){const b=document.querySelector('button[aria-label="'+label+'"]');if(b?.getAttribute('aria-pressed')==='true')b.click();}return true})()`);
+ await guest(`(()=>{window.__fontProofOriginal=CanvasRenderingContext2D.prototype.fillText;CanvasRenderingContext2D.prototype.fillText=function(...args){if(this.canvas.matches('canvas.cursor-text'))window.__fontProof={font:this.font,text:String(args[0])};return window.__fontProofOriginal.apply(this,args)};return true})()`);
+ await follow(false);await wait(async()=>!(await guest(snapshot)).following);report.baseline=await guest(snapshot);
+ await setFonts('"Liberation Sans", sans-serif','"Liberation Serif", serif','"Noto Sans Mono", monospace');await follow(true);
+ await wait(async()=>{const s=await guest(snapshot);return s.following&&s.ui.includes('Liberation Sans')&&s.chat.includes('Liberation Serif')&&s.composer.includes('Liberation Serif')&&s.code.includes('Noto Sans Mono');});
+ report.system=await guest(snapshot);report.checks.threeRoles=true;report.systemScreenshot=await shot('system-font-mapping');
+ report.platformSystem={ui:await platform('button[aria-label="Thread actions for Theme synchronization review"]'),chat:await platform('.chat-markdown p'),composer:await platform('[data-testid="composer-editor"]'),code:await platform('.chat-markdown pre code')};
+ console.log(JSON.stringify(report.platformSystem));
+ assert(report.platformSystem.ui.some(f=>f.familyName==='Liberation Sans'&&f.glyphCount>0));assert(report.platformSystem.chat.some(f=>f.familyName==='Liberation Serif'&&f.glyphCount>0));assert(report.platformSystem.composer.some(f=>f.familyName==='Liberation Serif'&&f.glyphCount>0));assert(report.platformSystem.code.some(f=>f.familyName==='Noto Sans Mono'&&f.glyphCount>0));
+ report.checks.platformFonts=true;
+ await guest(`(()=>{document.querySelector('button[aria-label="Toggle terminal drawer"]').click();return true})()`);
+ await wait(async()=>await guest(`!!document.querySelector('textarea[aria-label="Terminal input"]')`));report.terminalScreenshot=await shot('terminal-font-mapping');console.log('Terminal snapshot',await guest(snapshot));await wait(async()=>(await guest(snapshot)).terminal?.includes('Noto Sans Mono'));
+ report.checks.terminalFont=true;
+ await parent(`(async()=>{app.customCss.setTheme('Catppuccin');await app.customCss.loadTheme();return true})()`);await setFonts('"Liberation Sans", sans-serif','Vollkorn, serif','"Source Code Pro", monospace');
+ await wait(async()=>{const s=await guest(snapshot);return s.chat.includes('Vollkorn')&&s.code.includes('Source Code Pro');});
+ await guest('document.fonts.ready.then(()=>true)');report.embeddedScreenshot=await shot('theme-embedded-fonts');await wait(async()=>(await guest(snapshot)).terminal?.includes('Source Code Pro'));report.embedded=await guest(snapshot);report.platformEmbedded={chat:await platform('.chat-markdown p'),code:await platform('.chat-markdown pre code')};
+ assert(report.platformEmbedded.chat.some(f=>f.familyName==='Vollkorn'&&f.isCustomFont&&f.glyphCount>0));assert(report.platformEmbedded.code.some(f=>f.familyName==='Source Code Pro'&&f.isCustomFont&&f.glyphCount>0));report.checks.themeEmbeddedFonts=true;
+ await follow(false);await wait(async()=>!(await guest(snapshot)).following);
+ const disabled=await guest(snapshot);for(const role of ['ui','chat','composer','code'])assert.equal(disabled[role],report.baseline[role]);report.checks.disableRestoresT3=true;
+ await follow(true);await wait(async()=>(await guest(snapshot)).chat.includes('Vollkorn'));report.checks.reenable=true;
+ await parent(`app.plugins.plugins.threecode.reconnect().then(()=>true)`);await wait(async()=>{const s=await guest(snapshot);return s.chat?.includes('Vollkorn')&&s.code?.includes('Source Code Pro');});report.checks.reconnect=true;
+ await writeFile(path.join(output,'runtime.json'),JSON.stringify(report,null,2)+'\n');console.log(report.checks);
+}finally{
+ await guest(`(()=>{if(window.__fontProofOriginal)CanvasRenderingContext2D.prototype.fillText=window.__fontProofOriginal;delete window.__fontProofOriginal;delete window.__fontProof;return true})()`).catch(()=>{});
+ if(original)await parent(`(async()=>{const old=${JSON.stringify(original)};if(old.style===null)document.body.removeAttribute('style');else document.body.setAttribute('style',old.style);app.customCss.setTheme(old.theme);await app.customCss.loadTheme();app.changeTheme(old.appearance);app.plugins.plugins.threecode.settings.followAppearance=old.follow;app.plugins.plugins.threecode.syncAppearance();return true})()`).catch(()=>{});
+ c.close();
+}

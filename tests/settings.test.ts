@@ -149,3 +149,38 @@ test('Connect shows progress while saving and restores the button when opening f
   assert.equal(f.button.text, 'Connect');
   assert.match(f.notices.at(-1)!, /Could not save or reconnect/);
 });
+
+test('theme following uses a fresh enable token and remains independent of font following', async () => {
+  const f=fixture();
+  f.plugin.settings.followAppearance=false;
+  await f.plugin.setFollowTheme(true);
+  const first=f.plugin.settings.themeFollowToken;
+  assert.match(first,/^[a-f0-9-]{36}$/);
+  await f.plugin.setFollowTheme(false);
+  assert.equal(f.plugin.settings.followAppearance,false);
+  await f.plugin.setFollowTheme(true);
+  assert.notEqual(f.plugin.settings.themeFollowToken,first);
+  await f.plugin.themeOverridden(first);
+  assert.equal(f.plugin.settings.followTheme,true);
+  await f.plugin.themeOverridden(f.plugin.settings.themeFollowToken);
+  assert.equal(f.plugin.settings.followTheme,false);
+  assert.equal(f.plugin.settings.followAppearance,false);
+  assert.equal((f.saved.at(-1) as any).followTheme,false);
+});
+
+test('failed follow-setting writes restore the prior ownership token', async () => {
+  const f=fixture();
+  const previous={...f.plugin.settings};
+  f.plugin.saveData=async()=>{throw Error('Disk unavailable');};
+  await assert.rejects(f.plugin.setFollowTheme(true),/Disk unavailable/);
+  assert.deepEqual(f.plugin.settings,previous);
+});
+
+test('T3 choices update the plugin toggle in both directions without changing its token or font setting',async()=>{
+  const f=fixture();await f.plugin.setFollowTheme(true);const token=f.plugin.settings.themeFollowToken;
+  await f.plugin.themeFollowingChanged(token,false);assert.equal(f.plugin.settings.followTheme,false);
+  await f.plugin.themeFollowingChanged(token,true);assert.equal(f.plugin.settings.followTheme,true);
+  assert.equal(f.plugin.settings.themeFollowToken,token);assert.equal(f.plugin.settings.followAppearance,true);
+  await f.plugin.setFollowTheme(false);assert.notEqual(f.plugin.settings.themeFollowToken,token);
+  await f.plugin.themeFollowingChanged(token,true);assert.equal(f.plugin.settings.followTheme,false);
+});

@@ -5,6 +5,7 @@ import { canonicalDirectory, containsDirectory } from './scope';
 import type { AliasRequest } from './host-contract';
 import type { SearchEntry } from './aliases';
 import type { ReferenceDropTarget } from './references';
+import type { HostPalette } from './theme';
 import { serverOrigin, savedTarget } from './connection';
 import type { Guest } from './guest';
 import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest } from './host-contract';
@@ -44,7 +45,7 @@ export class HostBridge {
       result = await this.evaluate(`(() => {
       const api = window.t3ObsidianHostV1;
       if (!api) return "pending";
-      if (api.protocol !== ${HOST_PROTOCOL} || api.revision !== ${JSON.stringify(T3_REVISION)}) return null;
+      if (api.protocol !== ${HOST_PROTOCOL} || api.revision !== ${JSON.stringify(T3_REVISION)} || api.themeCapability !== 2 || api.fontCapability !== 1) return null;
       return api.initialize(${JSON.stringify(identity)});
     })()`) as Record<string, unknown> | null | string;
       if (result !== 'pending') break;
@@ -56,6 +57,18 @@ export class HostBridge {
     }
   }
   async localConnectionReady() { return await this.evaluate('window.t3ObsidianHostV1.localConnectionReady()') === true; }
+  async configureTheme(token: string, revision: number, enabled: boolean, palette?: HostPalette) {
+    return this.evaluate(`window.t3ObsidianHostV1.configureTheme(${JSON.stringify({generation:this.session.generation,token,revision,enabled,palette})})`);
+  }
+  async themeStatus(): Promise<{token:string;following:boolean;requested:boolean;suspended:boolean} | null> {
+    const value = await this.evaluate(`window.t3ObsidianHostV1.themeStatus(${JSON.stringify({generation:this.session.generation})})`);
+    if(value===null)return null;
+    if(!value || typeof value!=='object' || !('version' in value) || value.version!==2 || !('token' in value) || typeof value.token!=='string' || !('suspended' in value) || typeof value.suspended!=='boolean' || !('following' in value) || typeof value.following!=='boolean' || !('requested' in value) || typeof value.requested!=='boolean')throw Error('Invalid theme host status.');
+    return {token:value.token,following:value.following,requested:value.requested,suspended:value.suspended};
+  }
+  async fontsChanged() {
+    await this.evaluate(`window.t3ObsidianHostV1.fontsChanged(${JSON.stringify({generation:this.session.generation})})`);
+  }
   async readLocalProof(file: string, machineFile?: string) { return this.evaluate(`window.t3ObsidianHostV1.readLocalProof(${JSON.stringify({generation:this.session.generation,path:file,machinePath:machineFile})})`); }
   async confirmLocal() {
     if (await this.evaluate(`window.t3ObsidianHostV1.confirmLocal(${JSON.stringify({generation:this.session.generation})})`) !== true) throw new Error('Local T3 handshake failed.');
@@ -179,5 +192,11 @@ export class HostBridge {
     if (handled !== true) throw new Error('The T3 target changed. References were not added.');
   }
   async invalidateAliases() { await this.evaluate('window.t3ObsidianHostV1.invalidateAliases()'); }
-  close() { this.closed = true; this.session.invalidate(); }
+  close() {
+    if(!this.closed){
+      try {void this.guest.executeJavaScript(`window.t3ObsidianHostV1?.closeTheme(${JSON.stringify({generation:this.session.generation})})`).catch(()=>{});}
+      catch {/* Electron can throw synchronously after the guest has detached. */}
+    }
+    this.closed = true; this.session.invalidate();
+  }
 }

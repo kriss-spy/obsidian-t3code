@@ -15,6 +15,10 @@ threecode brings your T3 Code workspace into Obsidian. Work with agents alongsid
 | [<img src="docs/images/04-native-obsidian-editor.png" alt="The Product brief note open in Obsidian" width="360">](docs/images/04-native-obsidian-editor.png) | **Keep editing in Obsidian.** Work with the original note using Obsidian's properties, internal links, and reading view. |
 | [<img src="docs/images/05-alias-search.png" alt="Searching for customer voice finds Audience research by alias" width="360">](docs/images/05-alias-search.png) | **Find notes by alias.** Search by filename or an alias from the note's Obsidian properties. Alias matches point to the original note. |
 
+### Follow Obsidian colors
+
+Enable **Follow Obsidian theme** in the plugin settings to use your resolved Obsidian colors and light or dark appearance in T3. Theme customizations also apply. Choosing another T3 theme or appearance disables following. Selecting the generated **Obsidian** theme in T3, or enabling the plugin toggle, resumes following. Disabling it keeps the last generated palette. **Follow Obsidian fonts** is independent. It maps the interface font to T3 controls, the text font to chat and composer, and the monospace font to code and terminal. Font sizes stay in T3.
+
 ### Keep sessions focused on your vault
 
 The embedded workspace shows sessions whose working directories belong to the current vault. Use **Use vault folder** to create a T3 project for your vault, or right-click a folder and select **Open folder in T3 Code**.

@@ -94,6 +94,9 @@ export default class T3Plugin extends Plugin {
     try { this.settings.origin = serverOrigin(raw.origin ?? defaults.origin); } catch { /* Retain safe default. */ }
     this.settings.notePlacement = raw.notePlacement === 'split' ? 'split' : 'tab';
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
+    this.settings.followTheme = raw.followTheme === true;
+    this.settings.themeFollowToken = typeof raw.themeFollowToken === 'string' && /^[a-f0-9-]{36}$/.test(raw.themeFollowToken) ? raw.themeFollowToken : '';
+    if(!this.settings.themeFollowToken){this.settings.followTheme=false;this.settings.themeFollowToken=globalThis.crypto.randomUUID();}
     this.settings.target = savedTarget(raw.target, this.settings.origin);
     this.registerView(VIEW_TYPE, leaf => new T3View(leaf, this));
     this.settingsTab = new SettingsTab(this);
@@ -158,10 +161,31 @@ export default class T3Plugin extends Plugin {
     this.registerEvent(this.app.workspace.on('css-change', () => this.syncAppearance()));
   }
   openMarkdown(request: FileRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor, this.settings.notePlacement); }
-  syncAppearance() { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) void (leaf.view as T3View).syncAppearance(); }
+  syncAppearance() { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) { const view=leaf.view as T3View; if(typeof view.syncAppearance==='function')void view.syncAppearance(); } }
+  async setFollowTheme(enabled: boolean) {
+    const previous = {followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken};
+    this.settings.followTheme = enabled;
+    this.settings.themeFollowToken = globalThis.crypto.randomUUID();
+    try {await this.saveSettings();}
+    catch(error){Object.assign(this.settings,previous);throw error;}
+    this.syncAppearance();
+    this.settingsTab?.update();
+  }
+  async themeFollowingChanged(token: string, following: boolean, requested=false) {
+    if(token!==this.settings.themeFollowToken)return;
+    if(following===this.settings.followTheme){if(requested)this.syncAppearance();return;}
+    // Keep the token for a client choice, so stale queued updates cannot undo it.
+    this.settings.followTheme=following;
+    this.syncAppearance();
+    this.settingsTab?.update();
+    try {await this.saveSettings();}
+    catch {new Notice('Could not save the theme-following setting.');}
+  }
+  async themeOverridden(token: string) { await this.themeFollowingChanged(token,false); }
   async saveSettings() {
     // Whitelist persisted fields. Never spread descriptor, guest state, or pairing data.
     await this.saveData({ origin: serverOrigin(this.settings.origin), followAppearance: this.settings.followAppearance,
+      followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken,
       target: savedTarget(this.settings.target, this.settings.origin), notePlacement:this.settings.notePlacement });
   }
   openWorkspace(): Promise<T3View> {
@@ -208,7 +232,8 @@ export default class T3Plugin extends Plugin {
   onunload() {
     this.stopped.abort();
     for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) {
-      (leaf.view as T3View).disconnect();
+      const view=leaf.view as T3View;
+      if(typeof view.disconnect==='function')view.disconnect();
     }
   }
 }
