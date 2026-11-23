@@ -99,7 +99,7 @@ export default class T3Plugin extends Plugin {
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
     this.settings.followTheme = raw.followTheme === true;
     this.settings.themeFollowToken = typeof raw.themeFollowToken === 'string' && /^[a-f0-9-]{36}$/.test(raw.themeFollowToken) ? raw.themeFollowToken : '';
-    if(!this.settings.themeFollowToken){this.settings.followTheme=false;this.settings.themeFollowToken=globalThis.crypto.randomUUID();}
+    if(!this.settings.themeFollowToken){this.settings.followTheme=false;this.settings.themeFollowToken=window.crypto.randomUUID();}
     this.settings.target = savedTarget(raw.target, this.settings.origin);
     this.registerView(VIEW_TYPE, leaf => new T3View(leaf, this));
     this.registerExtensions(['t3draft'],'markdown');
@@ -198,7 +198,7 @@ export default class T3Plugin extends Plugin {
   async setFollowTheme(enabled: boolean) {
     const previous = {followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken};
     this.settings.followTheme = enabled;
-    this.settings.themeFollowToken = globalThis.crypto.randomUUID();
+    this.settings.themeFollowToken = window.crypto.randomUUID();
     try {await this.saveSettings();}
     catch(error){Object.assign(this.settings,previous);throw error;}
     this.syncAppearance();

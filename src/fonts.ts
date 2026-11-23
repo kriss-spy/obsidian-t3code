@@ -4,20 +4,20 @@ import { Buffer } from 'node:buffer';
 export async function readObsidianFontCSS(body: HTMLElement): Promise<string> {
   const doc=body.ownerDocument, win=doc.defaultView;
   if(!win)throw Error('Obsidian window is unavailable.');
-  const probe=doc.createElement('span');probe.style.display='none';body.append(probe);
+  const probe=body.createEl('span');probe.setCssStyles({display:'none'});
   const valid=(font:string)=>font && win.CSS.supports('font-family',font) && !/[;{}<>]/.test(font);
   const read=(variable:string,fallback:string)=>{
-    probe.style.fontFamily=`var(--${variable}, ${fallback})`;
+    probe.setCssStyles({fontFamily:`var(--${variable}, ${fallback})`});
     const font=win.getComputedStyle(probe).fontFamily;
     return valid(font)?font:fallback;
   };
   let ui:string,text:string,mono:string;
-  const editor=doc.createElement('div');editor.className='markdown-source-view mod-cm6';editor.style.display='none';
-  const scroller=editor.appendChild(doc.createElement('div'));scroller.className='cm-scroller';
+  const editor=body.createDiv({cls:'markdown-source-view mod-cm6'});editor.setCssStyles({display:'none'});
+  const scroller=editor.createDiv({cls:'cm-scroller'});
   try {
     const bodyFont=win.getComputedStyle(body).fontFamily;
     ui=valid(bodyFont)?bodyFont:read('font-interface','sans-serif');mono=read('font-monospace','monospace');
-    body.append(editor);scroller.append(probe);probe.className='cm-content';probe.style.fontFamily='';
+    body.append(editor);scroller.append(probe);probe.className='cm-content';probe.setCssStyles({fontFamily:''});
     const editorFont=win.getComputedStyle(probe).fontFamily;
     text=valid(editorFont)?editorFont:read('font-text',ui);
   } finally {probe.remove();editor.remove();}
@@ -30,11 +30,11 @@ export async function readObsidianFontCSS(body: HTMLElement): Promise<string> {
   const faces:CSSFontFaceRule[]=[];
   const visit=(rules:CSSRuleList)=>{
     for(const rule of Array.from(rules)){
-      if(rule.type===win.CSSRule.FONT_FACE_RULE){
-        const face=rule as CSSFontFaceRule;
+      if(rule instanceof win.CSSFontFaceRule){
+        const face=rule;
         if(families.has(face.style.fontFamily.trim().replace(/^(['"])(.*)\1$/,'$2').toLowerCase()))faces.push(face);
       } else if('cssRules' in rule){
-        if(rule.type===win.CSSRule.MEDIA_RULE && !win.matchMedia((rule as CSSMediaRule).conditionText).matches)continue;
+        if(rule instanceof win.CSSMediaRule && !win.matchMedia(rule.conditionText).matches)continue;
         visit((rule as CSSGroupingRule).cssRules);
       }
     }

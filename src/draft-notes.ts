@@ -75,12 +75,12 @@ export class DraftNotes {
     edit.status = stage + '…';
     edit.notice?.setMessage(edit.status);
     this.syncActions();
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: number | undefined;
     try {
       return await Promise.race([operation(),new Promise<never>((_,reject) => {
-        timer = setTimeout(() => reject(new Error(stage + ' timed out. Your draft is preserved. Retry Return to check again.')),10000);
+        timer = window.setTimeout(() => reject(new Error(stage + ' timed out. Your draft is preserved. Retry Return to check again.')),10000);
       })]);
-    } finally { clearTimeout(timer); }
+    } finally { window.clearTimeout(timer); }
   }
   private async formatText(edit: DraftEdit, text: string): Promise<string> {
     const cache = await this.step(edit,'Reading draft links',() => draftMetadata(this.app.metadataCache,text));
@@ -110,7 +110,7 @@ export class DraftNotes {
       leaf.view instanceof MarkdownView && leaf.view.file === edit.file);
     for (const leaf of leaves) await (leaf.view as MarkdownView).save();
     for (const leaf of leaves) leaf.detach();
-    await this.app.vault.delete(edit.file);
+    await this.app.fileManager.trashFile(edit.file);
   }
   async finish(view: MarkdownView, cancel = false) {
     const edit = view.file && this.edits.get(view.file);

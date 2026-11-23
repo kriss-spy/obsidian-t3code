@@ -29,13 +29,12 @@ function fixture() {
     getViewData() {return this.text;}
   }
   const module={exports:{} as {DraftNotes:typeof DraftNotes}};
-  new Function('require','module','exports',bundle)((name:string)=>name==='obsidian'?{MarkdownView,WorkspaceTabs,Notice}:nativeRequire(name),module,module.exports);
+  new Function('require','module','exports','window',bundle)((name:string)=>name==='obsidian'?{MarkdownView,WorkspaceTabs,Notice}:nativeRequire(name),module,module.exports,globalThis);
   const files=new Map<any,string>(),leaves:any[]=[],events=new Set<(...args:any[])=>void>();
   const deleted:any[]=[],returned:string[]=[],canceled:string[]=[],focused:string[]=[];
-  const app={vault:{
+  const app={fileManager:{trashFile:async(f:any)=>{deleted.push(f);files.delete(f);}},vault:{
     create:async(path:string,text:string)=>{const f={path,extension:path.split('.').pop()};files.set(f,text);return f;},
     modify:async(f:any,text:string)=>{files.set(f,text);for(const event of events)event(f,text,{links:[]});},
-    delete:async(f:any)=>{deleted.push(f);files.delete(f);},
     read:async(f:any)=>files.get(f),
   },metadataCache:{computeMetadataAsync:async()=>({links:[]}),on:(_name:string,cb:(...args:any[])=>void)=>{events.add(cb);return cb;},offref:(cb:(...args:any[])=>void)=>events.delete(cb)},workspace:{
     getLeavesOfType:()=>leaves.filter(leaf=>!leaf.closed),

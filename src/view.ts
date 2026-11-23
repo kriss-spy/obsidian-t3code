@@ -23,7 +23,7 @@ export class T3View extends ItemView {
   private appearanceGeneration = 0;
   private themeReady = false;
   private themeRevision = 0;
-  private themeTimer?: ReturnType<typeof setTimeout>;
+  private themeTimer?: number;
   constructor(leaf: WorkspaceLeaf, private plugin: T3Plugin) { super(leaf); }
   onload() {
     super.onload();
@@ -50,7 +50,7 @@ export class T3View extends ItemView {
     ++this.generation;
     ++this.appearanceGeneration;
     this.themeReady = false;
-    clearTimeout(this.themeTimer);
+    (this.contentEl.ownerDocument.defaultView ?? window).clearTimeout(this.themeTimer);
     for (const fn of this.cleanup.splice(0)) fn();
     this.bridge?.close();
     this.bridge = undefined;
@@ -256,10 +256,10 @@ export class T3View extends ItemView {
     } catch { /* A closing document has no remaining stylesheet to update. */ }
   }
   private scheduleTheme() {
-    clearTimeout(this.themeTimer);
+    (this.contentEl.ownerDocument.defaultView ?? window).clearTimeout(this.themeTimer);
     if(!this.themeReady || !this.bridge)return;
     const bridge=this.bridge, generation=this.generation, revision=++this.themeRevision;
-    this.themeTimer=setTimeout(()=>{
+    this.themeTimer=(this.contentEl.ownerDocument.defaultView ?? window).setTimeout(()=>{
       if(generation!==this.generation || bridge!==this.bridge)return;
       const {followTheme,themeFollowToken}=this.plugin.settings;
       if(!themeFollowToken)return;

@@ -13,7 +13,7 @@ function fixture(readFonts:()=>Promise<string>=async()=>':root{--font-sans:test-
   const workspace = {on:(_event:string,callback:(leaf:unknown)=>void)=>{listeners.add(callback);return callback;}};
   class ItemView {
     app={workspace};
-    contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{getComputedStyle:()=>({fontFamily:'test-font'})}}};
+    contentEl={removeClass:()=>{},ownerDocument:{body,defaultView:{setTimeout,clearTimeout,getComputedStyle:()=>({fontFamily:'test-font'})}}};
     cleanups:Array<()=>void>=[];
     constructor(public leaf:unknown) {}
     addAction() {}

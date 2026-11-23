@@ -67,24 +67,25 @@ export function translateTheme(source: ThemeSource, appearance: 'light'|'dark'):
 export function readObsidianTheme(element: HTMLElement): HostPalette {
   const doc=element.ownerDocument, win=doc.defaultView;
   if(!win)throw Error('Obsidian window is unavailable.');
-  const probe=doc.createElement('span'), canvas=doc.createElement('canvas');
+  const probe=element.createEl('span'), canvas=element.createEl('canvas');
+  canvas.remove();
   canvas.width=canvas.height=1;
   const context=canvas.getContext('2d',{willReadFrequently:true});
-  if(!context)throw Error('Color conversion is unavailable.');
-  probe.style.display='none';element.appendChild(probe);
+  if(!context){probe.remove();throw Error('Color conversion is unavailable.');}
+  probe.setCssStyles({display:'none'});
   const computed=win.getComputedStyle(element), source: ThemeSource={};
   try {
     for(const key of THEME_VARIABLES){
       const raw=computed.getPropertyValue('--'+key).trim();
       if(!raw)continue;
       if(!win.CSS.supports('color',raw) || /^(?:inherit|initial|unset|revert|currentcolor)$/i.test(raw))throw Error('Invalid Obsidian color: --'+key);
-      probe.style.color='';probe.style.color=`var(--${key})`;
+      probe.setCssStyles({color:''});probe.setCssStyles({color:`var(--${key})`});
       const resolved=win.getComputedStyle(probe).color;
       if(!resolved || !win.CSS.supports('color',resolved))throw Error('Invalid Obsidian color: --'+key);
       context.clearRect(0,0,1,1);context.fillStyle=resolved;context.fillRect(0,0,1,1);
       const [r,g,b,a]=context.getImageData(0,0,1,1).data;
       // Composite translucent semantic colors onto the actual canvas before crossing the parser.
-      const base=source['background-primary'] ? rgb(source['background-primary']!) : null;
+      const base=source['background-primary'] ? rgb(source['background-primary']) : null;
       if(a<255 && !base)throw Error('Obsidian canvas must be opaque.');
       source[key]=hex([r,g,b].map((n,i)=>base?n*a/255+base[i]*(1-a/255):n) as unknown as RGB);
     }

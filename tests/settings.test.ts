@@ -19,8 +19,8 @@ function fixture() {
     Notice: class { constructor(message: string) { notices.push(message); } } };
   const load = (bundle: string) => {
     const module = { exports: {} as any };
-    new Function('require', 'module', 'exports', bundle)(
-      (name: string) => name === 'obsidian' ? obsidian : nativeRequire(name), module, module.exports);
+    new Function('require', 'module', 'exports', 'window', bundle)(
+      (name: string) => name === 'obsidian' ? obsidian : nativeRequire(name), module, module.exports, globalThis);
     return module.exports;
   };
   const plugin: T3Plugin = new (load(bundles[0]).default)({} as App, {} as PluginManifest);

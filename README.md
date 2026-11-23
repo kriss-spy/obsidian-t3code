@@ -46,7 +46,7 @@ Existing Markdown file paths and encoded spaces stay unchanged. Generated wikili
 When formatting is enabled, missing or ambiguous wikilinks must be corrected before return. Block references cannot be formatted.
 
 Use **Cancel draft editing** from the note header or menu to keep the composer unchanged and delete the temporary note.
-Interrupted requests also keep their notes. Successful returns remove the temporary note.
+Interrupted requests also keep their notes. Successful returns remove the temporary note. Removal uses your Obsidian trash preference.
 If the composer changes during editing, return reports a conflict and preserves the note.
 Return or copy active drafts before reloading or disabling threecode. Editing requests are held in memory.
 After an interruption, copy a preserved note's text into a new composer.
