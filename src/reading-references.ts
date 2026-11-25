@@ -19,7 +19,7 @@ export function readingReference(plugin: T3Plugin, target: Element): string | nu
     const leaf = plugin.app.workspace.getLeavesOfType('markdown').find(leaf => leaf.view.containerEl.contains(target));
     const sourcePath = (leaf?.view as {file?:{path:string}} | undefined)?.file?.path;
     if (!sourcePath) return null;
-    const linkpath = source.split('#')[0]!;
+    const linkpath = source.split('#')[0];
     const file = plugin.app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath);
     if (!file) return null;
     destination = path.resolve(plugin.vaultRoot, file.path);
@@ -27,7 +27,7 @@ export function readingReference(plugin: T3Plugin, target: Element): string | nu
     if (fragment >= 0) destination += source.slice(fragment);
   }
   const label = (image ? image.getAttribute('alt') ?? '' : anchor?.textContent ?? '')
-    .replace(/\\/g, '\\\\').replace(/([\[\]])/g, '\\$1').replace(/[\r\n]+/g, ' ');
+    .replace(/\\/g, '\\\\').replace(/([[\]])/g, '\\$1').replace(/[\r\n]+/g, ' ');
   destination = destination.replace(/\\/g, '/').replace(/</g, '%3C').replace(/>/g, '%3E').replace(/[\r\n]/g, '');
   return `${image ? '!' : ''}[${label}](<${destination}>)`;
 }

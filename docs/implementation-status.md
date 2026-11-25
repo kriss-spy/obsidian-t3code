@@ -1,14 +1,16 @@
 # Implementation status
 
-Date: 2026-11-23. Version 0.2.0 is the stable release. See [release readiness](release-readiness.md) for remaining publication checks and [verification](verification/0.2.0.md) for current evidence.
+Date: 2026-11-25. Version 0.3.0 is prepared locally and remains unpublished. See [release readiness](release-readiness.md), [release verification](verification/0.3.0.md), and [folder-action verification](verification/issue-25-folders.md).
 
-The plugin hosts a patched T3 0.1.11 client and connects to a standard server using orchestration protocol 2. It does not patch or manage the server. The client uses adapter `obsidian-host-v1.10`, host protocol 1, and upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. Its manifest SHA-256 is `8f8d4a68f382d903776f001a05817af006304a1c4e53497a975593e7ef396090`.
+The plugin hosts a patched T3 0.1.11 client and connects to a standard server using orchestration protocol 2. It does not patch or manage the server. The client uses adapter `obsidian-host-v1.11`, host protocol 1, and upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. Its manifest SHA-256 is `9e90f473bb2ca88a74e53c1cc8e9d7e05556f1159ec24d164da2961c5b33d0b2`.
+
+Version 0.3.0 adds configurable modified folder clicks, grouped settings, and a fix for font flicker during settings navigation. Components target `components-0.3.0`.
 
 Implemented workflows include persistent guest pairing, canonical vault filtering, Markdown navigation, explicit note context, alias search, folder projects, and reference insertion. Version 0.2.0 adds temporary composer draft editing, optional link formatting, theme and font following, component removal controls, and focus and tab-activation fixes.
 
 T3 owns agent configuration and permissions. Vault filtering changes session visibility, not agent filesystem access. Theme following is optional. The plugin does not change agent instructions.
 
-Desktop Windows, macOS, and Linux require Obsidian 1.13.4 or later. The server must run on the same computer and operating system. Earlier Windows and macOS runtime checks concern previous client versions. Runtime evidence for the new features covers Linux with Obsidian 1.15.1. It does not establish Windows or macOS behavior for those features.
+Desktop Windows, macOS, and Linux require Obsidian 1.13.4 or later. The server must run on the same computer and operating system. Earlier Windows and macOS runtime checks concern previous client versions. Folder-action runtime evidence covers Linux with Obsidian 1.13.4. Earlier feature evidence also covers Obsidian 1.15.1. It does not establish Windows or macOS behavior for those features.
 
 The [0.1.2 report](verification/0.1.2.md) records the preceding release checks. New feature reports cover [theme and font following](verification/issue-17/README.md), [Escape focus](verification/escape-focus.md), [tab activation](verification/issue-29.md), and [draft editing](verification/issue-28.md). Reports retain their original artifact hashes and limitations. Older patched-server candidate reports are historical evidence.
 

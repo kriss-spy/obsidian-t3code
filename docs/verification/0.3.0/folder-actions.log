@@ -1,0 +1,37 @@
+
+> t3-code-obsidian@0.3.0 test:obsidian
+> node scripts/test-obsidian.mjs
+
+Testing Obsidian 1.13.4, installer 1.13.4
+threecode-compat: Existing installs default to native folder behavior
+threecode-compat: Default declines folder interception
+threecode-compat: Core explorer handles folders
+threecode-compat: Core explorer expands parent folder
+threecode-compat: Core explorer renders requested folder
+threecode-compat: Core explorer handles folders
+threecode-compat: Core explorer expands parent folder
+threecode-compat: Core explorer renders requested folder
+threecode-compat: Folder note action handles folder
+threecode-compat: Folder note opens existing Markdown note
+threecode-compat: Notebook Navigator handles folder
+threecode-compat: Notebook Navigator opens closed pane
+threecode-compat: Notebook Navigator handles folder
+threecode-compat: Notebook Navigator opens closed pane
+threecode-compat: File Tree Alternative handles folder
+threecode-compat: File Tree Alternative opens closed pane and selects requested folder
+threecode-compat: File Tree Alternative handles folder
+threecode-compat: File Tree Alternative opens closed pane and selects requested folder
+threecode-compat: Folder settings survive reload
+threecode-compat: Unavailable navigator consumes action without native fallback
+{
+  "appVersion": "1.13.4",
+  "installerVersion": "1.13.4",
+  "checks": [
+    "folder setting default/persistence",
+    "core explorer open/closed",
+    "existing folder note",
+    "Notebook Navigator open/closed",
+    "File Tree Alternative open/closed",
+    "plugin unavailable"
+  ]
+}

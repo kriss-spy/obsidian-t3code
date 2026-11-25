@@ -45,3 +45,9 @@ test('host rejects malformed, oversized and duplicate requests', () => {
     assert.throws(()=>parseHostRequest({...aliases,...change},'g'));
   }
 });
+
+test('folder requests require a current generation, path and requesting route',()=>{
+  const request={type:'folder',id:'folder',generation:'g',environmentId:'local',path:'/vault/Folder',route:'/local/thread'};
+  assert.deepEqual(parseHostRequest(request,'g'),request);
+  for (const change of [{generation:'old'},{path:''},{path:'bad\0path'},{route:undefined},{route:''}])assert.throws(()=>parseHostRequest({...request,...change},'g'));
+});

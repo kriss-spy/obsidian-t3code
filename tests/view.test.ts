@@ -62,12 +62,13 @@ test('overlapping appearance updates remove superseded styles, including after d
     f.pending[1]('new');await second;
     f.pending[0]('old');await first;
     assert.deepEqual(f.removed,['old']);
+    f.plugin.settings.followAppearance=true;
     const third=f.view.syncAppearance();
     await Promise.resolve();
-    assert.deepEqual(f.removed,['old','new']);
+    assert.deepEqual(f.removed,['old']);
     f.view.disconnect();
     f.pending[2]('closing');await third;
-    assert.deepEqual(f.removed,['old','new','closing']);
+    assert.deepEqual(f.removed,['old','closing']);
   } finally {
     if(old)Object.defineProperty(globalThis,'getComputedStyle',old);
     else Reflect.deleteProperty(globalThis,'getComputedStyle');
@@ -85,4 +86,22 @@ test('disabling font following cancels an older font-resource read before styles
   ready(':root{--font-sans:stale-font}');await loading;
   assert.equal(f.pending.length,1);
   f.view.disconnect();
+});
+
+test('appearance updates retain the active font stylesheet until its replacement is installed',async()=>{
+  const f=fixture();
+  const first=f.view.syncAppearance();await Promise.resolve();
+  f.pending[0]('initial');await first;
+  f.plugin.settings.followAppearance=false;
+  const next=f.view.syncAppearance();await Promise.resolve();
+  assert.deepEqual(f.removed,[],'pending replacement must not expose native T3 fonts');
+  f.pending[1]('replacement');await next;
+  assert.deepEqual(f.removed,['initial']);
+});
+
+test('unrelated appearance updates do not replace an unchanged stylesheet',async()=>{
+  const f=fixture();
+  const first=f.view.syncAppearance();await Promise.resolve();f.pending[0]('initial');await first;
+  await f.view.syncAppearance();
+  assert.equal(f.pending.length,1);assert.deepEqual(f.removed,[]);
 });

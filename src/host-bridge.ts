@@ -9,7 +9,7 @@ import type { ReferenceDropTarget } from './references';
 import type { HostPalette } from './theme';
 import { serverOrigin, savedTarget } from './connection';
 import type { Guest } from './guest';
-import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest } from './host-contract';
+import { HostSession, HOST_PROTOCOL, ADAPTER_BUILD, SCOPE_COVERAGE, parseHostRequest, T3_REVISION, type FileRequest, type FolderRequest } from './host-contract';
 
 export class DraftReturnRejected extends Error {}
 
@@ -22,7 +22,7 @@ export class HostBridge {
     private guest: Pick<Guest, 'getURL' | 'executeJavaScript'>,
     private origin: string,
     private session: HostSession,
-    private onFile: (request: FileRequest) => Promise<boolean>,
+    private onFile: (request: FileRequest | FolderRequest) => Promise<boolean>,
     private onExternal: (path: string) => Promise<void> = async () => {},
     private onDiagnostic: (message: string) => void = () => {},
     private onAliases: (request: AliasRequest) => Promise<SearchEntry[]> = async () => [],

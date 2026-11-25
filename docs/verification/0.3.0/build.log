@@ -1,0 +1,4 @@
+
+> t3-code-obsidian@0.3.0 build
+> tsc --noEmit && node esbuild.config.mjs
+

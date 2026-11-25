@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { threadScope, canonicalDirectory, type Project, type Thread } from './scope';
 
 export const HOST_PROTOCOL = 1;
-export const ADAPTER_BUILD = 'obsidian-host-v1.10';
+export const ADAPTER_BUILD = 'obsidian-host-v1.11';
 export const SCOPE_COVERAGE = ['active','pinned','working','snoozed','settled','recents','search','archive','projects','routes','drafts','reconnect','side-chats','onboarding'] as const;
 export const T3_REVISION = '59651c1761f6c63e9b6056839067066968e6a406';
 export const MAX_SCOPE_ROWS = 20000;
@@ -20,12 +20,13 @@ export interface FileRequest {
   type: 'file'; id: string; generation: string; environmentId: string;
   path: string; line?: number; column?: number; route?: string; newTab: boolean;
 }
+export interface FolderRequest {type:'folder'; id:string; generation:string; environmentId:string; path:string; route:string}
 export interface ExternalRequest {type:'external'; id:string; generation:string; environmentId:string; path:string}
 export interface BrowserRequest {type:'browser'; id:string; generation:string; environmentId:string; url:string; route:string}
 export interface FileCheckRequest {type:'file-check'; id:string; generation:string; environmentId:string; path:string; route:string}
 export interface AliasRequest {type:"aliases"; id:string; generation:string; environmentId:string; cwd:string; query:string; entries:SearchEntry[]; limit:number; route:string}
 export interface ReferenceRequest {type:"references"; id:string; generation:string; environmentId:string; token:string; route:string}
-export type HostRequest = ScopeRequest | FileRequest | ExternalRequest | BrowserRequest | FileCheckRequest | AliasRequest | ReferenceRequest;
+export type HostRequest = ScopeRequest | FileRequest | FolderRequest | ExternalRequest | BrowserRequest | FileCheckRequest | AliasRequest | ReferenceRequest;
 const text = (v: unknown): v is string => typeof v === 'string' && v.length > 0 && v.length <= 8192 && !v.includes('\0');
 const position = (v: unknown) => v === undefined || (Number.isSafeInteger(v) && (v as number) >= 1 && (v as number) <= 10000000);
 export function parseHostRequest(value: unknown, generation: string): HostRequest {
@@ -44,6 +45,7 @@ export function parseHostRequest(value: unknown, generation: string): HostReques
     }
     return {type:'aliases',id:r.id,generation,environmentId:r.environmentId,cwd:r.cwd,query:r.query,route:r.route,limit:r.limit as number,entries};
   }
+  if (r.type === 'folder' && text(r.path) && text(r.route)) return {type:'folder',id:r.id,generation,environmentId:r.environmentId,path:r.path,route:r.route};
   if (r.type === 'file-check' && text(r.path) && text(r.route)) return {type:'file-check',id:r.id,generation,environmentId:r.environmentId,path:r.path,route:r.route};
   if (r.type === 'external' && text(r.path) && /^\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_%:-]+$/.test(r.path)) return {type:'external',id:r.id,generation,environmentId:r.environmentId,path:r.path};
   if (r.type === 'file' && text(r.path) && position(r.line) && position(r.column) && typeof r.newTab === 'boolean' && (r.route === undefined || text(r.route))) {

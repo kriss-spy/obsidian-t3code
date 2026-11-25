@@ -17,7 +17,7 @@ let launched, browser;
 try {
   await mkdir(path.join(vault, '.obsidian'));
   await writeFile(path.join(vault, '.obsidian', 'app.json'), JSON.stringify({trashOption:'local'}));
-  launched = await launcher.launch({appVersion,installerVersion,vault,plugins:[process.cwd()],
+  launched = await launcher.launch({appVersion,installerVersion,vault,plugins:[process.cwd(),...(process.env.FOLDER_ACTIONS ? [process.env.NOTEBOOK_NAVIGATOR_PATH ?? {repo:'johansan/notebook-navigator',version:'3.5.2'}, process.env.FILE_TREE_ALTERNATIVE_PATH ?? {repo:'ozntel/file-tree-alternative',version:'2.6.4'}] : [])],
     args:['--remote-debugging-port=0'],spawnOptions:{stdio:['ignore','pipe','pipe']}});
   const endpoint = await new Promise((resolve,reject) => {
     let output='';
@@ -38,7 +38,7 @@ try {
   await page.waitForFunction(()=>window.app?.workspace?.layoutReady && window.app.plugins?.plugins?.threecode?.settingsTab,{},{timeout:60000});
   await page.bringToFront();
   page.on('console',message=>{if(message.text().startsWith('threecode-compat:'))console.log(message.text());});
-  const bundle=await build({entryPoints:['tests/obsidian/compatibility.ts'],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian'],target:'es2022'});
+  const bundle=await build({entryPoints:[process.env.FOLDER_ACTIONS ? 'tests/obsidian/folder-actions.ts' : 'tests/obsidian/compatibility.ts'],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian'],target:'es2022'});
   let runtimeTimer;
   const report=await Promise.race([page.evaluate(async ({code,expectedVault})=>{
     if(window.app.vault.adapter.getBasePath()!==expectedVault)throw Error('Refuse a non-fixture vault');

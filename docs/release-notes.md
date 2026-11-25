@@ -1,39 +1,37 @@
-# threecode 0.2.0
+# threecode 0.3.0
 
-Status: stable release. See the [release checks](verification/0.2.0.md) and [publication checklist](release-readiness.md).
+Status: prepared locally, unpublished. See [verification](verification/0.3.0.md) and [publication steps](release-readiness.md).
 
-## New features
+## Changes
 
-- Edit a T3 composer draft in Obsidian's Markdown editor. Use the temporary note's native Return and Cancel actions, note menu, or command palette.
-- Return draft text explicitly without sending the prompt. Existing attachments stay in the composer. Successful returns and cancellations delete the temporary note.
-- Enable **Format draft links on return** to convert wikilinks into T3 file mentions. The default preserves text exactly. Formatting uses full filenames as labels and resolves heading references to line ranges.
-- Enable **Follow Obsidian theme** to follow resolved colors and light or dark appearance. Choosing another T3 theme or appearance disables following. Select the generated **Obsidian** theme to resume.
-- Follow Obsidian's interface, text, and monospace fonts independently of theme following. Font sizes remain controlled by T3.
-- Delete required components or optional fonts from plugin settings. Download them again to reinstall.
+- Support desktop Obsidian 1.13.4 and add earliest/latest runtime checks to cross-platform CI.
+- Fix link and image reference drops from Obsidian reading mode.
 
-## Fixes
+- Configure Ctrl+click and Cmd+click on folder links. Choose native T3 behavior, Obsidian file explorer, an existing folder note, Notebook Navigator, or File Tree Alternative. Native behavior remains the default.
+- Open folder notes inside the selected folder. The default filename is `{folder}.md`; use `index.md` or another filename if needed. Missing notes show a notice. The plugin does not create them.
+- Disable unavailable folder integrations in settings. Check availability again on click and show a notice when an integration becomes unavailable.
+- Group settings into Connection, Notes and folders, Composer, Appearance, and Help and resources. Find Obsidian agent skills and Compatibility under Help and resources.
+- Prevent font flicker when switching settings categories. Keep active CSS until its replacement is installed and skip unchanged CSS.
 
-- Returning to the T3 tab restores keyboard focus and preserves the mounted chat.
-- Unused Escape returns keyboard focus to Obsidian. T3 menus, dialogs, suggestions, and terminals retain their Escape handling.
-- Packaged-client verification uses the current draft-editor client checksum.
+Folder actions accept canonical paths in the local vault. Remote environments, paths outside the vault, and symlinks outside the vault retain native behavior. Ordinary clicks retain their existing action.
 
 ## Upgrade
 
 1. Return or copy any active temporary draft before reloading threecode. Draft request bindings do not survive a reload.
 2. Replace `main.js`, `manifest.json`, and `styles.css` in `<vault>/.obsidian/plugins/threecode/`. Preserve `data.json`.
 3. Reload Obsidian and enable threecode.
-4. Open **Settings → threecode** and select **Download necessary files** to install the 0.2.0 components.
+4. Open **Settings → threecode → Connection** and select **Download necessary files** to install the 0.3.0 components.
 5. Optionally select **Download extra fonts**.
 6. Connect to your existing T3 server and complete pairing if prompted.
 
-Temporary `.t3draft` files remain in the vault after interrupted editing. Keep threecode enabled to open them in the Markdown editor. Copy their text into a new composer if the original editing request ended.
+The download URLs require publication of `components-0.3.0`. They are unavailable during local preparation. Folder actions default to native behavior on existing installations.
 
 ## Compatibility and verification limits
 
 Requires desktop Obsidian 1.13.4 or later and a local T3 server using orchestration protocol 2. Obsidian and T3 must run on the same computer and operating system. Windows Obsidian with a WSL T3 server is unsupported.
 
-The embedded client uses T3 0.1.11 with adapter `obsidian-host-v1.10`. The plugin connects to a standard server without patching or managing it. New feature runtime evidence covers Linux with Obsidian 1.15.1. Earlier Windows and macOS checks cover previous client versions. They do not establish runtime coverage for these new features.
+The embedded client uses T3 0.1.11 with adapter `obsidian-host-v1.11`. The plugin connects to a standard server without patching or managing it. Disposable-vault folder checks cover Linux, Obsidian 1.13.4, Notebook Navigator 3.5.2, and File Tree Alternative 2.6.4. File Tree Alternative integration depends on its internal `fta-reveal-folder` event.
 
-Draft editing requires an active local composer inside the vault. Pending answers and queued-message edits are unavailable. Formatting rejects unresolved or ambiguous wikilinks, block references, and links to the temporary draft itself.
+Full rendered T3 Ctrl+click and Cmd+click flows remain unverified. Current-release Windows and macOS runtime checks, cross-platform CI, published downloads, and the full upstream test suite remain pending. Host-handler runtime checks and bridge unit tests do not establish the full rendered flow.
 
 Vault filtering changes the embedded session list. It does not restrict agent filesystem access. Pairing credentials remain in the dedicated browser partition. Office previews and bundled device models remain excluded.

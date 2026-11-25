@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0
+
+- Support desktop Obsidian 1.13.4 and add earliest/latest runtime checks across Linux, Windows, and macOS CI. Pin matching installers and bound runtime checks.
+- Fix link and image reference drops from Obsidian reading mode.
+
+- Configure Ctrl+click and Cmd+click folder actions: native T3 behavior, Obsidian file explorer, an existing folder note, Notebook Navigator, or File Tree Alternative. Native behavior remains the default.
+- Resolve folder actions against canonical local vault paths. Disable unavailable integrations in settings and check availability again on click.
+- Configure folder-note filenames, with `{folder}.md` as the default. Missing notes produce a notice without creating files.
+- Group settings into Connection, Notes and folders, Composer, Appearance, and Help and resources.
+- Prevent font flicker when switching settings categories by installing replacement CSS before removing active CSS and skipping unchanged styles.
+- Package adapter `obsidian-host-v1.11` and pin component downloads to `components-0.3.0`.
+
 ## 0.2.0
 
 - Edit composer drafts in temporary Obsidian notes with native Return and Cancel actions. Preserve attachments and detect composer conflicts.

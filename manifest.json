@@ -1,7 +1,7 @@
 {
   "id": "threecode",
   "name": "threecode",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "minAppVersion": "1.13.4",
   "description": "Use T3 Code with note context and vault-scoped navigation.",
   "author": "kriss-spy",

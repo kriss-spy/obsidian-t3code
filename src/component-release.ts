@@ -2,17 +2,17 @@
 import type { ComponentAsset } from './components';
 export const COMPONENT_ASSETS: Record<'core' | 'fonts', ComponentAsset> = {
   "core": {
-    "version": "0.2.0",
+    "version": "0.3.0",
     "kind": "core",
-    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.2.0/t3-core-0.2.0.json.gz",
-    "sha256": "ab140b71fcc5e121f44c955ce279d2e6e8c9e97d9e21ccdfe346153a5781f5f5",
-    "bytes": 25120821
+    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.3.0/t3-core-0.3.0.json.gz",
+    "sha256": "fe1a4d3367f1c54d3500f077cf866f547b1a1ba32c68202bd5f89076324aca93",
+    "bytes": 24928563
   },
   "fonts": {
-    "version": "0.2.0",
+    "version": "0.3.0",
     "kind": "fonts",
-    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.2.0/t3-fonts-0.2.0.json.gz",
-    "sha256": "59171257af18a63cd0cbd6b3612337508dca6e8bb3a10e2431d3fc21e1a9b9f5",
+    "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.3.0/t3-fonts-0.3.0.json.gz",
+    "sha256": "c2150a7ca32ec2ed5bf2a2373ca1b1318b1070c6eae74c5781bbe60ef0ae924a",
     "bytes": 1403037
   }
 };

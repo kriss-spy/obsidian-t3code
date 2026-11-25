@@ -12,6 +12,10 @@ const bundles = ['src/main.ts', 'src/settings.ts'].map(entry => buildSync({
   external: ['obsidian', 'electron'],
 }).outputFiles[0].text);
 
+function settingItems(tab: SettingsTab) {
+  return tab.getSettingDefinitions().flatMap(item => 'items' in item ? item.items ?? [] : [item]);
+}
+
 function fixture() {
   const notices: string[] = [];
   class PluginSettingTab { update() {} }
@@ -53,7 +57,7 @@ function fixture() {
   };
   let change = (_value: string) => {};
   const text = { setValue: (_value: string) => text, onChange(callback: typeof change) { change = callback; return text; } };
-  const definition = tab.getSettingDefinitions().find(item => 'name' in item && item.name === 'T3 server');
+  const definition = settingItems(tab).find(item => 'name' in item && item.name === 'T3 server');
   assert.ok(definition && 'render' in definition && definition.render);
   definition.render({
     addText: (render: (text: any) => void) => render(text),
@@ -80,7 +84,7 @@ test('component buttons switch between download and delete and block concurrent 
   f.plugin.downloadComponents = async kind => { actions.push('download ' + kind); };
   f.plugin.deleteComponents = async kind => { actions.push('delete ' + kind); };
   const render = (name: string) => {
-    const definition = f.tab.getSettingDefinitions().find(item => 'name' in item && item.name === name);
+    const definition = settingItems(f.tab).find(item => 'name' in item && item.name === name);
     assert.ok(definition && 'render' in definition && definition.render);
     definition.render({addButton: (callback: (button: any) => void) => callback(f.button), setDesc: () => {}} as any, {} as any);
     return f.button;
@@ -189,7 +193,7 @@ test('draft formatting toggle defaults off, saves both states and rolls back on 
   const f=fixture();assert.equal(f.plugin.settings.formatDraftLinks,false);
   let change=async(_value:boolean)=>{};
   const toggle={value:false,setValue(value:boolean){this.value=value;return this;},onChange(callback:typeof change){change=callback;return this;}};
-  const definition=f.tab.getSettingDefinitions().find(item=>'name' in item&&item.name==='Format draft links on return');
+  const definition=settingItems(f.tab).find(item=>'name' in item&&item.name==='Format draft links on return');
   assert.ok(definition&&'render' in definition&&definition.render);
   definition.render({addToggle:(callback:(value:typeof toggle)=>void)=>callback(toggle)} as any,{} as any);
   assert.equal(toggle.value,false);await change(true);
@@ -197,4 +201,25 @@ test('draft formatting toggle defaults off, saves both states and rolls back on 
   await change(false);assert.equal(f.plugin.settings.formatDraftLinks,false);assert.equal((f.saved.at(-1) as any).formatDraftLinks,false);
   f.plugin.saveData=async()=>{throw Error('Disk unavailable');};await change(true);
   assert.equal(f.plugin.settings.formatDraftLinks,false);assert.match(f.notices.at(-1)!,/Could not save the draft formatting setting/);
+});
+
+test('folder action options remain visible and disable unavailable integrations',async()=>{
+  const f=fixture();
+  assert.equal(f.plugin.settings.folderAction,'default');
+  assert.equal(f.plugin.settings.folderNoteName,'{folder}.md');
+  let change=async(_value:string)=>{};
+  const dropdown={selectEl:{options:[] as {value:string;text:string;disabled:boolean}[]},value:'',
+    addOption(value:string,text:string){this.selectEl.options.push({value,text,disabled:false});return this;},
+    setValue(value:string){this.value=value;return this;},onChange(fn:typeof change){change=fn;return this;}};
+  const definition=settingItems(f.tab).find(item=>'name' in item&&item.name==='Ctrl+click folder action');
+  assert.ok(definition&&'render' in definition&&definition.render);
+  definition.render({addDropdown:(callback:(value:typeof dropdown)=>void)=>callback(dropdown)} as any,{} as any);
+  assert.equal(dropdown.value,'default');assert.equal(dropdown.selectEl.options.length,5);
+  assert.deepEqual(dropdown.selectEl.options.filter(o=>o.disabled).map(o=>o.value),['notebook','tree']);
+  assert.match(dropdown.selectEl.options[3].text,/Notebook Navigator/);
+  assert.match(dropdown.selectEl.options[4].text,/File Tree Alternative/);
+  await change('notebook');assert.equal(f.saved.length,0);
+  await change('explorer');assert.equal(f.plugin.settings.folderAction,'explorer');assert.equal((f.saved.at(-1) as any).folderAction,'explorer');
+  f.plugin.saveData=async()=>{throw Error('Disk unavailable');};await change('note');
+  assert.equal(f.plugin.settings.folderAction,'explorer');assert.match(f.notices.at(-1)!,/Could not save the folder action/);
 });

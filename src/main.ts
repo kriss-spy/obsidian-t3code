@@ -8,8 +8,9 @@ import { ReferenceDrags } from './references';
 import { AliasIndex, metadataAliases } from './aliases';
 import { electronHost } from './electron-host';
 import { captureContext, encodeContext } from './context';
+import { folderActions, handleFolderAction } from './folder-actions';
 import { openLocalMarkdown } from './navigation';
-import type { FileRequest } from './host-contract';
+import type { FileRequest, FolderRequest } from './host-contract';
 import { FileSystemAdapter, MarkdownView, Notice, Plugin, TFile, TFolder } from 'obsidian';
 import { canonicalDirectory } from './scope';
 import { defaults, SettingsTab, type Settings } from './settings';
@@ -96,6 +97,8 @@ export default class T3Plugin extends Plugin {
     try { this.settings.origin = serverOrigin(raw.origin ?? defaults.origin); } catch { /* Retain safe default. */ }
     this.settings.notePlacement = raw.notePlacement === 'split' ? 'split' : 'tab';
     this.settings.formatDraftLinks = raw.formatDraftLinks === true;
+    this.settings.folderAction = typeof raw.folderAction === 'string' && Object.hasOwn(folderActions,raw.folderAction) ? raw.folderAction : defaults.folderAction;
+    this.settings.folderNoteName = typeof raw.folderNoteName === 'string' ? raw.folderNoteName : defaults.folderNoteName;
     this.settings.followAppearance = typeof raw.followAppearance === 'boolean' ? raw.followAppearance : true;
     this.settings.followTheme = raw.followTheme === true;
     this.settings.themeFollowToken = typeof raw.themeFollowToken === 'string' && /^[a-f0-9-]{36}$/.test(raw.themeFollowToken) ? raw.themeFollowToken : '';
@@ -193,7 +196,7 @@ export default class T3Plugin extends Plugin {
     this.registerEvent(this.app.workspace.on('window-open', window => registerDrags(window.doc)));
     this.registerEvent(this.app.workspace.on('css-change', () => this.syncAppearance()));
   }
-  openMarkdown(request: FileRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor, this.settings.notePlacement); }
+  openMarkdown(request: FileRequest | FolderRequest, verifiedEnvironmentId: string, isCurrent?: () => boolean, anchor?: import('obsidian').WorkspaceLeaf) { if (request.type === 'folder') return handleFolderAction(this.app, this.vaultRoot, verifiedEnvironmentId, request, this.settings, isCurrent, anchor); return openLocalMarkdown(this.app, this.vaultRoot, verifiedEnvironmentId, request, isCurrent, anchor, this.settings.notePlacement); }
   syncAppearance() { for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE)) { const view=leaf.view as T3View; if(typeof view.syncAppearance==='function')void view.syncAppearance(); } }
   async setFollowTheme(enabled: boolean) {
     const previous = {followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken};
@@ -226,7 +229,7 @@ export default class T3Plugin extends Plugin {
     await this.saveData({ origin: serverOrigin(this.settings.origin), followAppearance: this.settings.followAppearance,
       followTheme:this.settings.followTheme,themeFollowToken:this.settings.themeFollowToken,
       target: savedTarget(this.settings.target, this.settings.origin), notePlacement:this.settings.notePlacement,
-      formatDraftLinks:this.settings.formatDraftLinks });
+      formatDraftLinks:this.settings.formatDraftLinks, folderAction:this.settings.folderAction, folderNoteName:this.settings.folderNoteName });
   }
   openWorkspace(): Promise<T3View> {
     const owner = this.app.workspace.getMostRecentLeaf()?.view.containerEl.ownerDocument ?? activeDocument;

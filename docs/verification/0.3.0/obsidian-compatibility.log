@@ -1,0 +1,36 @@
+
+> t3-code-obsidian@0.3.0 test:obsidian
+> node scripts/test-obsidian.mjs
+
+Testing Obsidian 1.13.4, installer 1.13.4
+threecode-compat: Plugin must load
+threecode-compat: Settings must render
+threecode-compat: Setting must survive reload
+threecode-compat: Theme must resolve all palette roles
+threecode-compat: Fonts must resolve
+threecode-compat: Draft metadata parser must exist
+threecode-compat: Draft parser must parse wikilinks
+threecode-compat: Opening workspace
+threecode-compat: Missing components must show setup guidance
+threecode-compat: Draft must open in native Markdown view
+threecode-compat: Completed draft must leave the vault
+threecode-compat: Draft removal must use local trash
+threecode-compat: Draft must open in native Markdown view
+threecode-compat: Completed draft must leave the vault
+threecode-compat: Draft removal must use local trash
+threecode-compat: Return must deliver once; Cancel must not deliver
+threecode-compat: Guest must not expose Node globals
+{
+  "appVersion": "1.13.4",
+  "installerVersion": "1.13.4",
+  "checks": [
+    "plugin load/reload",
+    "settings persistence",
+    "theme and font resolution",
+    "draft metadata",
+    "missing component state",
+    "native draft Return/Cancel and trash",
+    "sandboxed webview",
+    "plugin disable"
+  ]
+}

@@ -327,3 +327,14 @@ test('temporary drafts reject newer input, replacement registrations and route c
   assert.equal(api.returnDraft({generation:'g',id:'canceled',text:'edited'}),false);
   assert.equal(writes,0);
 });
+
+test('folder hook preserves semantic path, environment and route and declines remote requests',async()=>{
+  const {api,exports:e,location}=load();api.initialize({generation:'g',environmentId:'local'});
+  for(const input of [{environmentId:'remote',path:'/vault/folder'},{environmentId:'local',path:'relative'}])assert.equal(await e.openObsidianFolder(input),false);
+  assert.equal(api.drain().length,0);
+  const result=e.openObsidianFolder({environmentId:'local',path:'/vault/Folder.md'});
+  const [request]=api.drain();assert.equal(request.type,'folder');assert.equal(request.path,'/vault/Folder.md');assert.equal(request.route,'/local/thread');
+  api.reply({id:request.id,generation:'g',handled:false});assert.equal(await result,false);
+  const stale=e.openObsidianFolder({environmentId:'local',path:'/vault/folder'});const [next]=api.drain();location.pathname='/other/thread';
+  api.reply({id:next.id,generation:'g',handled:false});assert.equal(await stale,true);
+});

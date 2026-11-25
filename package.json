@@ -1,6 +1,6 @@
 {
   "name": "t3-code-obsidian",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Full T3 workspace hosting for desktop Obsidian",
   "scripts": {

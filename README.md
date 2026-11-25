@@ -23,6 +23,11 @@ Enable **Follow Obsidian theme** in the plugin settings to use your resolved Obs
 
 The embedded workspace shows sessions whose working directories belong to the current vault. Use **Use vault folder** to create a T3 project for your vault, or right-click a folder and select **Open folder in T3 Code**.
 
+Set **Ctrl+click folder action** to keep the T3 Code default, reveal a folder in Obsidian’s file explorer, open its folder note, or reveal it in Notebook Navigator or File Tree Alternative. Cmd+click uses the same setting. Optional explorer plugins must be enabled. Folders outside the vault keep T3’s default behavior.
+
+For folder notes, set **Folder note filename** to `{folder}.md`, `index.md`, or another Markdown filename inside the folder. The plugin opens existing notes only. It does not read other folder-note plugins’ settings.
+
+
 Press Escape when no T3 interaction needs it to return keyboard focus to Obsidian. Ctrl/Cmd+P then opens Obsidian's command palette. Click the composer to return to T3. Menus, dialogs, suggestions, and terminals keep their Escape behavior.
 
 Vault filtering only changes which sessions appear in this view. It does not restrict an agent's filesystem access or change other T3 clients.
@@ -107,7 +112,7 @@ If the plugin reports missing or changed components, download the necessary file
 When a component is installed, its settings button becomes **Delete**.
 Deleting extra fonts restores system fonts. Deleting necessary files makes the workspace unavailable until you download them again.
 
-Version 0.2.0 requires a fresh component download after upgrading from 0.1.2.
+Version 0.3.0 requires a fresh component download after upgrading from an earlier release.
 Preserve `data.json` when replacing plugin files. See the [release notes](docs/release-notes.md) for upgrade steps and verification limits.
 
 PDF, code, and Markdown previews are available. Office document previews and bundled device models are excluded. You can still save those files and open them in another application.

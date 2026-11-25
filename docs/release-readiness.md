@@ -1,26 +1,26 @@
-# 0.2.0 release readiness
+# 0.3.0 release readiness
 
-Status: stable publication authorized after the maintainer reported that review passed. Version metadata and pinned download URLs target 0.2.0. Local artifacts are under `dist/`. See [verification](verification/0.2.0.md) for checks and limits.
+Status: publication authorized on 2026-11-25. The production build, all 120 unit tests, and candidate file comparisons passed again before publication. See [verification](verification/0.3.0.md) for checks and limits.
 
-## Release contents
+## Prepared contents
 
-- Plugin tag: `0.2.0`, matching `manifest.json` and `package.json`.
-- Plugin assets: `main.js`, `manifest.json`, and `styles.css` from `dist/0.2.0/`.
-- Component tag: `components-0.2.0`.
-- Component assets: `dist/components/t3-core-0.2.0.json.gz` and `dist/components/t3-fonts-0.2.0.json.gz`.
-- Release text: [release notes](release-notes.md).
+- Plugin tag to create: `0.3.0`, matching package, lockfile, manifest, and compatibility metadata.
+- Plugin assets: `dist/0.3.0/main.js`, `manifest.json`, and `styles.css`.
+- Release text and checksums: `dist/0.3.0/release-notes.md` and `SHA256SUMS`.
+- Component tag to create: `components-0.3.0`.
+- Component assets: `dist/components/t3-core-0.3.0.json.gz` and `dist/components/t3-fonts-0.3.0.json.gz`.
+- Component metadata and checksums: `dist/components/assets.json` and `SHA256SUMS-0.3.0`.
 
-The component URLs, byte counts, and SHA-256 values are pinned in `src/component-release.ts`. Publish the component assets before publishing the plugin. Missing or changed components block the embedded workspace until repaired.
+The component URLs, byte counts, and SHA-256 values are pinned in `src/component-release.ts`. Both archives must be published before the plugin. Missing or changed components block the embedded workspace until repaired.
 
-## Publication checks and verification limits
+## Remaining checks and publication steps
 
-1. Cross-platform CI passed for reviewed source commit `dcc3da1` on Linux, Windows, and macOS.
-2. Both archives are published under `components-0.2.0`.
-3. Published component and prerelease plugin downloads were checked against their local SHA-256 values.
-4. Install the plugin in a disposable vault through both settings download buttons. Check pairing, draft Return and Cancel, theme following, tab switching, and Escape.
-5. The maintainer reported that review passed and authorized stable publication. Automated theme assertions alone do not establish visual acceptance.
-6. Refresh the plugin assets from the reviewed source and promote `0.2.0` to the latest stable release.
+1. Verify a rendered T3 modified folder click in a paired disposable vault. Cover native fallback and the configured host action. Never use personal notes for this check.
+2. Run the current release through Windows and macOS CI and runtime checks. The existing workflow runs tests, builds, and earliest/latest Obsidian checks. It does not publish assets.
+3. Review the source diff and the local review warnings. The filesystem warning describes intentional desktop component installation and canonical path checks. Sentence-case warnings concern T3 branding.
+4. Commit the reviewed source and metadata. Rebuild and refresh checksums if any source changes. Current artifacts include uncommitted changes and record the base revision separately.
+5. After explicit publication authorization, create `components-0.3.0` and upload the two pinned archives. Preserve their exact bytes.
+6. Verify published component hashes. Install through both settings download buttons in a disposable vault. Check pairing, folder actions, draft Return and Cancel, font stability, tab switching, and Escape.
+7. After these checks pass, create plugin tag `0.3.0` and publish the three plugin assets with the prepared release notes. Verify published asset hashes and record the source revision.
 
-Preserve earlier releases for rollback. New feature runtime checks on Windows and macOS remain absent. The full upstream test suite has not been run. State these limits in the release notes.
-
-The embedded client targets T3 0.1.11, orchestration protocol 2. Future incompatible API changes can require an update. The plugin does not install, patch, start, or stop a server.
+Preserve earlier releases for rollback. GitHub artifact attestation checks and the full upstream test suite were not run during preparation. No release, tag, commit, push, or personal-vault deployment was performed.

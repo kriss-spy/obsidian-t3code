@@ -1,0 +1,33 @@
+{
+  "version": "0.3.0",
+  "minAppVersion": "1.13.4",
+  "components": {
+    "core": {
+      "version": "0.3.0",
+      "kind": "core",
+      "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.3.0/t3-core-0.3.0.json.gz",
+      "sha256": "fe1a4d3367f1c54d3500f077cf866f547b1a1ba32c68202bd5f89076324aca93",
+      "bytes": 24928563,
+      "files": 1318
+    },
+    "fonts": {
+      "version": "0.3.0",
+      "kind": "fonts",
+      "url": "https://github.com/kriss-spy/obsidian-t3code/releases/download/components-0.3.0/t3-fonts-0.3.0.json.gz",
+      "sha256": "c2150a7ca32ec2ed5bf2a2373ca1b1318b1070c6eae74c5781bbe60ef0ae924a",
+      "bytes": 1403037,
+      "files": 10
+    }
+  },
+  "checks": [
+    "version metadata",
+    "archive bytes and SHA-256",
+    "every component file SHA-256",
+    "production installation and receipts",
+    "33 packaged client assets",
+    "font removal preserves core",
+    "core removal reports missing",
+    "complete upstream patch reverse check"
+  ],
+  "patchSha256": "f73eda3f40fcb5e9c767710abc3159f0287d63931e3bc892f29e9cddec7f7b37"
+}

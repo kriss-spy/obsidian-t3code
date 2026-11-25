@@ -1,0 +1,736 @@
+
+> t3-code-obsidian@0.3.0 test
+> tsx --test tests/*.test.ts
+
+TAP version 13
+# Subtest: alias metadata merges canonical identities, updates, renames, duplicates and Unicode within the requested directory
+ok 1 - alias metadata merges canonical identities, updates, renames, duplicates and Unicode within the requested directory
+  ---
+  duration_ms: 70.840422
+  type: 'test'
+  ...
+# Subtest: reference tokens are single-use, canonical, and reject missing or outside originals
+ok 2 - reference tokens are single-use, canonical, and reject missing or outside originals
+  ---
+  duration_ms: 7.920821
+  type: 'test'
+  ...
+# Subtest: exact alias results survive a full normal-result limit
+ok 3 - exact alias results survive a full normal-result limit
+  ---
+  duration_ms: 58.396733
+  type: 'test'
+  ...
+# Subtest: local client routing separates UI files from server APIs, previews, uploads and authentication
+ok 4 - local client routing separates UI files from server APIs, previews, uploads and authentication
+  ---
+  duration_ms: 1.615587
+  type: 'test'
+  ...
+# Subtest: deleting either package preserves the other package and permits reinstallation
+ok 5 - deleting either package preserves the other package and permits reinstallation
+  ---
+  duration_ms: 134.966475
+  type: 'test'
+  ...
+# Subtest: deletion rejects symlinks, unsafe receipts and cancellation before deleting files
+ok 6 - deletion rejects symlinks, unsafe receipts and cancellation before deleting files
+  ---
+  duration_ms: 30.389561
+  type: 'test'
+  ...
+# Subtest: installation detects missing and damaged files, preserves optional fonts and old hashed assets, and repairs files
+ok 7 - installation detects missing and damaged files, preserves optional fonts and old hashed assets, and repairs files
+  ---
+  duration_ms: 53.666609
+  type: 'test'
+  ...
+# Subtest: downloads reject corrupt bytes, traversal, symbolic links, and cancellation before replacing the current entry
+ok 8 - downloads reject corrupt bytes, traversal, symbolic links, and cancellation before replacing the current entry
+  ---
+  duration_ms: 8.357311
+  type: 'test'
+  ...
+# Subtest: origin validation rejects insecure remote endpoints and credential-bearing URLs
+ok 9 - origin validation rejects insecure remote endpoints and credential-bearing URLs
+  ---
+  duration_ms: 12.949507
+  type: 'test'
+  ...
+# Subtest: partition isolates vaults and origins deterministically without including paths
+ok 10 - partition isolates vaults and origins deterministically without including paths
+  ---
+  duration_ms: 0.966614
+  type: 'test'
+  ...
+# Subtest: workspace state drops pairing data, external targets, and unknown routes
+ok 11 - workspace state drops pairing data, external targets, and unknown routes
+  ---
+  duration_ms: 0.819761
+  type: 'test'
+  ...
+# Subtest: server admission uses a compatible protocol and minimum version without requiring a custom capability
+ok 12 - server admission uses a compatible protocol and minimum version without requiring a custom capability
+  ---
+  duration_ms: 0.817606
+  type: 'test'
+  ...
+# Subtest: context captures unsaved content without saving, and encodes fences losslessly
+ok 13 - context captures unsaved content without saving, and encodes fences losslessly
+  ---
+  duration_ms: 5.354612
+  type: 'test'
+  ...
+# Subtest: wikilinks become T3 mentions with full filenames and paths relative to the captured project
+ok 14 - wikilinks become T3 mentions with full filenames and paths relative to the captured project
+  ---
+  duration_ms: 3.388098
+  type: 'test'
+  ...
+# Subtest: existing relative and absolute file paths keep their encoding while alias labels become filenames
+ok 15 - existing relative and absolute file paths keep their encoding while alias labels become filenames
+  ---
+  duration_ms: 0.415688
+  type: 'test'
+  ...
+# Subtest: external links and code omitted by metadata stay intact
+ok 16 - external links and code omitted by metadata stay intact
+  ---
+  duration_ms: 0.428588
+  type: 'test'
+  ...
+# Subtest: missing and duplicate headings, block links, draft-local links and stale metadata fail without partial text
+ok 17 - missing and duplicate headings, block links, draft-local links and stale metadata fail without partial text
+  ---
+  duration_ms: 1.067846
+  type: 'test'
+  ...
+# Subtest: encoded hash characters remain filename characters and filenames escape Markdown emphasis
+ok 18 - encoded hash characters remain filename characters and filenames escape Markdown emphasis
+  ---
+  duration_ms: 0.371799
+  type: 'test'
+  ...
+# Subtest: formatting adds the whitespace boundaries required by T3 without duplicating adjacent spaces
+ok 19 - formatting adds the whitespace boundaries required by T3 without duplicating adjacent spaces
+  ---
+  duration_ms: 0.271859
+  type: 'test'
+  ...
+# Subtest: root-level heading references use T3 line suffixes with an explicit relative path
+ok 20 - root-level heading references use T3 line suffixes with an explicit relative path
+  ---
+  duration_ms: 0.362451
+  type: 'test'
+  ...
+# Subtest: custom-extension drafts use the native parser with the exact UTF-8 editor text
+ok 21 - custom-extension drafts use the native parser with the exact UTF-8 editor text
+  ---
+  duration_ms: 1.263748
+  type: 'test'
+  ...
+# Subtest: an unavailable native parser reports a recoverable error
+ok 22 - an unavailable native parser reports a recoverable error
+  ---
+  duration_ms: 0.803373
+  type: 'test'
+  ...
+# Subtest: a failed native parse cannot return an unchecked draft
+ok 23 - a failed native parse cannot return an unchecked draft
+  ---
+  duration_ms: 0.301178
+  type: 'test'
+  ...
+# Subtest: drafts open in sibling tabs, return latest unsaved text and clean up only after acknowledgement
+ok 24 - drafts open in sibling tabs, return latest unsaved text and clean up only after acknowledgement
+  ---
+  duration_ms: 4.694055
+  type: 'test'
+  ...
+# Subtest: cancel deletes only its draft and preserves composer; an ended connection cannot return to another target
+ok 25 - cancel deletes only its draft and preserves composer; an ended connection cannot return to another target
+  ---
+  duration_ms: 1.917989
+  type: 'test'
+  ...
+# Subtest: lost acknowledgements preserve the note until a successful retry deletes it
+ok 26 - lost acknowledgements preserve the note until a successful retry deletes it
+  ---
+  duration_ms: 0.773713
+  type: 'test'
+  ...
+# Subtest: deleting a draft note releases only its own editing request
+ok 27 - deleting a draft note releases only its own editing request
+  ---
+  duration_ms: 0.49855
+  type: 'test'
+  ...
+# (node:1861391) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: native Return action displays a persistent notice when its target rejects the draft
+ok 28 - native Return action displays a persistent notice when its target rejects the draft
+  ---
+  duration_ms: 8.605116
+  type: 'test'
+  ...
+# Subtest: a stalled parser reports its stage, times out, and allows a safe retry
+ok 29 - a stalled parser reports its stage, times out, and allows a safe retry
+  ---
+  duration_ms: 2.852539
+  type: 'test'
+  ...
+# Subtest: native header actions are removed on completion and unload
+ok 30 - native header actions are removed on completion and unload
+  ---
+  duration_ms: 1.059135
+  type: 'test'
+  ...
+# Subtest: native note menus offer Return and Cancel through the same draft operations
+ok 31 - native note menus offer Return and Cancel through the same draft operations
+  ---
+  duration_ms: 2.666951
+  type: 'test'
+  ...
+# Subtest: formatting defaults off and returns existing Markdown paths and wikilinks byte for byte
+ok 32 - formatting defaults off and returns existing Markdown paths and wikilinks byte for byte
+  ---
+  duration_ms: 0.695117
+  type: 'test'
+  ...
+# Subtest: enabling formatting while a draft is open normalizes its labels on return
+ok 33 - enabling formatting while a draft is open normalizes its labels on return
+  ---
+  duration_ms: 1.329307
+  type: 'test'
+  ...
+# Subtest: cancel deletes the draft even when its T3 connection has ended
+ok 34 - cancel deletes the draft even when its T3 connection has ended
+  ---
+  duration_ms: 0.523225
+  type: 'test'
+  ...
+# Subtest: unused Escape transfers focus to the host and rearms until disconnect
+ok 35 - unused Escape transfers focus to the host and rearms until disconnect
+  ---
+  duration_ms: 5.164508
+  type: 'test'
+  ...
+# Subtest: a delayed Escape cannot steal focus from another Obsidian control
+ok 36 - a delayed Escape cannot steal focus from another Obsidian control
+  ---
+  duration_ms: 0.361684
+  type: 'test'
+  ...
+# Subtest: disconnect and replaced connections cannot transfer focus
+ok 37 - disconnect and replaced connections cannot transfer focus
+  ---
+  duration_ms: 3.063735
+  type: 'test'
+  ...
+# Subtest: file drag from explorer preserves the active note when T3 is hidden (outside)
+ok 38 - file drag from explorer preserves the active note when T3 is hidden (outside)
+  ---
+  duration_ms: 5.716195
+  type: 'test'
+  ...
+# Subtest: file drag from explorer preserves the active note when T3 is hidden (escape)
+ok 39 - file drag from explorer preserves the active note when T3 is hidden (escape)
+  ---
+  duration_ms: 2.956869
+  type: 'test'
+  ...
+# Subtest: file drag from explorer preserves the active note when T3 is hidden (dragend)
+ok 40 - file drag from explorer preserves the active note when T3 is hidden (dragend)
+  ---
+  duration_ms: 2.094115
+  type: 'test'
+  ...
+# Subtest: file reference drop into a visible T3 composer activates only on successful drop
+ok 41 - file reference drop into a visible T3 composer activates only on successful drop
+  ---
+  duration_ms: 2.159884
+  type: 'test'
+  ...
+# Subtest: folder drag from explorer preserves the active note when T3 is hidden (outside)
+ok 42 - folder drag from explorer preserves the active note when T3 is hidden (outside)
+  ---
+  duration_ms: 1.585445
+  type: 'test'
+  ...
+# Subtest: folder drag from explorer preserves the active note when T3 is hidden (escape)
+ok 43 - folder drag from explorer preserves the active note when T3 is hidden (escape)
+  ---
+  duration_ms: 1.449344
+  type: 'test'
+  ...
+# Subtest: folder drag from explorer preserves the active note when T3 is hidden (dragend)
+ok 44 - folder drag from explorer preserves the active note when T3 is hidden (dragend)
+  ---
+  duration_ms: 2.664189
+  type: 'test'
+  ...
+# Subtest: folder reference drop into a visible T3 composer activates only on successful drop
+ok 45 - folder reference drop into a visible T3 composer activates only on successful drop
+  ---
+  duration_ms: 0.97228
+  type: 'test'
+  ...
+# Subtest: file drag outside a visible T3 composer leaves the active note and normal drop unchanged
+ok 46 - file drag outside a visible T3 composer leaves the active note and normal drop unchanged
+  ---
+  duration_ms: 1.344249
+  type: 'test'
+  ...
+# Subtest: file drag cancellation cleans up a composer zone prepared asynchronously
+ok 47 - file drag cancellation cleans up a composer zone prepared asynchronously
+  ---
+  duration_ms: 1.93247
+  type: 'test'
+  ...
+# Subtest: folder drag outside a visible T3 composer leaves the active note and normal drop unchanged
+ok 48 - folder drag outside a visible T3 composer leaves the active note and normal drop unchanged
+  ---
+  duration_ms: 0.7729
+  type: 'test'
+  ...
+# Subtest: folder drag cancellation cleans up a composer zone prepared asynchronously
+ok 49 - folder drag cancellation cleans up a composer zone prepared asynchronously
+  ---
+  duration_ms: 0.610932
+  type: 'test'
+  ...
+# Subtest: reading-mode link drop preserves its destination in the composer
+ok 50 - reading-mode link drop preserves its destination in the composer
+  ---
+  duration_ms: 1.084988
+  type: 'test'
+  ...
+# Subtest: reading-mode image drop preserves its destination in the composer
+ok 51 - reading-mode image drop preserves its destination in the composer
+  ---
+  duration_ms: 0.866008
+  type: 'test'
+  ...
+# Subtest: folder note names stay inside the selected folder
+ok 52 - folder note names stay inside the selected folder
+  ---
+  duration_ms: 2.536603
+  type: 'test'
+  ...
+# Subtest: folder interception respects native default, environment, route, real directory and vault boundaries
+ok 53 - folder interception respects native default, environment, route, real directory and vault boundaries
+  ---
+  duration_ms: 20.122
+  type: 'test'
+  ...
+# Subtest: bridge checks the origin again after asynchronous evaluation
+ok 54 - bridge checks the origin again after asynchronous evaluation
+  ---
+  duration_ms: 2.535684
+  type: 'test'
+  ...
+# Subtest: system browser requests check route and environment, report opener failure, and retain the guest
+ok 55 - system browser requests check route and environment, report opener failure, and retain the guest
+  ---
+  duration_ms: 2.294256
+  type: 'test'
+  ...
+# Subtest: bridge rejects a self-declared but wrong revision and stale request generations
+ok 56 - bridge rejects a self-declared but wrong revision and stale request generations
+  ---
+  duration_ms: 0.872256
+  type: 'test'
+  ...
+# Subtest: bridge waits for the public module and declines file requests from a previous route
+ok 57 - bridge waits for the public module and declines file requests from a previous route
+  ---
+  duration_ms: 52.931366
+  type: 'test'
+  ...
+# Subtest: context cannot append after the intended route changes while waiting for its composer
+ok 58 - context cannot append after the intended route changes while waiting for its composer
+  ---
+  duration_ms: 51.897128
+  type: 'test'
+  ...
+# Subtest: folder actions deduplicate canonical projects and cancel navigation after a route change
+ok 59 - folder actions deduplicate canonical projects and cancel navigation after a route change
+  ---
+  duration_ms: 4.243063
+  type: 'test'
+  ...
+# Subtest: closing a detached Electron guest tolerates a synchronous evaluation failure
+ok 60 - closing a detached Electron guest tolerates a synchronous evaluation failure
+  ---
+  duration_ms: 0.64277
+  type: 'test'
+  ...
+# Subtest: reading reference insertion keeps the captured composer identity and rejects changed routes
+ok 61 - reading reference insertion keeps the captured composer identity and rejects changed routes
+  ---
+  duration_ms: 0.755771
+  type: 'test'
+  ...
+# Subtest: host scope uses canonical identities and never widens an empty result
+ok 62 - host scope uses canonical identities and never widens an empty result
+  ---
+  duration_ms: 4.845232
+  type: 'test'
+  ...
+# Subtest: host rejects malformed, oversized and duplicate requests
+ok 63 - host rejects malformed, oversized and duplicate requests
+  ---
+  duration_ms: 1.148527
+  type: 'test'
+  ...
+# Subtest: folder requests require a current generation, path and requesting route
+ok 64 - folder requests require a current generation, path and requesting route
+  ---
+  duration_ms: 0.457045
+  type: 'test'
+  ...
+# Subtest: standard T3 file reads prove vault and host access, and always remove both challenges
+ok 65 - standard T3 file reads prove vault and host access, and always remove both challenges
+  ---
+  duration_ms: 35.786926
+  type: 'test'
+  ...
+# Subtest: local image embeds resolve against the source note, including spaces and Unicode
+ok 66 - local image embeds resolve against the source note, including spaces and Unicode
+  ---
+  duration_ms: 2.328412
+  type: 'test'
+  ...
+# Subtest: reading links retain their URL and escape Markdown labels
+ok 67 - reading links retain their URL and escape Markdown labels
+  ---
+  duration_ms: 0.466616
+  type: 'test'
+  ...
+# Subtest: unknown vault files, resource URLs, and non-reading sources remain untouched
+ok 68 - unknown vault files, resource URLs, and non-reading sources remain untouched
+  ---
+  duration_ms: 0.362249
+  type: 'test'
+  ...
+# Subtest: canonical filesystem scope excludes siblings, outside worktrees, missing and remote metadata
+ok 69 - canonical filesystem scope excludes siblings, outside worktrees, missing and remote metadata
+  ---
+  duration_ms: 2.719279
+  type: 'test'
+  ...
+# Subtest: path boundaries follow platform rules, including Windows volume changes
+ok 70 - path boundaries follow platform rules, including Windows volume changes
+  ---
+  duration_ms: 0.373055
+  type: 'test'
+  ...
+# Subtest: Connect from settings creates a workspace and attempts a connection when no tab is open
+ok 71 - Connect from settings creates a workspace and attempts a connection when no tab is open
+  ---
+  duration_ms: 6.512428
+  type: 'test'
+  ...
+# Subtest: component buttons switch between download and delete and block concurrent operations
+ok 72 - component buttons switch between download and delete and block concurrent operations
+  ---
+  duration_ms: 3.365059
+  type: 'test'
+  ...
+# Subtest: Connect resets and reveals an existing workspace without opening another tab
+ok 73 - Connect resets and reveals an existing workspace without opening another tab
+  ---
+  duration_ms: 2.330353
+  type: 'test'
+  ...
+# Subtest: Connect rejects invalid addresses and does not open a workspace after a failed save
+ok 74 - Connect rejects invalid addresses and does not open a workspace after a failed save
+  ---
+  duration_ms: 0.958262
+  type: 'test'
+  ...
+# Subtest: Connect shows progress while saving and restores the button when opening fails
+ok 75 - Connect shows progress while saving and restores the button when opening fails
+  ---
+  duration_ms: 0.837221
+  type: 'test'
+  ...
+# Subtest: theme following uses a fresh enable token and remains independent of font following
+ok 76 - theme following uses a fresh enable token and remains independent of font following
+  ---
+  duration_ms: 1.548434
+  type: 'test'
+  ...
+# Subtest: failed follow-setting writes restore the prior ownership token
+ok 77 - failed follow-setting writes restore the prior ownership token
+  ---
+  duration_ms: 1.282338
+  type: 'test'
+  ...
+# Subtest: T3 choices update the plugin toggle in both directions without changing its token or font setting
+ok 78 - T3 choices update the plugin toggle in both directions without changing its token or font setting
+  ---
+  duration_ms: 0.81651
+  type: 'test'
+  ...
+# Subtest: draft formatting toggle defaults off, saves both states and rolls back on save failure
+ok 79 - draft formatting toggle defaults off, saves both states and rolls back on save failure
+  ---
+  duration_ms: 1.272881
+  type: 'test'
+  ...
+# Subtest: folder action options remain visible and disable unavailable integrations
+ok 80 - folder action options remain visible and disable unavailable integrations
+  ---
+  duration_ms: 1.832466
+  type: 'test'
+  ...
+# Subtest: translation supplies the complete pinned role set with readable text and statuses
+ok 81 - translation supplies the complete pinned role set with readable text and statuses
+  ---
+  duration_ms: 6.477594
+  type: 'test'
+  ...
+# Subtest: host retains last palette when disabled and reuses only its unchanged owned definition
+ok 82 - host retains last palette when disabled and reuses only its unchanged owned definition
+  ---
+  duration_ms: 83.910936
+  type: 'test'
+  ...
+# Subtest: manual override survives reconnect and explicit enable supersedes it
+ok 83 - manual override survives reconnect and explicit enable supersedes it
+  ---
+  duration_ms: 7.304003
+  type: 'test'
+  ...
+# Subtest: failed second setter rolls back theme, appearance and mixed halves and removes unused install
+ok 84 - failed second setter rolls back theme, appearance and mixed halves and removes unused install
+  ---
+  duration_ms: 9.967965
+  type: 'test'
+  ...
+# Subtest: invalid complete palettes and stale requests do not install; cleanup rejects pending writes
+ok 85 - invalid complete palettes and stale requests do not install; cleanup rejects pending writes
+  ---
+  duration_ms: 5.523803
+  type: 'test'
+  ...
+# Subtest: selecting the owned Obsidian palette resumes and rejects queued disabled updates
+ok 86 - selecting the owned Obsidian palette resumes and rejects queued disabled updates
+  ---
+  duration_ms: 11.024708
+  type: 'test'
+  ...
+# Subtest: a pending resume survives reconnect before the plugin acknowledges it
+ok 87 - a pending resume survives reconnect before the plugin acknowledges it
+  ---
+  duration_ms: 6.995955
+  type: 'test'
+  ...
+# Subtest: explicit plugin disable wins over a pending resume and keeps the complete palette
+ok 88 - explicit plugin disable wins over a pending resume and keeps the complete palette
+  ---
+  duration_ms: 8.495735
+  type: 'test'
+  ...
+# Subtest: same-name or user-edited palettes do not claim Obsidian theme following
+ok 89 - same-name or user-edited palettes do not claim Obsidian theme following
+  ---
+  duration_ms: 7.478817
+  type: 'test'
+  ...
+# Subtest: reselecting the active generated palette clears mixed halves even when colors are unchanged
+ok 90 - reselecting the active generated palette clears mixed halves even when colors are unchanged
+  ---
+  duration_ms: 5.174728
+  type: 'test'
+  ...
+# Subtest: pinned patch starts empty until handshake and host verdict; metadata changes invalidate approval
+ok 91 - pinned patch starts empty until handshake and host verdict; metadata changes invalidate approval
+  ---
+  duration_ms: 75.115791
+  type: 'test'
+  ...
+# Subtest: semantic Markdown hook preserves environment, location and modifier intent
+ok 92 - semantic Markdown hook preserves environment, location and modifier intent
+  ---
+  duration_ms: 6.454032
+  type: 'test'
+  ...
+# Subtest: system browser hook sends only HTTP URLs through the bounded host queue
+ok 93 - system browser hook sends only HTTP URLs through the bounded host queue
+  ---
+  duration_ms: 13.63874
+  type: 'test'
+  ...
+# Subtest: request queue stays bounded and timed-out file requests preserve T3 fallback
+ok 94 - request queue stays bounded and timed-out file requests preserve T3 fallback
+  ---
+  duration_ms: 6.520131
+  type: 'test'
+  ...
+# Subtest: ordinary clients retain the original snapshot and do not expose a host API
+ok 95 - ordinary clients retain the original snapshot and do not expose a host API
+  ---
+  duration_ms: 3.982482
+  type: 'test'
+  ...
+# Subtest: approved worktrees retain owning metadata without widening project choices
+ok 96 - approved worktrees retain owning metadata without widening project choices
+  ---
+  duration_ms: 4.705024
+  type: 'test'
+  ...
+# Subtest: scope reconnect invalidates active and archived rows and ignores old verdicts
+ok 97 - scope reconnect invalidates active and archived rows and ignores old verdicts
+  ---
+  duration_ms: 7.60975
+  type: 'test'
+  ...
+# Subtest: scope completion notifies empty-scope readers after pending rows clear
+ok 98 - scope completion notifies empty-scope readers after pending rows clear
+  ---
+  duration_ms: 8.358166
+  type: 'test'
+  ...
+# Subtest: more drafts than request slots remain pending until each receives a scope verdict
+ok 99 - more drafts than request slots remain pending until each receives a scope verdict
+  ---
+  duration_ms: 9.436535
+  type: 'test'
+  ...
+# Subtest: conflicting active and archived metadata never shares an approval
+ok 100 - conflicting active and archived metadata never shares an approval
+  ---
+  duration_ms: 5.10728
+  type: 'test'
+  ...
+# Subtest: public composer target rejects old routes, generations and replaced registrations
+ok 101 - public composer target rejects old routes, generations and replaced registrations
+  ---
+  duration_ms: 4.200468
+  type: 'test'
+  ...
+# Subtest: native menu checks require a host verdict and decline stale routes and ordinary clients
+ok 102 - native menu checks require a host verdict and decline stale routes and ordinary clients
+  ---
+  duration_ms: 15.418163
+  type: 'test'
+  ...
+# Subtest: reference drops preserve the intended composer and leave ordinary attachments to T3
+ok 103 - reference drops preserve the intended composer and leave ordinary attachments to T3
+  ---
+  duration_ms: 6.81668
+  type: 'test'
+  ...
+# Subtest: native explorer drop target exposes only the registered composer and rejects stale insertion
+ok 104 - native explorer drop target exposes only the registered composer and rejects stale insertion
+  ---
+  duration_ms: 6.328958
+  type: 'test'
+  ...
+# Subtest: an unpatched server stays scoped empty until authenticated filesystem proof is confirmed
+ok 105 - an unpatched server stays scoped empty until authenticated filesystem proof is confirmed
+  ---
+  duration_ms: 6.124731
+  type: 'test'
+  ...
+# Subtest: Windows vault paths survive initialization and native Markdown requests
+ok 106 - Windows vault paths survive initialization and native Markdown requests
+  ---
+  duration_ms: 4.718358
+  type: 'test'
+  ...
+# Subtest: Windows proof reads both challenges through T3 and rejects stale or escaping requests
+ok 107 - Windows proof reads both challenges through T3 and rejects stale or escaping requests
+  ---
+  duration_ms: 7.096724
+  type: 'test'
+  ...
+# Subtest: macOS proof reads both challenges through T3 and rejects stale or escaping requests
+ok 108 - macOS proof reads both challenges through T3 and rejects stale or escaping requests
+  ---
+  duration_ms: 5.894449
+  type: 'test'
+  ...
+# Subtest: temporary draft return binds to its composer and acknowledges retries once
+ok 109 - temporary draft return binds to its composer and acknowledges retries once
+  ---
+  duration_ms: 5.782736
+  type: 'test'
+  ...
+# Subtest: temporary drafts reject newer input, replacement registrations and route changes; cancel writes nothing
+ok 110 - temporary drafts reject newer input, replacement registrations and route changes; cancel writes nothing
+  ---
+  duration_ms: 7.339601
+  type: 'test'
+  ...
+# Subtest: folder hook preserves semantic path, environment and route and declines remote requests
+ok 111 - folder hook preserves semantic path, environment and route and declines remote requests
+  ---
+  duration_ms: 7.411809
+  type: 'test'
+  ...
+# Subtest: activating the T3 leaf restores guest focus and releases the listener on unload
+ok 112 - activating the T3 leaf restores guest focus and releases the listener on unload
+  ---
+  duration_ms: 3.00865
+  type: 'test'
+  ...
+# Subtest: overlapping appearance updates remove superseded styles, including after disconnect
+ok 113 - overlapping appearance updates remove superseded styles, including after disconnect
+  ---
+  duration_ms: 1.983081
+  type: 'test'
+  ...
+# Subtest: disabling font following cancels an older font-resource read before stylesheet insertion
+ok 114 - disabling font following cancels an older font-resource read before stylesheet insertion
+  ---
+  duration_ms: 0.524411
+  type: 'test'
+  ...
+# Subtest: appearance updates retain the active font stylesheet until its replacement is installed
+ok 115 - appearance updates retain the active font stylesheet until its replacement is installed
+  ---
+  duration_ms: 1.062733
+  type: 'test'
+  ...
+# Subtest: unrelated appearance updates do not replace an unchanged stylesheet
+ok 116 - unrelated appearance updates do not replace an unchanged stylesheet
+  ---
+  duration_ms: 0.320116
+  type: 'test'
+  ...
+# Subtest: overlapping Open requests deduplicate within each window and remain independent across windows
+ok 117 - overlapping Open requests deduplicate within each window and remain independent across windows
+  ---
+  duration_ms: 6.67513
+  type: 'test'
+  ...
+# Subtest: failed Open releases only its own window pending operation and permits retry
+ok 118 - failed Open releases only its own window pending operation and permits retry
+  ---
+  duration_ms: 6.065947
+  type: 'test'
+  ...
+# Subtest: unload releases guests without removing the workspace tabs needed for restoration
+ok 119 - unload releases guests without removing the workspace tabs needed for restoration
+  ---
+  duration_ms: 1.41424
+  type: 'test'
+  ...
+# Subtest: changing server resets each view target while an ordinary reconnect retains it
+ok 120 - changing server resets each view target while an ordinary reconnect retains it
+  ---
+  duration_ms: 2.204866
+  type: 'test'
+  ...
+1..120
+# tests 120
+# suites 0
+# pass 120
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 648.781701

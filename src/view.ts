@@ -20,6 +20,7 @@ export class T3View extends ItemView {
   private cleanup: Array<() => void> = [];
   private connecting?: Promise<void>;
   private cssKey?: string;
+  private fontCSS?: string;
   private appearanceGeneration = 0;
   private themeReady = false;
   private themeRevision = 0;
@@ -58,6 +59,7 @@ export class T3View extends ItemView {
     this.contentEl.removeClass('t3-code-workspace-connected');
     this.guest = undefined;
     this.cssKey = undefined;
+    this.fontCSS = undefined;
   }
   connect(transientURL?: string): Promise<void> {
     const task = this.connectOnce(transientURL);
@@ -239,19 +241,20 @@ export class T3View extends ItemView {
     const generation = ++this.appearanceGeneration;
     const guest = this.guest;
     if (!guest) return;
-    const oldKey = this.cssKey;
-    this.cssKey = undefined;
     try {
-      if (oldKey) await guest.removeInsertedCSS(oldKey);
-      if (guest !== this.guest || generation !== this.appearanceGeneration) return;
       // Fonts stay independent. Complete palettes use the versioned client theme API.
       const fontCSS = this.plugin.settings.followAppearance ? await readObsidianFontCSS(this.contentEl.ownerDocument.body) : '';
       if (guest !== this.guest || generation !== this.appearanceGeneration) return;
       const css = fontCSS + '@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}}';
+      if (css === this.fontCSS) return;
       const key = await guest.insertCSS(css);
       if (guest === this.guest && generation === this.appearanceGeneration) {
+        const oldKey = this.cssKey;
         this.cssKey = key;
-        await this.bridge?.fontsChanged();
+        this.fontCSS = css;
+        // Keep the current font rules active while Electron installs their replacement.
+        if (oldKey) await guest.removeInsertedCSS(oldKey);
+        if (guest === this.guest && generation === this.appearanceGeneration) await this.bridge?.fontsChanged();
       }
       else await guest.removeInsertedCSS(key);
     } catch { /* A closing document has no remaining stylesheet to update. */ }
