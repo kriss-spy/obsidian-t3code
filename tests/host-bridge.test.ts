@@ -93,3 +93,23 @@ test('closing a detached Electron guest tolerates a synchronous evaluation failu
   assert.doesNotThrow(()=>bridge.close());
   assert.doesNotThrow(()=>bridge.close());
 });
+
+test('reading reference insertion keeps the captured composer identity and rejects changed routes',async()=>{
+  const session=new HostSession('/vault','local');
+  let route='/intended',accepted=true;
+  const inserted:Array<{target:string;text:string;generation:string}>=[];
+  const guest={getURL:()=> 'http://127.0.0.1:3773'+route,executeJavaScript:async(code:string)=>{
+    inserted.push(JSON.parse(code.slice(code.indexOf('appendContext(')+14,-1)));
+    return accepted;
+  }};
+  const bridge=new HostBridge(guest,'http://127.0.0.1:3773',session,async()=>false);
+  const target={target:'captured-composer',route,rect:{x:0,y:0,width:100,height:30},viewport:{width:400,height:300}};
+  await bridge.appendDropText('[Wiki](<https://example.com>)',target);
+  assert.deepEqual(inserted,[{target:'captured-composer',text:'[Wiki](<https://example.com>)',generation:session.generation}]);
+  accepted=false;
+  await assert.rejects(bridge.appendDropText('changed composer',target),/target changed/);
+  route='/other';
+  await assert.rejects(bridge.appendDropText('changed route',target),/target changed/);
+  assert.equal(inserted.length,2);
+  bridge.close();
+});

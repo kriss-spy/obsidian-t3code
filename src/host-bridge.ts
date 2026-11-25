@@ -206,6 +206,11 @@ export class HostBridge {
     if (result.rect.width<=0 || result.rect.height<=0 || result.viewport.width<=0 || result.viewport.height<=0) return null;
     return result;
   }
+  async appendDropText(text: string, expected: ReferenceDropTarget) {
+    if (expected.route !== new URL(this.guest.getURL()).pathname) throw new Error('The T3 target changed. References were not added.');
+    const handled = await this.evaluate(`window.t3ObsidianHostV1.appendContext(${JSON.stringify({generation:this.session.generation,target:expected.target,text})})`);
+    if (handled !== true) throw new Error('The T3 target changed. References were not added.');
+  }
   async appendReferences(token: string, expected: ReferenceDropTarget) {
     if (expected.route !== new URL(this.guest.getURL()).pathname) throw new Error('The T3 target changed. References were not added.');
     const paths = await this.onReferences(token);

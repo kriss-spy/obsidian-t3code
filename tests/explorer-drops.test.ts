@@ -7,11 +7,20 @@ import type T3Plugin from '../src/main';
 
 const bundle = buildSync({stdin:{contents:"export { registerExplorerDrops } from './src/explorer-drops'; export { T3View } from './src/view';",resolveDir:process.cwd()},bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian','electron']}).outputFiles[0].text;
 const nativeRequire = createRequire(import.meta.url);
-function fixture(kind: 'file' | 'folder', visible = false) {
+function fixture(kind: 'file' | 'folder', visible = false, reading?: 'link' | 'image') {
   const module = {exports:{} as {T3View:new (...args:any[])=>T3View;registerExplorerDrops:(plugin:T3Plugin,doc:Document)=>void}};
   class Element {
-    closest() { return this; }
-    getAttribute() { return kind === 'file' ? 'Note.md' : 'Folder'; }
+    closest(selector: string) {
+      if (!reading) return selector.includes('.nav-file-title') ? this : null;
+      if (selector === '.markdown-reading-view') return this;
+      if (reading === 'link' && selector === 'a[href]') return this;
+      if (reading === 'image' && selector === 'img') return this;
+      return null;
+    }
+    get textContent() { return reading === 'link' ? 'Wiki file record' : ''; }
+    getAttribute(name: string) {
+      if (reading) return name === (reading === 'link' ? 'href' : 'src') ? 'https://bluearchive.wiki/wiki/File:Memorial_Lobby_Iroha.jpg' : null;
+      return kind === 'file' ? 'Note.md' : 'Folder'; }
   }
   class TFile {path='Note.md';extension='md';}
   class TFolder {path='Folder';}
@@ -29,6 +38,7 @@ function fixture(kind: 'file' | 'folder', visible = false) {
   let active = 'note';
   let revealCount=0, focusCount=0, targetCount=0, appendCount=0;
   const captured: string[][]=[];
+  const inserted: string[]=[];
   const handlers = new Map<string,(event:any)=>void>();
   const unregister: Array<()=>void> = [];
   const leaf={view:null as unknown as T3View};
@@ -36,12 +46,12 @@ function fixture(kind: 'file' | 'folder', visible = false) {
   const plugin={settings:{origin:'http://127.0.0.1:39176'},app:{workspace,vault:{getAbstractFileByPath:()=>kind==='file'?new TFile():new TFolder()}},referenceDrags:{capture:(paths:string[])=>{captured.push(paths);return 'token';}},register:(fn:()=>void)=>unregister.push(fn),registerDomEvent:(_doc:Document,name:string,fn:(event:any)=>void)=>handlers.set(name,fn)};
   const view = new module.exports.T3View(leaf,plugin);
   leaf.view=view;
-  Object.assign(view,{app:plugin.app,containerEl:{ownerDocument:doc},guest:{getBoundingClientRect:()=>({x:0,y:0,width:visible?400:0,height:visible?300:0}),focus:()=>{focusCount++;}},bridge:{referenceDropTarget:async()=>{targetCount++;return {target:'composer',route:'/',rect:{x:100,y:100,width:100,height:50},viewport:{width:400,height:300}};},appendReferences:async()=>{appendCount++;}}});
+  Object.assign(view,{app:plugin.app,containerEl:{ownerDocument:doc},guest:{getBoundingClientRect:()=>({x:0,y:0,width:visible?400:0,height:visible?300:0}),focus:()=>{focusCount++;}},bridge:{referenceDropTarget:async()=>{targetCount++;return {target:'composer',route:'/',rect:{x:100,y:100,width:100,height:50},viewport:{width:400,height:300}};},appendReferences:async()=>{appendCount++;},appendDropText:async(text:string)=>{inserted.push(text);appendCount++;}}});
   module.exports.registerExplorerDrops(plugin as unknown as T3Plugin,doc as unknown as Document);
   const event=(x:number,y:number,extra:Record<string,unknown>={})=>({clientX:x,clientY:y,button:0,target:new Element(),prevented:false,stopped:false,preventDefault(){this.prevented=true;},stopImmediatePropagation(){this.stopped=true;},...extra});
   const emit=(name:string,e=event(0,0))=>{handlers.get(name)?.(e);return e;};
   const settle=async()=>{for(let n=0;n<8;n++)await Promise.resolve();};
-  return {view,elements,captured,emit,event,settle,unregister,state:()=>({active,revealCount,focusCount,targetCount,appendCount})};
+  return {view,elements,captured,inserted,emit,event,settle,unregister,state:()=>({active,revealCount,focusCount,targetCount,appendCount})};
 }
 
 for (const kind of ['file','folder'] as const) {
@@ -111,5 +121,22 @@ for (const kind of ['file','folder'] as const) {
     assert.equal(f.state().appendCount,0);
     assert.equal(f.elements.length,1);
     assert(f.elements.every(element=>element.removed));
+  });
+}
+
+for (const reading of ['link','image'] as const) {
+  test(`reading-mode ${reading} drop preserves its destination in the composer`,async()=>{
+    const f=fixture('file',true,reading);
+    f.emit('pointerdown');
+    f.emit('dragstart',f.event(8,0,{dataTransfer:{setData:()=>{}}}));
+    await f.settle();
+    const drop=f.emit('pointerup',f.event(125,125));
+    await f.settle();
+    assert.equal(drop.prevented,true);
+    assert.deepEqual(f.inserted,[reading==='link'
+      ? '[Wiki file record](<https://bluearchive.wiki/wiki/File:Memorial_Lobby_Iroha.jpg>)'
+      : '![](<https://bluearchive.wiki/wiki/File:Memorial_Lobby_Iroha.jpg>)']);
+    assert.equal(f.state().appendCount,1);
+    assert.deepEqual(f.captured,[]);
   });
 }

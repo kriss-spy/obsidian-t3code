@@ -175,7 +175,7 @@ export class T3View extends ItemView {
       this.showUnavailable(this.plugin.diagnostic, origin);
     }
   }
-  async prepareReferenceDrop(token: string, expectedRoute: string = this.getState().target) {
+  async prepareReferenceDrop(token: string, expectedRoute: string = this.getState().target, text?: string) {
     const bridge = this.bridge, guest = this.guest, generation = this.generation;
     if (!bridge || !guest) return null;
     if(this.getState().target!==expectedRoute)return null;
@@ -204,7 +204,8 @@ export class T3View extends ItemView {
     return {element:zone,cancel,complete:async()=>{
       cancel();
       if (generation !== this.generation || bridge !== this.bridge) throw new Error('The T3 target changed. References were not added.');
-      await bridge.appendReferences(token,target);
+      if(text !== undefined) await bridge.appendDropText(text,target);
+      else await bridge.appendReferences(token,target);
       await this.app.workspace.revealLeaf(this.leaf);
       this.app.workspace.setActiveLeaf(this.leaf,{focus:true});
       guest.focus();
