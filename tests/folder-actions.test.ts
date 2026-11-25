@@ -5,6 +5,7 @@ import { createRequire } from 'node:module';
 import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { canonicalDirectory } from '../src/scope';
 const nativeRequire=createRequire(import.meta.url);
 const bundle=buildSync({entryPoints:['src/folder-actions.ts'],bundle:true,write:false,platform:'node',format:'cjs',external:['obsidian']}).outputFiles[0].text;
 function fixture() {
@@ -19,7 +20,7 @@ test('folder note names stay inside the selected folder',()=>{
   for(const name of ['../else.md','/outside.md','a\\b.md','', 'note.txt','bad\0.md']) assert.equal(folderNotePath(folder,name),null);
 });
 test('folder interception respects native default, environment, route, real directory and vault boundaries',async()=>{
-  const f=fixture();const root=await mkdtemp(path.join(tmpdir(),'folder-actions-'));
+  const f=fixture();const root=canonicalDirectory(await mkdtemp(path.join(tmpdir(),'folder-actions-')));
   try {
     const vault=path.join(root,'vault');await mkdir(vault);await mkdir(path.join(root,'external'));await mkdir(path.join(vault,'Child.md'));await symlink(path.join(root,'external'),path.join(vault,'escape'));await writeFile(path.join(vault,'note.md'),'note');
     const calls:string[]=[];const folder={path:'Child.md',name:'Child.md'};
