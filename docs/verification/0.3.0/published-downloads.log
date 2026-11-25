@@ -1,0 +1,15 @@
+Testing Obsidian 1.13.4, installer 1.13.4
+threecode-compat: Installed plugin is 0.3.0
+threecode-compat: Clicking Download necessary files
+threecode-compat: core settings download installed and passed file hashes: Required files are installed.
+threecode-compat: Clicking Download extra fonts
+threecode-compat: fonts settings download installed and passed file hashes: Extra fonts are installed.
+{
+  "appVersion": "1.13.4",
+  "installerVersion": "1.13.4",
+  "checks": [
+    "0.3.0 required files downloaded through settings",
+    "0.3.0 optional fonts downloaded through settings",
+    "production installed file hashes"
+  ]
+}

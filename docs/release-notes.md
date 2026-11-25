@@ -1,6 +1,6 @@
 # threecode 0.3.0
 
-Status: prepared locally, unpublished. See [verification](verification/0.3.0.md) and [publication steps](release-readiness.md).
+Published on 2026-11-25. See [verification](verification/0.3.0.md) and [publication steps](release-readiness.md).
 
 ## Changes
 
@@ -24,7 +24,7 @@ Folder actions accept canonical paths in the local vault. Remote environments, p
 5. Optionally select **Download extra fonts**.
 6. Connect to your existing T3 server and complete pairing if prompted.
 
-The download URLs require publication of `components-0.3.0`. They are unavailable during local preparation. Folder actions default to native behavior on existing installations.
+The download URLs use the published `components-0.3.0` assets. Folder actions default to native behavior on existing installations.
 
 ## Compatibility and verification limits
 
@@ -32,6 +32,6 @@ Requires desktop Obsidian 1.13.4 or later and a local T3 server using orchestrat
 
 The embedded client uses T3 0.1.11 with adapter `obsidian-host-v1.11`. The plugin connects to a standard server without patching or managing it. Disposable-vault folder checks cover Linux, Obsidian 1.13.4, Notebook Navigator 3.5.2, and File Tree Alternative 2.6.4. File Tree Alternative integration depends on its internal `fta-reveal-folder` event.
 
-Full rendered T3 Ctrl+click and Cmd+click flows remain unverified. Current-release Windows and macOS runtime checks, cross-platform CI, published downloads, and the full upstream test suite remain pending. Host-handler runtime checks and bridge unit tests do not establish the full rendered flow.
+Full rendered T3 Ctrl+click and Cmd+click flows remain unverified. Cross-platform CI results and published-download checks are recorded in [release readiness](release-readiness.md). The full upstream test suite was not run. Host-handler runtime checks and bridge unit tests do not establish the full rendered flow.
 
 Vault filtering changes the embedded session list. It does not restrict agent filesystem access. Pairing credentials remain in the dedicated browser partition. Office previews and bundled device models remain excluded.

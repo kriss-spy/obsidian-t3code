@@ -1,6 +1,6 @@
 # Implementation status
 
-Date: 2026-11-25. Version 0.3.0 is prepared locally and remains unpublished. See [release readiness](release-readiness.md), [release verification](verification/0.3.0.md), and [folder-action verification](verification/issue-25-folders.md).
+Date: 2026-11-25. Version 0.3.0 is published. See [release readiness](release-readiness.md), [release verification](verification/0.3.0.md), and [folder-action verification](verification/issue-25-folders.md).
 
 The plugin hosts a patched T3 0.1.11 client and connects to a standard server using orchestration protocol 2. It does not patch or manage the server. The client uses adapter `obsidian-host-v1.11`, host protocol 1, and upstream revision `59651c1761f6c63e9b6056839067066968e6a406`. Its manifest SHA-256 is `9e90f473bb2ca88a74e53c1cc8e9d7e05556f1159ec24d164da2961c5b33d0b2`.
 
@@ -14,4 +14,4 @@ Desktop Windows, macOS, and Linux require Obsidian 1.13.4 or later. The server m
 
 The [0.1.2 report](verification/0.1.2.md) records the preceding release checks. New feature reports cover [theme and font following](verification/issue-17/README.md), [Escape focus](verification/escape-focus.md), [tab activation](verification/issue-29.md), and [draft editing](verification/issue-28.md). Reports retain their original artifact hashes and limitations. Older patched-server candidate reports are historical evidence.
 
-Local preparation verifies tests, builds, archive integrity, and filesystem installation. It does not establish published downloads, clean-vault runtime behavior for the final release package, or visual acceptance. These checks remain listed in release readiness.
+Release checks verify tests, builds, archive integrity, filesystem installation, and both published component downloads through settings in a disposable vault. See release readiness for cross-platform CI results and the remaining rendered-click verification limit.
